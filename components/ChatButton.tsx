@@ -1,0 +1,66 @@
+"use client";
+
+import React, { useState } from 'react';
+import SimpleChatModal from './SimpleChatModal';
+
+// Complete interface definition
+interface ChatButtonProps {
+  className?: string;
+  isDarkMode?: boolean;
+  currentProject?: string | null;
+  currentProjectId?: string | null;
+  rootFolderId?: string;
+  isSystemInitializing?: boolean;
+}
+
+export default function ChatButton({ 
+  className = '', 
+  isDarkMode = false,
+  currentProject,
+  currentProjectId,
+  rootFolderId,
+  isSystemInitializing = false
+}: ChatButtonProps): React.JSX.Element {
+  
+  // Explicit state typing
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  // Event handler with explicit typing
+  const handleClick = (): void => {
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = (): void => {
+    setIsModalOpen(false);
+  };
+
+  return (
+    <>
+      <button
+        onClick={handleClick}
+        disabled={isSystemInitializing}
+        style={{
+          padding: '3px 8px',
+          backgroundColor: isSystemInitializing ? '#666' : '#9C27B0',
+          color: isSystemInitializing ? '#999' : '#fff',
+          border: 'none',
+          borderRadius: '3px',
+          fontSize: '11px',
+          cursor: isSystemInitializing ? 'not-allowed' : 'pointer'
+        }}
+        type="button"
+      >
+        Chat
+      </button>
+
+      <SimpleChatModal 
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        isDarkMode={isDarkMode}
+        currentProject={currentProject}
+        currentProjectId={currentProjectId}
+        rootFolderId={rootFolderId}
+      />
+    </>
+  );
+}

@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* SweetAlert2 Theme Styles */
+[data-theme="light"] .swal2-popup {
+  background: #fff !important;
+  color: #333 !important;
+}
+
+[data-theme="light"] .swal2-title {
+  color: #333 !important;
+}
+
+[data-theme="light"] .swal2-content {
+  color: #666 !important;
+}
+
+[data-theme="light"] .swal2-confirm {
+  background-color: #3085d6 !important;
+}
+
+[data-theme="dark"] .swal2-popup {
+  background: #222 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .swal2-title {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .swal2-content {
+  color: #ccc !important;
+}
+
+[data-theme="dark"] .swal2-confirm {
+  background-color: #3085d6 !important;
+}
+
+/* High z-index for SweetAlert2 popups that need to appear above modals */
+.swal2-container {
+  z-index: 20000 !important;
+}
