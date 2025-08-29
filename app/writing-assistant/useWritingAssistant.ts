@@ -121,12 +121,161 @@ export function useWritingAssistant(
     return { canRun: true };
   }, [state.steps, state.projectFiles]);
 
+  // Helper function to update dependent steps
+  const updateDependentSteps = useCallback((completedStepId: WorkflowStepId) => {
+    setState(prev => ({
+      ...prev,
+      steps: prev.steps.map(step => {
+        if (step.dependencies.includes(completedStepId)) {
+          const allDependenciesCompleted = step.dependencies.every(depId =>
+            prev.steps.find(s => s.id === depId)?.status === 'completed'
+          );
+          
+          return allDependenciesCompleted 
+            ? { ...step, status: 'ready' }
+            : step;
+        }
+        return step;
+      })
+    }));
+  }, []);
+
+  // Execute workflow step with prerequisite check
+  // const executeStep = useCallback(async (stepId: WorkflowStepId) => {
+  //   if (!currentProjectId) return;
+
+  //   // Check prerequisites
+  //   const { canRun, errorMessage } = checkPrerequisites(stepId);
+  //   if (!canRun) {
+  //     showAlert(errorMessage || 'Cannot run this step', 'error', undefined, isDarkMode);
+  //     return;
+  //   }
+
+  //   const now = Date.now();
+  //   const interval = setInterval(() => {
+  //     setState(prev => ({
+  //       ...prev,
+  //       steps: prev.steps.map(step =>
+  //         step.id === stepId && step.status === 'executing'
+  //           ? { ...step, elapsedTime: Math.floor((Date.now() - now) / 1000) }
+  //           : step
+  //       )
+  //     }));
+  //   }, 1000) as unknown as number;
+
+  //   setState(prev => ({
+  //     ...prev,
+  //     steps: prev.steps.map(step =>
+  //       step.id === stepId 
+  //         ? { 
+  //             ...step, 
+  //             status: 'executing',
+  //             startTime: now,
+  //             elapsedTime: 0,
+  //             timerInterval: interval
+  //           } : step
+  //     )
+  //   }));
+
+  //   try {
+  //     const result = await executeWorkflowStepAction(
+  //       session.accessToken as string,
+  //       rootFolderId,
+  //       stepId,
+  //       '', // No userInput needed - files contain the content
+  //       currentProjectId,
+  //       currentProvider,
+  //       currentModel,
+  //       state.projectFiles
+  //     );
+
+  //     if (result.success) {
+  //       // Refresh project files to ensure all files are up to date for next steps
+  //       const refreshedFiles = await detectExistingWorkflowFilesAction(session.accessToken as string, rootFolderId, currentProjectId!);
+        
+  //       setState(prev => ({
+  //         ...prev,
+  //         steps: prev.steps.map(step => {
+  //           if (step.id === stepId) {
+  //             // Clear timer
+  //             if (step.timerInterval) {
+  //               clearInterval(step.timerInterval);
+  //             }
+  //             return {
+  //               ...step, 
+  //               status: 'completed',
+  //               fileName: result.fileName,
+  //               fileId: result.fileId,
+  //               createdAt: new Date().toISOString(),
+  //               timerInterval: undefined
+  //             };
+  //           }
+  //           return step;
+  //         }),
+  //         projectFiles: refreshedFiles.success && refreshedFiles.data ? refreshedFiles.data : {
+  //           ...prev.projectFiles,
+  //           [stepId]: result.file
+  //         }
+  //       }));
+        
+  //       // Update dependent steps
+  //       updateDependentSteps(stepId);
+  //     } else {
+  //       setState(prev => ({
+  //         ...prev,
+  //         steps: prev.steps.map(step => {
+  //           if (step.id === stepId) {
+  //             // Clear timer on error
+  //             if (step.timerInterval) {
+  //               clearInterval(step.timerInterval);
+  //             }
+  //             return {
+  //               ...step, 
+  //               status: 'error', 
+  //               error: result.error,
+  //               timerInterval: undefined
+  //             };
+  //           }
+  //           return step;
+  //         })
+  //       }));
+  //     }
+  //   } catch (error) {
+  //     setState(prev => ({
+  //       ...prev,
+  //       steps: prev.steps.map(step => {
+  //         if (step.id === stepId) {
+  //           // Clear timer on error
+  //           if (step.timerInterval) {
+  //             clearInterval(step.timerInterval);
+  //           }
+  //           return {
+  //             ...step, 
+  //             status: 'error', 
+  //             error: 'Execution failed',
+  //             timerInterval: undefined
+  //           };
+  //         }
+  //         return step;
+  //       })
+  //     }));
+  //   }
+  // }, [currentProjectId, currentProvider, currentModel, state.projectFiles]);
   // Execute workflow step with prerequisite check
   const executeStep = useCallback(async (stepId: WorkflowStepId) => {
     if (!currentProjectId) return;
 
-    // Check prerequisites
-    const { canRun, errorMessage } = checkPrerequisites(stepId);
+    // ALWAYS get fresh file data before execution to avoid stale state issues
+    const freshFiles = await detectExistingWorkflowFilesAction(
+      session.accessToken as string, 
+      rootFolderId, 
+      currentProjectId
+    );
+    
+    const currentFiles = freshFiles.success && freshFiles.data ? freshFiles.data : state.projectFiles;
+
+    // Check prerequisites with fresh file data
+    const { canRun, errorMessage } = checkPrerequisitesWithFiles(stepId, currentFiles);
     if (!canRun) {
       showAlert(errorMessage || 'Cannot run this step', 'error', undefined, isDarkMode);
       return;
@@ -167,11 +316,11 @@ export function useWritingAssistant(
         currentProjectId,
         currentProvider,
         currentModel,
-        state.projectFiles
+        currentFiles // Use fresh files instead of potentially stale state.projectFiles
       );
 
       if (result.success) {
-        // Refresh project files to ensure all files are up to date for next steps
+        // Refresh project files again after successful execution
         const refreshedFiles = await detectExistingWorkflowFilesAction(session.accessToken as string, rootFolderId, currentProjectId!);
         
         setState(prev => ({
@@ -241,7 +390,58 @@ export function useWritingAssistant(
         })
       }));
     }
-  }, [currentProjectId, currentProvider, currentModel, state.projectFiles]);
+  }, [currentProjectId, currentProvider, currentModel, checkPrerequisites, updateDependentSteps, session, rootFolderId, isDarkMode]);
+
+  // Helper function to check prerequisites with provided files instead of state
+  const checkPrerequisitesWithFiles = useCallback((stepId: WorkflowStepId, files: any): { canRun: boolean; errorMessage?: string } => {
+    // Special check for brainstorm - it needs a file created in the Editor first
+    if (stepId === 'brainstorm') {
+      const brainstormFile = files.brainstorm;
+      if (!brainstormFile || !brainstormFile.id) {
+        return { 
+          canRun: false, 
+          errorMessage: 'Error: brainstorm.txt must exist. Please create it in the Editor first with your story ideas.'
+        };
+      }
+      return { canRun: true };
+    }
+
+    // Check prerequisites for other steps
+    if (stepId === 'outline') {
+      if (!files.brainstorm || !files.brainstorm.id) {
+        return { 
+          canRun: false, 
+          errorMessage: 'Error: brainstorm.txt must exist before creating an outline. Please run Brainstorm first.'
+        };
+      }
+    }
+
+    if (stepId === 'world') {
+      if (!files.outline || !files.outline.id) {
+        return { 
+          canRun: false, 
+          errorMessage: 'Error: outline.txt must exist before building the world. Please run Outline first.'
+        };
+      }
+    }
+
+    if (stepId === 'chapters') {
+      if (!files.outline || !files.outline.id) {
+        return { 
+          canRun: false, 
+          errorMessage: 'Error: outline.txt must exist before writing chapters. Please run Outline first.'
+        };
+      }
+      if (!files.world || !files.world.id) {
+        return { 
+          canRun: false, 
+          errorMessage: 'Error: world.txt must exist before writing chapters. Please run World Builder first.'
+        };
+      }
+    }
+
+    return { canRun: true };
+  }, []);
 
   // View file content
   const viewFile = useCallback(async (stepId: WorkflowStepId) => {
@@ -337,25 +537,6 @@ export function useWritingAssistant(
       setIsLoadingPrompt(false);
     }
   }, [onLoadFileIntoEditor, isLoadingPrompt]);
-
-  // Helper function to update dependent steps
-  const updateDependentSteps = useCallback((completedStepId: WorkflowStepId) => {
-    setState(prev => ({
-      ...prev,
-      steps: prev.steps.map(step => {
-        if (step.dependencies.includes(completedStepId)) {
-          const allDependenciesCompleted = step.dependencies.every(depId =>
-            prev.steps.find(s => s.id === depId)?.status === 'completed'
-          );
-          
-          return allDependenciesCompleted 
-            ? { ...step, status: 'ready' }
-            : step;
-        }
-        return step;
-      })
-    }));
-  }, []);
 
   // Check if any step is currently executing
   const isAnyStepExecuting = state.steps.some(step => step.status === 'executing');
