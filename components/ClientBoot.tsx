@@ -404,22 +404,59 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   };
 
   // Settings save handler (API key only)
+  // const handleSettingsSave = async (provider: string) => {
+  //   if (!session?.accessToken) {
+  //     projectActions.setUploadStatus('❌ Not authenticated');
+  //     return;
+  //   }
+    
+  //   projectActions.setUploadStatus(`Saving API key for ${provider}...`);
+    
+  //   try {
+  //     setCurrentProvider(provider);
+  //     setHasConfiguredProvider(true);
+  //     // Check API key status after save
+  //     await checkApiKey();
+  //     projectActions.setUploadStatus(`✅ API key saved for ${provider}`);
+  //   } catch (error) {
+  //     projectActions.setUploadStatus(`❌ Failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
+  //   }
+  // };
   const handleSettingsSave = async (provider: string) => {
     if (!session?.accessToken) {
       projectActions.setUploadStatus('❌ Not authenticated');
       return;
     }
     
-    projectActions.setUploadStatus(`Saving API key for ${provider}...`);
+    projectActions.setUploadStatus(`Saving settings for ${provider}...`);
     
     try {
+      // Set local state first
       setCurrentProvider(provider);
       setHasConfiguredProvider(true);
+      
+      // IMPORTANT: Actually save the provider to the config file
+      // This was missing before - that's why selectedApiProvider stayed empty!
+      const updateResult = await updateProviderAndModelAction(
+        session.accessToken, 
+        init?.config?.settings.proselenos_root_folder_id || '', 
+        provider, 
+        'google/gemini-2.5-flash-lite' // Default model - almost free for testing
+      );
+      
+      if (!updateResult.success) {
+        throw new Error(updateResult.error || 'Failed to update provider config');
+      }
+      
+      // Set default model in local state too
+      setCurrentModel('google/gemini-2.5-flash-lite');
+      
       // Check API key status after save
       await checkApiKey();
-      projectActions.setUploadStatus(`✅ API key saved for ${provider}`);
+      projectActions.setUploadStatus(`✅ Settings saved for ${provider}. Click Models button to select your preferred model.`);
     } catch (error) {
       projectActions.setUploadStatus(`❌ Failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('Settings save error:', error);
     }
   };
 
