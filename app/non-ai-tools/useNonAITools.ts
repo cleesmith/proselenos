@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { showAlert } from '../shared/alerts';
 import { listGoogleDriveFilesAction } from '@/lib/google-drive-actions';
 import { publishManuscriptAction } from '@/lib/publish-actions';
+import { listDocxFilesAction, extractDocxCommentsAction } from '@/lib/docx-comments-actions';
 
 interface NonAIToolsManagerState {
   selectedNonAITool: string;
@@ -35,6 +36,7 @@ interface NonAIToolsManagerActions {
 // Available non-AI tools
 export const NON_AI_TOOLS = [
   // 'Publish or Unpublish Manuscript', // Hidden - use Publishing Assistant instead
+  'DOCX: Convert Comments as Text',
   'Export Manuscript', 
   'Backup Project',
   'Word Count Analysis'
@@ -63,16 +65,31 @@ export function useNonAITools(): [NonAIToolsManagerState, NonAIToolsManagerActio
     }
     setIsGoogleDriveOperationPending(true);
     try {
-      // Get text files from current project
-      const result = await listGoogleDriveFilesAction(session.accessToken as string, currentProjectId);
+      let result;
+      
+      // Choose which files to load based on selected tool
+      if (selectedNonAITool === 'DOCX: Convert Comments as Text') {
+        // Get DOCX files for comment extraction
+        result = await listDocxFilesAction(session.accessToken as string, currentProjectId);
+      } else {
+        // Get text files from current project for other tools
+        result = await listGoogleDriveFilesAction(session.accessToken as string, currentProjectId);
+      }
+      
       if (result.success && result.data?.files) {
-        // Filter for .txt files and Google Docs (exactly like AI Tools)
-        const textFiles = result.data.files.filter((file: any) => 
-          file.name.endsWith('.txt') || 
-          file.mimeType === 'text/plain' ||
-          file.mimeType === 'application/vnd.google-apps.document'
-        );
-        setFileSelectorFiles(textFiles);
+        let filteredFiles = result.data.files;
+        
+        // Apply additional filtering if needed
+        if (selectedNonAITool !== 'DOCX: Convert Comments as Text') {
+          // Filter for .txt files and Google Docs (exactly like AI Tools)
+          filteredFiles = result.data.files.filter((file: any) => 
+            file.name.endsWith('.txt') || 
+            file.mimeType === 'text/plain' ||
+            file.mimeType === 'application/vnd.google-apps.document'
+          );
+        }
+        
+        setFileSelectorFiles(filteredFiles);
         setShowFileSelector(true);
       } else {
         showAlert(`Failed to load project files: ${result.error}`, 'error', undefined, isDarkMode);
@@ -98,12 +115,68 @@ export function useNonAITools(): [NonAIToolsManagerState, NonAIToolsManagerActio
       return;
     }
 
-    if (selectedNonAITool === 'Publish or Unpublish Manuscript') {
+    if (selectedNonAITool === 'DOCX: Convert Comments as Text') {
+      await handleDocxCommentsExtraction(session, currentProjectId, onShowAlert, isDarkMode);
+    } else if (selectedNonAITool === 'Publish or Unpublish Manuscript') {
       await handlePublishManuscript(session, currentProjectId, onShowAlert, isDarkMode);
     } else {
       // Future functionality for other tools
       console.log('Non-AI Tool Run - Future functionality:', selectedNonAITool);
       onShowAlert('error', `${selectedNonAITool} - Not yet implemented`, isDarkMode);
+    }
+  };
+
+  const handleDocxCommentsExtraction = async (
+    session: any,
+    currentProjectId: string | null,
+    onShowAlert: (type: 'success' | 'error', message: string, isDarkMode: boolean) => void,
+    isDarkMode: boolean
+  ) => {
+    if (!currentProjectId) {
+      onShowAlert('error', 'Please select a project first', isDarkMode);
+      return;
+    }
+
+    if (!selectedManuscriptForTool) {
+      onShowAlert('error', 'Please select a DOCX file first', isDarkMode);
+      return;
+    }
+
+    setIsPublishing(true);
+    setPublishResult(null);
+
+    try {
+      // Generate output filename based on original filename
+      const originalName = selectedManuscriptForTool.name.replace('.docx', '');
+      const timestamp = new Date().toISOString().replace(/[-:.]/g, '').substring(0, 15);
+      const outputFileName = `${originalName}_comments_${timestamp}.txt`;
+
+      const result = await extractDocxCommentsAction(
+        session.accessToken as string,
+        selectedManuscriptForTool.id,
+        outputFileName,
+        currentProjectId
+      );
+      
+      if (result.success && result.data) {
+        const { commentCount, hasComments } = result.data;
+        const successMessage = hasComments 
+          ? `Successfully extracted ${commentCount} comments and paired them with referenced text.`
+          : 'No comments found in document. Document content saved for reference.';
+        setPublishResult(successMessage);
+        onShowAlert('success', successMessage, isDarkMode);
+      } else {
+        const errorMessage = result.error || 'Unknown error occurred';
+        setPublishResult(`Error: ${errorMessage}`);
+        onShowAlert('error', errorMessage, isDarkMode);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setPublishResult(`Error: ${errorMessage}`);
+      onShowAlert('error', errorMessage, isDarkMode);
+    } finally {
+      setIsPublishing(false);
+      setToolJustFinished(true);
     }
   };
 
