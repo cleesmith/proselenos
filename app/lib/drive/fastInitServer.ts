@@ -3,7 +3,7 @@
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getAuthClient, getDriveClient, ensureStoryGrindFolder } from '@/lib/googleDrive';
+import { getAuthClient, getDriveClient, ensureproselenosFolder } from '@/lib/googleDrive';
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
 
@@ -11,7 +11,7 @@ export type Config = {
   settings: {
     current_project: string | null;
     current_project_folder_id: string | null;
-    storygrind_root_folder_id: string;
+    proselenos_root_folder_id: string;
     tool_prompts_folder_id: string | null;
   };
   selectedApiProvider: string;
@@ -42,7 +42,7 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
     const drive = getDriveClient(authClient);
     
     // Ensure root folder exists
-    const rootFolder = await ensureStoryGrindFolder(drive);
+    const rootFolder = await ensureproselenosFolder(drive);
     const rootId = rootFolder.id;
     
     const opts = { 
@@ -92,8 +92,8 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
 
     // B) Fetch config file, settings file (metadata only), and root folders in parallel
     const [configFile, settingsFile, rootFolders] = await Promise.all([
-      findOne(rootId, 'storygrind-config.json', opts),
-      findOne(rootId, 'storygrind-settings.json', opts), // metadata only
+      findOne(rootId, 'proselenos-config.json', opts),
+      findOne(rootId, 'proselenos-settings.json', opts), // metadata only
       listAll(qAnd([`'${rootId}' in parents`, `mimeType='${FOLDER_MIME}'`, `trashed=false`]), opts),
     ]);
 
@@ -104,7 +104,7 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
       settings: {
         current_project: null,
         current_project_folder_id: null,
-        storygrind_root_folder_id: rootId,
+        proselenos_root_folder_id: rootId,
         tool_prompts_folder_id: null,
       },
       selectedApiProvider: '',
@@ -117,7 +117,7 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
     const toolPromptsId = toolPromptsFolder?.id || null;
 
     // Find projects folder
-    const projectsFolder = rootFolders.find(f => f.name === 'storygrind_projects');
+    const projectsFolder = rootFolders.find(f => f.name === 'proselenos_projects');
     
     // Load projects and tool categories in parallel
     const [projects, toolCategories] = await Promise.all([
@@ -157,7 +157,7 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
         ...config,
         settings: {
           ...config.settings,
-          storygrind_root_folder_id: rootId,
+          proselenos_root_folder_id: rootId,
           tool_prompts_folder_id: toolPromptsId,
         },
       },

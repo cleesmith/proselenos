@@ -106,9 +106,9 @@ export async function getToolPromptAction(toolId: string): Promise<{
       return { success: false, error: 'Invalid tool ID format' };
     }
 
-    // Step 1: find storygrind_projects folder
+    // Step 1: find proselenos_projects folder
     const projects = await drive.files.list({
-      q: "name='storygrind_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+      q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
       fields: 'files(id)',
     });
     const projectsFolderId = projects.data.files?.[0]?.id;
@@ -181,9 +181,9 @@ export async function updateToolPromptAction(toolId: string, content: string): P
       return { success: false, error: 'Invalid tool ID format' };
     }
 
-    // Step 1: find storygrind_projects folder
+    // Step 1: find proselenos_projects folder
     const projects = await drive.files.list({
-      q: "name='storygrind_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+      q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
       fields: 'files(id)',
     });
     const projectsFolderId = projects.data.files?.[0]?.id;

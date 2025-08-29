@@ -1,6 +1,6 @@
 // app/page.tsx
-// StoryGrind Main Interface - Next.js version with Fast Init
-// https://storygrind.onrender.com
+// Proselenos Main Interface - Next.js version with Fast Init
+// https://proselenos.onrender.com
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ import { authOptions } from '@/lib/auth';
 import { fastInitForUser } from './lib/drive/fastInitServer';
 import ClientBoot from '@/components/ClientBoot';
 
-export default async function StoryGrindHome() {
+export default async function proselenosHome() {
   const session = await getServerSession(authOptions);
   
   if (!session?.accessToken) {

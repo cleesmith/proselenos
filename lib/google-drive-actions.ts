@@ -6,14 +6,14 @@ import { Readable } from 'stream';
 import {
   getAuthClient,
   getDriveClient,
-  ensureStoryGrindFolder,
+  ensureproselenosFolder,
   uploadManuscript,
   readTextFile,
   readGoogleDoc,
   listFilesAndFolders,
   getFolderInfo,
   createProjectFolder,
-  getStoryGrindConfig,
+  getproselenosConfig,
   updateCurrentProject,
   updateProviderAndModel,
   updateSelectedModel,
@@ -44,7 +44,7 @@ async function getAuthenticatedClients(accessToken: string, rootFolderId: string
   const drive = getDriveClient(authClient);
   
   // Use the provided root folder ID (already ensured to exist in fastInitServer)
-  const rootFolder = { id: rootFolderId, name: 'storygrind_projects' };
+  const rootFolder = { id: rootFolderId, name: 'proselenos_projects' };
   
   return {
     authClient,
@@ -221,7 +221,7 @@ export async function createProjectFolderAction(accessToken: string, rootFolderI
   }
 }
 
-export async function getStoryGrindConfigAction(accessToken: string, rootFolderId: string): Promise<ActionResult> {
+export async function getproselenosConfigAction(accessToken: string, rootFolderId: string): Promise<ActionResult> {
   try {
     const clients = await getAuthenticatedClients(accessToken, rootFolderId);
     if ('error' in clients) {
@@ -229,7 +229,7 @@ export async function getStoryGrindConfigAction(accessToken: string, rootFolderI
     }
 
     const { rootFolder } = clients;
-    const config = await getStoryGrindConfig(clients.drive, rootFolder.id);
+    const config = await getproselenosConfig(clients.drive, rootFolder.id);
     
     // Also check if tool-prompts folder exists
     const toolPromptsExists = await checkToolPromptsInstallation(

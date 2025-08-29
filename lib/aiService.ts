@@ -1,8 +1,8 @@
 // aiService.ts - AI Provider Factory
-// Migrated from ~/storygrind/client.js for Next.js web environment
+// Migrated from ~/proselenos/client.js for Next.js web environment
 
 import { getApiKeyAction } from './api-key-actions';
-import { getStoryGrindConfigAction } from './google-drive-actions';
+import { getproselenosConfigAction } from './google-drive-actions';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 import { fastInitForUser } from '@/app/lib/drive/fastInitServer';
@@ -71,15 +71,15 @@ export async function getCurrentProviderAndModel(accessToken: string): Promise<{
   try {
     // Get the rootFolderId from the user's session/initialization data
     const init = await fastInitForUser(accessToken);
-    const rootFolderId = init.config?.settings.storygrind_root_folder_id;
+    const rootFolderId = init.config?.settings.proselenos_root_folder_id;
     
     if (!rootFolderId) {
-      throw new Error('StoryGrind not initialized - missing root folder ID');
+      throw new Error('Proselenos not initialized - missing root folder ID');
     }
     
-    const result = await getStoryGrindConfigAction(accessToken, rootFolderId);
+    const result = await getproselenosConfigAction(accessToken, rootFolderId);
     if (!result.success || !result.data?.config) {
-      throw new Error('Failed to load StoryGrind configuration');
+      throw new Error('Failed to load Proselenos configuration');
     }
     
     const config = result.data.config;

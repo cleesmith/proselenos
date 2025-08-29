@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 // openrouter.ts - OpenRouter AI Provider
-// Migrated from ~/storygrind/client-openrouter.js for Next.js web environment
+// Migrated from ~/proselenos/client-openrouter.js for Next.js web environment
 
 import { OpenAI } from 'openai';
 
@@ -32,7 +32,7 @@ export class AiApiService {
   public client: OpenAI | null = null;
   public apiKeyMissing: boolean = true;
   public prompt: string | null = null;
-  public user: string = "storygrind";
+  public user: string = "proselenos";
   public temp: number = 0.3; // 0.0 (conservative) to 2.0 (wild/crazy)
 
   constructor(config: AIConfig = {}) {
@@ -46,8 +46,8 @@ export class AiApiService {
         apiKey: config.apiKey,
         baseURL: "https://openrouter.ai/api/v1",
         defaultHeaders: {
-          'HTTP-Referer': 'https://www.slipthetrap.com/storygrind.html',
-          'X-Title': 'StoryGrind'
+          'HTTP-Referer': 'https://www.slipthetrap.com/proselenos.html',
+          'X-Title': 'Proselenos'
         }
       });
       this.apiKeyMissing = false;

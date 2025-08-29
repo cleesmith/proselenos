@@ -27,9 +27,9 @@ export function getDocsClient(authClient: any) {
   return google.docs({ version: 'v1', auth: authClient });
 }
 
-// 1. Create or find storygrind_projects folder
-export async function ensureStoryGrindFolder(drive: any) {
-  const folderName = 'storygrind_projects';
+// 1. Create or find proselenos_projects folder
+export async function ensureproselenosFolder(drive: any) {
+  const folderName = 'proselenos_projects';
   const query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
   
   const response = await drive.files.list({
@@ -244,7 +244,7 @@ export async function deleteFile(drive: any, fileId: string) {
 
 // Google Docs Functions
 
-// Create a Google Doc in storygrind_projects folder
+// Create a Google Doc in proselenos_projects folder
 export async function createGoogleDoc(drive: any, docs: any, title: string, parentFolderId: string, initialContent = 'Welcome to your new document!\n\nStart writing your story here...') {
   // First create empty Google Doc
   const fileMetadata = {
@@ -329,21 +329,21 @@ export async function listGoogleDocsInFolder(drive: any, folderId: string) {
   return response.data.files;
 }
 
-// StoryGrind Configuration Management
-export interface StoryGrindConfig {
+// Configuration Management
+export interface proselenosConfig {
   settings: {
     current_project: string | null;
     current_project_folder_id: string | null;
-    storygrind_root_folder_id: string;
+    proselenos_root_folder_id: string;
   };
   selectedApiProvider: string;
   selectedAiModel: string;
   author_name: string;
 }
 
-// Get or create the storygrind-config.json file
-export async function getStoryGrindConfig(drive: any, rootFolderId: string): Promise<StoryGrindConfig> {
-  const configFileName = 'storygrind-config.json';
+// Get or create the proselenos-config.json file
+export async function getproselenosConfig(drive: any, rootFolderId: string): Promise<proselenosConfig> {
+  const configFileName = 'proselenos-config.json';
   
   // Look for existing config file
   const query = `name='${configFileName}' and '${rootFolderId}' in parents and trashed=false`;
@@ -364,7 +364,7 @@ export async function getStoryGrindConfig(drive: any, rootFolderId: string): Pro
       let configContent = configResponse.data;
       if (typeof configContent === 'object' && configContent !== null) {
         // If it's already an object, use it directly
-        return configContent as StoryGrindConfig;
+        return configContent as proselenosConfig;
       } else if (typeof configContent === 'string') {
         // If it's a string, parse it
         return JSON.parse(configContent);
@@ -378,24 +378,24 @@ export async function getStoryGrindConfig(drive: any, rootFolderId: string): Pro
   }
 
   // Create default config
-  const defaultConfig: StoryGrindConfig = {
+  const defaultConfig: proselenosConfig = {
     settings: {
       current_project: null,
       current_project_folder_id: null,
-      storygrind_root_folder_id: rootFolderId
+      proselenos_root_folder_id: rootFolderId
     },
     selectedApiProvider: "",
     selectedAiModel: "",
     author_name: "Anonymous"
   };
 
-  await saveStoryGrindConfig(drive, rootFolderId, defaultConfig);
+  await saveproselenosConfig(drive, rootFolderId, defaultConfig);
   return defaultConfig;
 }
 
-// Save the storygrind-config.json file
-export async function saveStoryGrindConfig(drive: any, rootFolderId: string, config: StoryGrindConfig): Promise<void> {
-  const configFileName = 'storygrind-config.json';
+// Save the proselenos-config.json file
+export async function saveproselenosConfig(drive: any, rootFolderId: string, config: proselenosConfig): Promise<void> {
+  const configFileName = 'proselenos-config.json';
   const configContent = JSON.stringify(config, null, 2);
   
   // Look for existing config file
@@ -432,24 +432,24 @@ export async function saveStoryGrindConfig(drive: any, rootFolderId: string, con
 
 // Update config when user selects a project
 export async function updateCurrentProject(drive: any, rootFolderId: string, projectName: string, projectFolderId: string): Promise<void> {
-  const config = await getStoryGrindConfig(drive, rootFolderId);
+  const config = await getproselenosConfig(drive, rootFolderId);
   config.settings.current_project = projectName;
   config.settings.current_project_folder_id = projectFolderId;
-  await saveStoryGrindConfig(drive, rootFolderId, config);
+  await saveproselenosConfig(drive, rootFolderId, config);
 }
 
 // Update config when user changes AI provider and model settings
 export async function updateProviderAndModel(drive: any, rootFolderId: string, provider: string, model: string): Promise<void> {
-  const config = await getStoryGrindConfig(drive, rootFolderId);
+  const config = await getproselenosConfig(drive, rootFolderId);
   config.selectedApiProvider = provider;
   config.selectedAiModel = model;
-  await saveStoryGrindConfig(drive, rootFolderId, config);
+  await saveproselenosConfig(drive, rootFolderId, config);
 }
 
 export async function updateSelectedModel(drive: any, rootFolderId: string, model: string): Promise<void> {
-  const config = await getStoryGrindConfig(drive, rootFolderId);
+  const config = await getproselenosConfig(drive, rootFolderId);
   config.selectedAiModel = model;
-  await saveStoryGrindConfig(drive, rootFolderId, config);
+  await saveproselenosConfig(drive, rootFolderId, config);
 }
 
 // Check if tool-prompts folder exists in Google Drive
@@ -468,15 +468,15 @@ export async function checkToolPromptsExists(drive: any, rootFolderId: string): 
 
 // Clear current project (when project is deleted or invalid)
 export async function clearCurrentProject(drive: any, rootFolderId: string): Promise<void> {
-  const config = await getStoryGrindConfig(drive, rootFolderId);
+  const config = await getproselenosConfig(drive, rootFolderId);
   config.settings.current_project = null;
   config.settings.current_project_folder_id = null;
-  await saveStoryGrindConfig(drive, rootFolderId, config);
+  await saveproselenosConfig(drive, rootFolderId, config);
 }
 
 // Validate that current project still exists on Drive
 export async function validateCurrentProject(drive: any, rootFolderId: string): Promise<boolean> {
-  const config = await getStoryGrindConfig(drive, rootFolderId);
+  const config = await getproselenosConfig(drive, rootFolderId);
   
   if (!config.settings.current_project_folder_id) {
     return false;

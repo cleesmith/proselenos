@@ -1,12 +1,11 @@
-// StoryGrind Header Component
-// Extracted from app/page.tsx lines 803-940
+// Header Component
 
 'use client';
 
 import { ThemeConfig } from '../shared/theme';
 import ChatButton from '@/components/ChatButton';
 
-interface StoryGrindHeaderProps {
+interface ProselenosHeaderProps {
   session: any;
   theme: ThemeConfig;
   isDarkMode: boolean;
@@ -27,7 +26,7 @@ interface StoryGrindHeaderProps {
   onSignOut: () => void;
 }
 
-export default function StoryGrindHeader({
+export default function ProselenosHeader({
   session,
   theme,
   isDarkMode,
@@ -46,7 +45,7 @@ export default function StoryGrindHeader({
   onSettingsClick,
   onEditorClick,
   onSignOut
-}: StoryGrindHeaderProps) {
+}: ProselenosHeaderProps) {
   return (
     <div style={{
       backgroundColor: theme.headerBg,
@@ -82,8 +81,8 @@ export default function StoryGrindHeader({
       }}>
         <img 
           src="icon.png" 
-          alt="StoryGrind Logo"
-          title="Polish your manuscript with StoryGrind"
+          alt="Proselenos Logo"
+          title="Polish your manuscript with Proselenos"
           style={{
             width: '32px',
             height: '32px'
@@ -94,7 +93,7 @@ export default function StoryGrindHeader({
           fontWeight: 'bold', 
           color: theme.text 
         }}>
-          StoryGrind
+          Proselenos
         </div>
         {session && (
           <div 

@@ -11,7 +11,7 @@ import {
   createGoogleDriveFileAction,
   listGoogleDriveFilesAction
 } from '@/lib/google-drive-actions';
-import { getAuthClient, getDriveClient, ensureStoryGrindFolder } from '@/lib/googleDrive';
+import { getAuthClient, getDriveClient, ensureproselenosFolder } from '@/lib/googleDrive';
 import * as fs from 'fs';
 import * as path from 'path';
 import PDFDocument from 'pdfkit';
@@ -59,10 +59,10 @@ async function prepareManuscriptData(manuscriptFileId: string, projectFolderId: 
     return { success: false, error: 'Unauthorized - please sign in' };
   }
 
-  // For now, use ensureStoryGrindFolder to get rootFolderId (like before, but with new HTTP optimizations)
+  // For now, use ensureproselenosFolder to get rootFolderId (like before, but with new HTTP optimizations)
   const authClient = getAuthClient(session.accessToken as string);
   const drive = getDriveClient(authClient);
-  const rootFolder = await ensureStoryGrindFolder(drive);
+  const rootFolder = await ensureproselenosFolder(drive);
 
   // Read manuscript content from Google Drive
   const manuscriptResult = await readGoogleDriveFileAction(session.accessToken as string, rootFolder.id, manuscriptFileId);
@@ -227,10 +227,10 @@ export async function publishManuscriptAction(
     return { success: false, error: 'Unauthorized - please sign in' };
   }
 
-  // For now, use ensureStoryGrindFolder to get rootFolderId (like before, but with new HTTP optimizations)
+  // For now, use ensureproselenosFolder to get rootFolderId (like before, but with new HTTP optimizations)
   const authClient = getAuthClient(session.accessToken as string);
   const drive = getDriveClient(authClient);
-  const rootFolder = await ensureStoryGrindFolder(drive);
+  const rootFolder = await ensureproselenosFolder(drive);
 
   try {
     // Read manuscript content from Google Drive
@@ -1036,7 +1036,7 @@ ${navItems}
  * Create Kindle-compatible CSS (exact copy from working code)
  */
 function createFullWidthCSS(): string {
-  return `/* StoryGrind EPUB - Kindle-Compatible CSS */
+  return `/* Proselenos EPUB - Kindle-Compatible CSS */
 
 /* Reset and base styles */
 html {
@@ -1263,7 +1263,7 @@ function createPDFTitlePage(doc: any, metadata: any): void {
 
   // Publisher - at ~80% of page height
   doc.fontSize(12)
-    .text((metadata.publisher || 'StoryGrind').toUpperCase(), 0, 555, {
+    .text((metadata.publisher || 'Proselenos').toUpperCase(), 0, 555, {
       align: 'center',
       width: pageWidth,
       continued: false
@@ -1289,7 +1289,7 @@ function createPDFCopyrightPage(doc: any, metadata: any): void {
     '',
     'All rights reserved.',
     '',
-    `Published by ${metadata.publisher || 'StoryGrind'}`,
+    `Published by ${metadata.publisher || 'Proselenos'}`,
     '',
     'This is a work of fiction. Names, characters, places, and incidents',
     'either are the product of the author\'s imagination or are used',
@@ -1358,7 +1358,7 @@ async function createPDF(chapters: Chapter[], metadata: any): Promise<{ pdfData:
   // Set metadata
   doc.info.Title = metadata.title;
   doc.info.Author = metadata.author;
-  doc.info.Creator = 'StoryGrind';
+  doc.info.Creator = 'Proselenos';
   
   // Track pages that should not have headers/numbers
   const skipHeaderPages = new Set<number>();

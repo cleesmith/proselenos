@@ -102,9 +102,9 @@ export async function getModelsInternal(): Promise<ModelData[]> {
     if (error.message === 'No AI provider configured' ||
         error.message === 'AI_PROVIDER_NOT_CONFIGURED' ||
         error.message === 'AI_MODEL_NOT_CONFIGURED' ||
-        error.message === 'STORYGRIND_CONFIG_NOT_READY' ||
-        error.message === 'Failed to load StoryGrind configuration') {
-      console.log('StoryGrind not fully configured yet, returning empty models list');
+        error.message === 'proselenos_CONFIG_NOT_READY' ||
+        error.message === 'Failed to load Proselenos configuration') {
+      console.log('Proselenos not fully configured yet, returning empty models list');
       return [];
     }
     console.error('Models fetch error:', error);

@@ -1,5 +1,4 @@
-// Shared theme configuration for StoryGrind
-// Extracted from app/page.tsx lines 87-97
+// Shared theme configuration
 
 export interface ThemeConfig {
   bg: string;

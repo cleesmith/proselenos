@@ -1,5 +1,4 @@
-// StoryGrind Editor Modal Component
-// Extracted from app/page.tsx lines 1642-1786
+// Editor modal component
 
 'use client';
 
@@ -56,7 +55,7 @@ export default function EditorModal({
     }
 
     // Check for config file protection
-    if (currentFileName && currentFileName.match(/storygrind.*\.json$/i)) {
+    if (currentFileName && currentFileName.match(/proselenos.*\.json$/i)) {
       showAlert('Cannot edit configuration files!', 'error', undefined, isDarkMode);
       return;
     }

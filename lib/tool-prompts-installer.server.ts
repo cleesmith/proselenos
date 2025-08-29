@@ -8,14 +8,14 @@ import path from 'path';
 
 export async function installToolPrompts(
   accessToken: string,
-  storygrindRootFolderId: string
+  proselenosRootFolderId: string
 ): Promise<ToolPromptsInstallResult> {
   try {
     const authClient = getAuthClient(accessToken);
     const drive = getDriveClient(authClient);
     
     // Check if tool-prompts folder already exists on Google Drive
-    const toolPromptsExists = await checkToolPromptsExists(drive, storygrindRootFolderId);
+    const toolPromptsExists = await checkToolPromptsExists(drive, proselenosRootFolderId);
     if (toolPromptsExists) {
       return {
         success: true,
@@ -32,7 +32,7 @@ export async function installToolPrompts(
     const result = await uploadFolderToGoogleDrive(
       authClient,
       toolPromptsPath,
-      storygrindRootFolderId,
+      proselenosRootFolderId,
       'tool-prompts'
     );
     
@@ -62,12 +62,12 @@ export async function installToolPrompts(
 
 export async function checkToolPromptsInstallation(
   accessToken: string,
-  storygrindRootFolderId: string
+  proselenosRootFolderId: string
 ): Promise<boolean> {
   try {
     const authClient = getAuthClient(accessToken);
     const drive = getDriveClient(authClient);
-    return await checkToolPromptsExists(drive, storygrindRootFolderId);
+    return await checkToolPromptsExists(drive, proselenosRootFolderId);
     
   } catch (error) {
     console.error('Error checking tool-prompts installation:', error);

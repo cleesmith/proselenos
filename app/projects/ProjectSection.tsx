@@ -168,7 +168,7 @@ export default function ProjectSection({
         {isLoadingConfig ? (
           <span style={{ color: '#ff9500' }}>Standby, loading settings...</span>
         ) : (
-          `My Drive › storygrind_projects › ${currentProject ? currentProject : '(none)'}`
+          `My Drive › proselenos_projects › ${currentProject ? currentProject : '(none)'}`
         )}
       </div>
 

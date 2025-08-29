@@ -24,8 +24,8 @@ class ManuscriptToEpub extends ToolBase {
       title: 'Unknown',
       author: 'Unknown',
       language: 'en',
-      publisher: 'StoryGrind',
-      description: 'Created with StoryGrind EPUB Converter'
+      publisher: 'Proselenos',
+      description: 'Created with Proselenos EPUB Converter'
     };
   }
 
@@ -605,7 +605,7 @@ ${navItems}
    * @returns {string} - CSS content
    */
   createFullWidthCSS() {
-    return `/* StoryGrind EPUB - Kindle-Compatible CSS */
+    return `/* Proselenos EPUB - Kindle-Compatible CSS */
 
 /* Reset and base styles */
 html {
@@ -1037,7 +1037,7 @@ ${tocItems}
       ).join('\n');
     } else {
       // Use default about text
-      aboutContent = `    <p>${this.escapeHTML(metadata.author)} is an author who creates compelling stories using StoryGrind for editing and publishing.</p>
+      aboutContent = `    <p>${this.escapeHTML(metadata.author)} is an author who creates compelling stories using Proselenos for editing and publishing.</p>
     <p></p>
     <p>When not writing, they enjoy exploring new narrative possibilities and reading well edited books.</p>`;
     }

@@ -15,7 +15,7 @@ interface StorageConfig {
 export class InternalSecureStorage {
   private drive: drive_v3.Drive;
   private userId: string;
-  private configFileName: string = 'storygrind-settings.json';
+  private configFileName: string = 'proselenos-settings.json';
   private appSecret: string;
 
   constructor(googleDriveClient: drive_v3.Drive, userId: string) {
@@ -32,7 +32,7 @@ export class InternalSecureStorage {
   // Generate encryption key that ONLY your app can create
   private getAppOnlyKey(): Buffer {
     // Combine user ID with app secret that only your server knows
-    const combined = this.userId + this.appSecret + 'storygrind-keys';
+    const combined = this.userId + this.appSecret + 'proselenos-keys';
     return crypto.createHash('sha256').update(combined).digest();
   }
 
@@ -63,12 +63,12 @@ export class InternalSecureStorage {
     return decrypted;
   }
 
-  // Find config file in user's storygrind_projects folder on Google Drive
+  // Find config file in user's proselenos_projects folder on Google Drive
   private async findOrCreateProjectsFolder(): Promise<string> {
     try {
-      // First check if storygrind_projects folder exists
+      // First check if proselenos_projects folder exists
       const folderQuery = await this.drive.files.list({
-        q: "name='storygrind_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+        q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
         fields: 'files(id, name)',
       });
 
@@ -79,7 +79,7 @@ export class InternalSecureStorage {
       // Create the folder if it doesn't exist
       const folderResponse = await this.drive.files.create({
         requestBody: {
-          name: 'storygrind_projects',
+          name: 'proselenos_projects',
           mimeType: 'application/vnd.google-apps.folder',
         },
         fields: 'id',
@@ -87,7 +87,7 @@ export class InternalSecureStorage {
 
       return folderResponse.data.id!;
     } catch (error) {
-      console.error('Error finding/creating storygrind_projects folder:', error);
+      console.error('Error finding/creating proselenos_projects folder:', error);
       throw error;
     }
   }

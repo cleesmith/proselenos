@@ -113,7 +113,7 @@ class ManuscriptToPDF extends ToolBase {
         title: projectMetadata.title.replace(/\n/g, ' '),
         author: projectMetadata.author,
         language: options.language || 'en',
-        publisher: projectMetadata.publisher || 'StoryGrind',
+        publisher: projectMetadata.publisher || 'Proselenos',
         copyright: projectMetadata.copyright,
         aboutAuthor: projectMetadata.aboutAuthor
       };
@@ -186,7 +186,7 @@ class ManuscriptToPDF extends ToolBase {
 
     // Publisher - at ~80% of page height
     doc.fontSize(12)
-      .text((metadata.publisher || 'StoryGrind').toUpperCase(), 0, 555, {
+      .text((metadata.publisher || 'Proselenos').toUpperCase(), 0, 555, {
         align: 'center',
         width: pageWidth,
         continued: false
@@ -209,7 +209,7 @@ class ManuscriptToPDF extends ToolBase {
       '',
       'All rights reserved.',
       '',
-      `Published by ${metadata.publisher || 'StoryGrind'}`,
+      `Published by ${metadata.publisher || 'Proselenos'}`,
       '',
       'This is a work of fiction. Names, characters, places, and incidents',
       'either are the product of the author\'s imagination or are used',
@@ -287,7 +287,7 @@ class ManuscriptToPDF extends ToolBase {
     // Set metadata
     doc.info.Title = metadata.title;
     doc.info.Author = metadata.author;
-    doc.info.Creator = 'StoryGrind';
+    doc.info.Creator = 'Proselenos';
     
     // Track pages that should not have headers/numbers
     const skipHeaderPages = new Set();

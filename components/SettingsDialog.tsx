@@ -212,7 +212,7 @@ export default function SettingsDialog({
             color: theme.textSecondary,
             fontStyle: 'italic'
           }}>
-            My Drive › storygrind_projects
+            My Drive › proselenos_projects
           </div>
         </div>
 

@@ -1,5 +1,4 @@
-// Shared alert utilities for StoryGrind
-// Extracted from app/page.tsx lines 105-132
+// Shared alert utilities
 
 import Swal from 'sweetalert2';
 

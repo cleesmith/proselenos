@@ -18,12 +18,12 @@ export class PromptSyncManager {
     this.localToolPromptsPath = path.join(process.cwd(), 'original-tool-prompts');
   }
 
-  // Find or create the storygrind_projects folder
+  // Find or create the proselenos_projects folder
   private async findOrCreateProjectsFolder(): Promise<string> {
     try {
-      // Check if storygrind_projects folder exists
+      // Check if proselenos_projects folder exists
       const folderQuery = await this.drive.files.list({
-        q: "name='storygrind_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+        q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
         fields: 'files(id, name)',
       });
 
@@ -34,7 +34,7 @@ export class PromptSyncManager {
       // Create the folder if it doesn't exist
       const folderResponse = await this.drive.files.create({
         requestBody: {
-          name: 'storygrind_projects',
+          name: 'proselenos_projects',
           mimeType: 'application/vnd.google-apps.folder',
         },
         fields: 'id',
@@ -42,7 +42,7 @@ export class PromptSyncManager {
 
       return folderResponse.data.id!;
     } catch (error) {
-      console.error('Error finding/creating storygrind_projects folder:', error);
+      console.error('Error finding/creating proselenos_projects folder:', error);
       throw error;
     }
   }

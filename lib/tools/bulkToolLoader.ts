@@ -315,14 +315,14 @@ export class BulkToolLoader {
 
   // Find tool-prompts folder in Google Drive
   private async findToolPromptsFolder(): Promise<string | null> {
-    // Find storygrind_projects folder
+    // Find proselenos_projects folder
     const projectsResponse = await this.drive.files.list({
-      q: "name='storygrind_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+      q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
       fields: 'files(id)',
     });
 
     if (!projectsResponse.data.files || projectsResponse.data.files.length === 0) {
-      throw new Error('storygrind_projects folder not found');
+      throw new Error('proselenos_projects folder not found');
     }
 
     const projectsFolderId = projectsResponse.data.files[0].id!;

@@ -875,8 +875,8 @@ class PublishManuscript extends ToolBase {
           title: metadata.title,
           author: displayAuthor,
           language: 'en',
-          publisher: metadata.publisher || 'StoryGrind',
-          description: 'Created with StoryGrind'
+          publisher: metadata.publisher || 'Proselenos',
+          description: 'Created with Proselenos'
       };
       this.emitOutput(`Converting to EPUB with cover image...\n`);
       await epubConverter.execute(epubOptions);
@@ -889,8 +889,8 @@ class PublishManuscript extends ToolBase {
           title: metadata.title.replace(/\n/g, ' '),
           author: displayAuthor,
           language: 'en',
-          publisher: 'StoryGrind',
-          description: 'Created with StoryGrind'
+          publisher: 'Proselenos',
+          description: 'Created with Proselenos'
       };
       this.emitOutput(`Converting to PDF for use with KDP paperback books...\n`);
 

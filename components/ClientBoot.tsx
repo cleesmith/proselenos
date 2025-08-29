@@ -4,10 +4,10 @@ import { useEffect, useCallback } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
-import StoryGrindHeader from '../app/storygrind/StoryGrindHeader';
+import ProselenosHeader from '../app/proselenos/proselenosHeader';
 import SettingsDialog from '../components/SettingsDialog';
 import ModelsDropdown from '../components/ModelsDropdown';
-import EditorModal from '../app/storygrind/EditorModal';
+import EditorModal from '../app/proselenos/EditorModal';
 import ProjectSection from '../app/projects/ProjectSection';
 import ProjectSelectorModal from '../app/projects/ProjectSelectorModal';
 import ImportDocxModal from '../app/projects/ImportDocxModal';
@@ -22,7 +22,7 @@ import { useNonAITools } from '../app/non-ai-tools/useNonAITools';
 import { getTheme } from '../app/shared/theme';
 import { showAlert } from '../app/shared/alerts';
 import {
-  getStoryGrindConfigAction,
+  getproselenosConfigAction,
   validateCurrentProjectAction,
   installToolPromptsAction,
   updateProviderAndModelAction,
@@ -136,7 +136,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
           Swal.close(); // close any previous alert
           Swal.fire({
             title: 'Initializing',
-            text: 'Preparing storygrind_projects folder on Google Drive...',
+            text: 'Preparing proselenos_projects folder on Google Drive...',
             icon: 'info',
             background: isDarkMode ? '#222' : '#fff',
             color: isDarkMode ? '#fff' : '#333',
@@ -146,7 +146,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
           });
           
           try {
-            const installResult = await installToolPromptsAction(session.accessToken as string, init.config?.settings.storygrind_root_folder_id || '');
+            const installResult = await installToolPromptsAction(session.accessToken as string, init.config?.settings.proselenos_root_folder_id || '');
             
             if (installResult.success) {
               setIsGoogleDriveReady(true);
@@ -228,7 +228,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     } else if (!status.allReady && isSystemInitializing) {
       // Show persistent initializing modal
       Swal.fire({
-        title: 'Initializing StoryGrind...',
+        title: 'Initializing Proselenos...',
         html: `Loading... (${status.readyCount}/${status.totalCount})<br>Waiting for: ${status.notReady.join(', ')}`,
         icon: 'info',
         background: isDarkMode ? '#222' : '#fff',
@@ -288,7 +288,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       if (!session?.accessToken || !projectState.currentProject || !projectState.currentProjectId) return;
 
       try {
-        const validateResult = await validateCurrentProjectAction(session.accessToken as string, init?.config?.settings.storygrind_root_folder_id || '');
+        const validateResult = await validateCurrentProjectAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || '');
         if (validateResult.success && validateResult.data?.isValid) {
           projectActions.setUploadStatus(`✅ Project loaded: ${projectState.currentProject}`);
         } else {
@@ -309,7 +309,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     setIsLoadingConfig(true);
     
     try {
-      const result = await getStoryGrindConfigAction(session.accessToken as string, init?.config?.settings.storygrind_root_folder_id || '');
+      const result = await getproselenosConfigAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || '');
       
       if (result.success && result.data?.config) {
         const config = result.data.config;
@@ -327,7 +327,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         // Only set project if it exists and is valid
         if (current_project && current_project_folder_id) {
           // Validate project still exists
-          const validateResult = await validateCurrentProjectAction(session.accessToken as string, init?.config?.settings.storygrind_root_folder_id || '');
+          const validateResult = await validateCurrentProjectAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || '');
           
           if (validateResult.success && validateResult.data?.isValid) {
             projectActions.setCurrentProject(current_project);
@@ -378,7 +378,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     
     // Existing file mode - update the existing file
     if (editorMode === 'existing' && currentFileId) {
-      const result = await updateGoogleDriveFileAction(session.accessToken, init?.config?.settings.storygrind_root_folder_id || '', currentFileId, content);
+      const result = await updateGoogleDriveFileAction(session.accessToken, init?.config?.settings.proselenos_root_folder_id || '', currentFileId, content);
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -393,14 +393,14 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       throw new Error('Project ID is required for new files');
     }
     
-    const result = await createGoogleDriveFileAction(session.accessToken, init?.config?.settings.storygrind_root_folder_id || '', content, fileName, projectState.currentProjectId);
+    const result = await createGoogleDriveFileAction(session.accessToken, init?.config?.settings.proselenos_root_folder_id || '', content, fileName, projectState.currentProjectId);
     if (!result.success) {
       throw new Error(result.error);
     }
   };
 
   const handleEditorBrowseFiles = async () => {
-    await projectActions.browseProjectFiles(session, init?.config?.settings.storygrind_root_folder_id || '', isDarkMode);
+    await projectActions.browseProjectFiles(session, init?.config?.settings.proselenos_root_folder_id || '', isDarkMode);
   };
 
   // Settings save handler (API key only)
@@ -425,7 +425,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
 
   // Project action handlers
   const handleSelectProject = () => {
-    projectActions.openProjectSelector(session, init?.config?.settings.storygrind_root_folder_id || '', isDarkMode);
+    projectActions.openProjectSelector(session, init?.config?.settings.proselenos_root_folder_id || '', isDarkMode);
   };
 
   const handleOpenSettings = async () => {
@@ -449,7 +449,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     projectActions.setUploadStatus(`Updating AI model to ${model}...`);
     
     try {
-      const result = await updateSelectedModelAction(session.accessToken, init?.config?.settings.storygrind_root_folder_id || '', model);
+      const result = await updateSelectedModelAction(session.accessToken, init?.config?.settings.proselenos_root_folder_id || '', model);
       if (result.success) {
         setCurrentModel(model);
         projectActions.setUploadStatus(`✅ AI model updated to ${model}`);
@@ -476,7 +476,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     setShowProjectSettingsModal(true);
 
     try {
-      const result = await loadProjectMetadataAction(session.accessToken, init?.config?.settings.storygrind_root_folder_id || '', projectState.currentProjectId);
+      const result = await loadProjectMetadataAction(session.accessToken, init?.config?.settings.proselenos_root_folder_id || '', projectState.currentProjectId);
       if (result.success && result.data) {
         setProjectMetadata(result.data);
       } else {
@@ -506,7 +506,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   };
 
   const handlePerformUpload = () => {
-    projectActions.performFileUpload(session, init?.config?.settings.storygrind_root_folder_id || '', isDarkMode);
+    projectActions.performFileUpload(session, init?.config?.settings.proselenos_root_folder_id || '', isDarkMode);
   };
 
   const handleCloseUploadModal = () => {
@@ -515,17 +515,17 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
 
   // Project modal handlers
   const handleProjectSelect = (folder: any) => {
-    projectActions.selectProject(session, init?.config?.settings.storygrind_root_folder_id || '', folder, setIsGoogleDriveOperationPending, () => {
+    projectActions.selectProject(session, init?.config?.settings.proselenos_root_folder_id || '', folder, setIsGoogleDriveOperationPending, () => {
       // Clear selected manuscript when project changes (placeholder for AI tools phase)
     });
   };
 
   const handleProjectNavigation = (folderId: string) => {
-    projectActions.navigateToFolder(session, init?.config?.settings.storygrind_root_folder_id || '', folderId, setIsGoogleDriveOperationPending);
+    projectActions.navigateToFolder(session, init?.config?.settings.proselenos_root_folder_id || '', folderId, setIsGoogleDriveOperationPending);
   };
 
   const handleCreateNewProject = () => {
-    projectActions.createNewProject(session, init?.config?.settings.storygrind_root_folder_id || '', setIsGoogleDriveOperationPending, isDarkMode, toolsActions);
+    projectActions.createNewProject(session, init?.config?.settings.proselenos_root_folder_id || '', setIsGoogleDriveOperationPending, isDarkMode, toolsActions);
   };
 
   const handleLoadFileIntoEditor = (content: string, fileName: string, fileId?: string) => {
@@ -546,7 +546,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   const handleSetupTool = () => {
     toolsActions.setupAITool(
       session,
-      init?.config?.settings.storygrind_root_folder_id || '',
+      init?.config?.settings.proselenos_root_folder_id || '',
       projectState.currentProject,
       projectState.currentProjectId,
       setIsGoogleDriveOperationPending,
@@ -557,7 +557,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   const handleExecuteTool = () => {
     toolsActions.executeAITool(
       session,
-      init?.config?.settings.storygrind_root_folder_id || '',
+      init?.config?.settings.proselenos_root_folder_id || '',
       projectState.currentProject,
       projectState.currentProjectId,
       currentProvider,
@@ -639,7 +639,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     projectActions.setUploadStatus('Saving project settings...');
 
     try {
-      const result = await saveProjectMetadataAction(session.accessToken, init?.config?.settings.storygrind_root_folder_id || '', projectState.currentProjectId, metadata);
+      const result = await saveProjectMetadataAction(session.accessToken, init?.config?.settings.proselenos_root_folder_id || '', projectState.currentProjectId, metadata);
       if (result.success) {
         setProjectMetadata(metadata);
         projectActions.setUploadStatus('✅ Project settings saved successfully');
@@ -670,7 +670,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         justifyContent: 'center',
         alignItems: 'center' 
       }}>
-        Loading StoryGrind...
+        Loading Proselenos...
       </div>
     );
   }
@@ -684,7 +684,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     }}>
       {/* Header - Only show when logged in */}
       {session && (
-        <StoryGrindHeader
+        <ProselenosHeader
           session={session}
           theme={theme}
           isDarkMode={isDarkMode}
@@ -696,7 +696,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
           toolExecuting={toolsState.toolExecuting}
           currentProject={projectState.currentProject}
           currentProjectId={projectState.currentProjectId}
-          rootFolderId={init?.config?.settings.storygrind_root_folder_id || ''}
+          rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
           isSystemInitializing={isSystemInitializing}
           onThemeToggle={toggleTheme}
           onModelsClick={handleModelsClick}
@@ -717,7 +717,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         }}>
           <img 
             src="/icon.png" 
-            alt="StoryGrind Logo"
+            alt="Proselenos Logo"
             style={{
               width: '80px',
               height: '80px'
@@ -728,7 +728,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
             margin: '0',
             color: theme.text
           }}>
-            Welcome to StoryGrind
+            Welcome to Proselenos
           </h2>
           <p style={{ color: '#ccc' }}>Sign in to access your writing projects</p>
           <button 
@@ -784,7 +784,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
             currentProject={projectState.currentProject}
             currentProjectId={projectState.currentProjectId}
             isGoogleDriveOperationPending={isGoogleDriveOperationPending}
-            rootFolderId={init?.config?.settings.storygrind_root_folder_id || ''}
+            rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
             isSystemInitializing={isSystemInitializing}
             theme={theme}
             isDarkMode={isDarkMode}
@@ -808,7 +808,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               toolJustFinished={nonAIToolsState.toolJustFinished}
               currentProject={projectState.currentProject}
               currentProjectId={projectState.currentProjectId}
-              rootFolderId={init?.config?.settings.storygrind_root_folder_id || ''}
+              rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
               isGoogleDriveOperationPending={isGoogleDriveOperationPending}
               theme={theme}
               isDarkMode={isDarkMode}
@@ -868,7 +868,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         theme={theme}
         isDarkMode={isDarkMode}
         currentProject={projectState.currentProject}
-        rootFolderId={init?.config?.settings.storygrind_root_folder_id || ''}
+        rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
         modalFiles={projectState.modalFiles}
         folderName={projectState.folderName}
         breadcrumbs={projectState.breadcrumbs}
