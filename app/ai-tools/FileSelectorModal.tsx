@@ -11,6 +11,7 @@ interface FileSelectorModalProps {
   isDarkMode: boolean;
   fileSelectorFiles: any[];
   selectedManuscriptForTool: any | null;
+  selectedTool?: string;
   onClose: () => void;
   onSelectFile: (file: any) => void;
 }
@@ -21,11 +22,22 @@ export default function FileSelectorModal({
   isDarkMode,
   fileSelectorFiles,
   selectedManuscriptForTool,
+  selectedTool,
   onClose,
   onSelectFile
 }: FileSelectorModalProps) {
   
   if (!isOpen) return null;
+
+  // Determine modal title and description based on selected tool
+  const isDocxCommentsTool = selectedTool === 'DOCX: Extract Comments as Text';
+  const modalTitle = isDocxCommentsTool ? 'Select DOCX File' : 'Select Manuscript File';
+  const modalDescription = isDocxCommentsTool 
+    ? 'Choose a DOCX file to extract comments from:' 
+    : 'Choose a text file from your project to use as manuscript content:';
+  const noFilesMessage = isDocxCommentsTool 
+    ? 'No DOCX files found in project' 
+    : 'No text files found in project';
 
   return (
     <div style={{
@@ -61,7 +73,7 @@ export default function FileSelectorModal({
             fontSize: '16px', 
             fontWeight: 'bold' 
           }}>
-            Select Manuscript File
+            {modalTitle}
           </div>
           <button
             onClick={onClose}
@@ -84,11 +96,11 @@ export default function FileSelectorModal({
           color: theme.textSecondary, 
           marginBottom: '12px' 
         }}>
-          Choose a text file from your project to use as manuscript content:
+          {modalDescription}
         </div>
 
         {fileSelectorFiles.length === 0 ? (
-          <p style={{ color: theme.textMuted, textAlign: 'center' }}>No text files found in project</p>
+          <p style={{ color: theme.textMuted, textAlign: 'center' }}>{noFilesMessage}</p>
         ) : (
           <div style={{ 
             backgroundColor: isDarkMode ? '#222' : '#f8f9fa', 
@@ -148,16 +160,6 @@ export default function FileSelectorModal({
           </div>
         )}
 
-        <div style={{
-          marginTop: '12px',
-          padding: '8px',
-          backgroundColor: isDarkMode ? '#333' : '#f0f0f0',
-          borderRadius: '4px',
-          fontSize: '11px',
-          color: theme.textSecondary
-        }}>
-          💡 Tip: Select a file then click Run to execute the tool with that manuscript.
-        </div>
       </div>
     </div>
   );

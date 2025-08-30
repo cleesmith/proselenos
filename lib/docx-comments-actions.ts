@@ -52,7 +52,7 @@ export async function extractDocxCommentsAction(
   docxFileId: string,
   outputFileName: string,
   projectFolderId: string
-): Promise<ActionResult> {
+): Promise<ActionResult<{ fileId: string; fileName: string; commentCount: number; hasComments: boolean }>> {
   try {
     const clients = await getAuthenticatedClients(accessToken);
     if ('error' in clients) {
@@ -72,6 +72,13 @@ export async function extractDocxCommentsAction(
     }
 
     try {
+      // Get the DOCX file metadata to retrieve the original filename
+      const metadata = await drive.files.get({
+        fileId: docxFileId,
+        fields: 'name'
+      });
+      const docxFileName = (metadata.data && 'name' in metadata.data) ? metadata.data.name as string : docxFileId;
+
       // Download the DOCX file from Google Drive
       const response = await drive.files.get({
         fileId: docxFileId,
@@ -121,7 +128,7 @@ ${cleanupText(extractionResult.documentContent)}`;
       }
 
       // Generate formatted output with comments
-      const formattedOutput = generateFormattedOutput(extractionResult, outputFileName);
+      const formattedOutput = generateFormattedOutput(extractionResult, docxFileName);
       
       // Save to Google Drive
       const file = await uploadManuscript(
@@ -309,18 +316,18 @@ function extractParagraphText(paragraph: any, select: any): string {
 
 // Extract comments from HTML content (backup method)
 function extractCommentsFromHtml(html: string): CommentData[] {
-  const commentRegex = /<!--\s*(.*?)\s*-->/g;
+  const commentRegex = /<!--([\s\S]*?)-->/g;
   const comments: CommentData[] = [];
   
-  let match;
+  let match: RegExpExecArray | null;
   let index = 0;
   
   while ((match = commentRegex.exec(html)) !== null) {
     const commentText = match[1].trim();
     
-    // Attempt to find context around the comment
+    // Look 200 chars around the comment to extract nearby context
     const start = Math.max(0, match.index - 200);
-    const end = Math.min(html.length, match.index + 200);
+    const end = Math.min(html.length, match.index + match[0].length + 200);
     const context = html.substring(start, end);
     
     // Remove HTML tags to get plain text
@@ -355,12 +362,12 @@ function cleanupText(text: string): string {
 }
 
 // Generate formatted output with comments paired with referenced text
-function generateFormattedOutput(extractionResult: ExtractionResult, originalFileName: string): { content: string } {
+function generateFormattedOutput(extractionResult: ExtractionResult, originalDocxFileName: string): { content: string } {
   const timestamp = new Date().toISOString();
   const { comments, documentContent } = extractionResult;
   
   let formattedOutput = `=== DOCX COMMENTS EXTRACTION ===
-Original File: ${originalFileName}
+Original File: ${originalDocxFileName}
 Extracted: ${timestamp}
 Comments Found: ${comments.length}
 =====================================

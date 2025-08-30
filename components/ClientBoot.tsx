@@ -990,6 +990,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         isDarkMode={isDarkMode}
         fileSelectorFiles={toolsState.fileSelectorFiles}
         selectedManuscriptForTool={toolsState.selectedManuscriptForTool}
+        selectedTool={toolsState.selectedTool}
         onClose={handleFileSelectorClose}
         onSelectFile={handleFileSelect}
       />
@@ -1001,6 +1002,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         isDarkMode={isDarkMode}
         fileSelectorFiles={nonAIToolsState.fileSelectorFiles}
         selectedManuscriptForTool={nonAIToolsState.selectedManuscriptForTool}
+        selectedTool={nonAIToolsState.selectedNonAITool}
         onClose={handleNonAIFileSelectorClose}
         onSelectFile={handleNonAIFileSelect}
       />

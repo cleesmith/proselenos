@@ -35,11 +35,7 @@ interface NonAIToolsManagerActions {
 
 // Available non-AI tools
 export const NON_AI_TOOLS = [
-  // 'Publish or Unpublish Manuscript', // Hidden - use Publishing Assistant instead
-  'DOCX: Convert Comments as Text',
-  'Export Manuscript', 
-  'Backup Project',
-  'Word Count Analysis'
+  'DOCX: Extract Comments as Text'
 ];
 
 export function useNonAITools(): [NonAIToolsManagerState, NonAIToolsManagerActions] {
@@ -68,7 +64,7 @@ export function useNonAITools(): [NonAIToolsManagerState, NonAIToolsManagerActio
       let result;
       
       // Choose which files to load based on selected tool
-      if (selectedNonAITool === 'DOCX: Convert Comments as Text') {
+      if (selectedNonAITool === 'DOCX: Extract Comments as Text') {
         // Get DOCX files for comment extraction
         result = await listDocxFilesAction(session.accessToken as string, currentProjectId);
       } else {
@@ -80,7 +76,7 @@ export function useNonAITools(): [NonAIToolsManagerState, NonAIToolsManagerActio
         let filteredFiles = result.data.files;
         
         // Apply additional filtering if needed
-        if (selectedNonAITool !== 'DOCX: Convert Comments as Text') {
+        if (selectedNonAITool !== 'DOCX: Extract Comments as Text') {
           // Filter for .txt files and Google Docs (exactly like AI Tools)
           filteredFiles = result.data.files.filter((file: any) => 
             file.name.endsWith('.txt') || 
@@ -115,7 +111,7 @@ export function useNonAITools(): [NonAIToolsManagerState, NonAIToolsManagerActio
       return;
     }
 
-    if (selectedNonAITool === 'DOCX: Convert Comments as Text') {
+    if (selectedNonAITool === 'DOCX: Extract Comments as Text') {
       await handleDocxCommentsExtraction(session, currentProjectId, onShowAlert, isDarkMode);
     } else if (selectedNonAITool === 'Publish or Unpublish Manuscript') {
       await handlePublishManuscript(session, currentProjectId, onShowAlert, isDarkMode);
