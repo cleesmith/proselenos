@@ -35,20 +35,6 @@ export default function WritingAssistantModal({
     }
   }, [isOpen, state.isModalOpen, actions.openModal]);
 
-  // Close modal on escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        actions.closeModal();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [isOpen, onClose, actions.closeModal]);
 
   if (!isOpen) return null;
 
@@ -66,12 +52,6 @@ export default function WritingAssistantModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-          actions.closeModal();
-        }
       }}
     >
       <div
@@ -113,20 +93,19 @@ export default function WritingAssistantModal({
               actions.closeModal();
             }}
             style={{
-              background: 'none',
+              backgroundColor: '#6c757d',
+              color: '#fff',
               border: 'none',
-              color: theme.textSecondary,
-              fontSize: '24px',
+              borderRadius: '4px',
+              fontSize: '14px',
               cursor: 'pointer',
-              padding: 0,
-              width: '30px',
-              height: '30px',
+              padding: '8px 16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}
           >
-            ×
+            Close
           </button>
         </div>
 

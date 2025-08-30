@@ -28,20 +28,6 @@ export default function PublishingAssistantModal({
     }
   }, [isOpen, state.isModalOpen, actions.openModal]);
 
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        actions.closeModal();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [isOpen, onClose, actions.closeModal]);
 
   if (!isOpen) return null;
 
@@ -65,7 +51,6 @@ export default function PublishingAssistantModal({
         zIndex: 1000,
         padding: '20px'
       }}
-      onClick={handleClose}
     >
       <div 
         style={{
@@ -104,21 +89,19 @@ export default function PublishingAssistantModal({
           <button
             onClick={handleClose}
             style={{
-              background: 'none',
+              backgroundColor: '#6c757d',
+              color: '#fff',
               border: 'none',
-              fontSize: '24px',
+              borderRadius: '4px',
+              fontSize: '14px',
               cursor: 'pointer',
-              color: theme.text,
-              padding: '0',
-              width: '32px',
-              height: '32px',
+              padding: '8px 16px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '4px'
+              justifyContent: 'center'
             }}
           >
-            ×
+            Close
           </button>
         </div>
 
