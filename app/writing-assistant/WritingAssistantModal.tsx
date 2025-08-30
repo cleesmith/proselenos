@@ -18,7 +18,8 @@ export default function WritingAssistantModal({
   currentProvider,
   currentModel,
   session,
-  onLoadFileIntoEditor
+  onLoadFileIntoEditor,
+  onModalCloseReopen
 }: WritingAssistantModalProps) {
   const { state, actions } = useWritingAssistant(
     currentProjectId,
@@ -27,7 +28,8 @@ export default function WritingAssistantModal({
     currentModel,
     session,
     isDarkMode,
-    onLoadFileIntoEditor
+    onLoadFileIntoEditor,
+    onModalCloseReopen
   );
 
   // Handle modal open/close

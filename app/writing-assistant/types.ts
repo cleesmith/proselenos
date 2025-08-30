@@ -56,6 +56,7 @@ export interface WritingAssistantModalProps {
   currentModel: string;
   session: any;
   onLoadFileIntoEditor?: (content: string, fileName: string, fileId?: string) => void;
+  onModalCloseReopen?: () => void;
 }
 
 export interface WorkflowStepProps {

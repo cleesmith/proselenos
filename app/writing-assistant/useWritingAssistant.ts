@@ -18,7 +18,8 @@ export function useWritingAssistant(
   currentModel: string,
   session: any,
   isDarkMode: boolean,
-  onLoadFileIntoEditor?: (content: string, fileName: string, fileId?: string) => void
+  onLoadFileIntoEditor?: (content: string, fileName: string, fileId?: string) => void,
+  onModalCloseReopen?: () => void
 ) {
   const [state, setState] = useState<WorkflowState>({
     isModalOpen: false,
@@ -352,6 +353,14 @@ export function useWritingAssistant(
         
         // Update dependent steps
         updateDependentSteps(stepId);
+
+        // Close and reopen modal after successful execution
+        if (onModalCloseReopen) {
+          // Small delay to ensure UI updates are complete
+          setTimeout(() => {
+            onModalCloseReopen();
+          }, 100);
+        }
       } else {
         setState(prev => ({
           ...prev,

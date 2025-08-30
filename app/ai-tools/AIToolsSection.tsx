@@ -114,6 +114,17 @@ export default function AIToolsSection({
     }
   }, [toolJustFinished]);
 
+  // Handler for close/reopen modal functionality
+  const handleWritingAssistantCloseReopen = () => {
+    // Close the modal first
+    setShowWritingAssistant(false);
+    
+    // Reopen immediately after a brief delay
+    setTimeout(() => {
+      setShowWritingAssistant(true);
+    }, 150); // 150ms delay for smooth UX
+  };
+
   const formatFullReport = (toolResult: string, toolId: string, currentProvider: string, currentModel: string, manuscriptFileName: string, currentProject: string) => {
     // Create human-readable timestamp like the original Node.js app
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -466,6 +477,7 @@ https://proselenos.onrender.com
           currentModel={currentModel || 'unknown'}
           session={session}
           onLoadFileIntoEditor={onLoadFileIntoEditor}
+          onModalCloseReopen={handleWritingAssistantCloseReopen}
         />
       )}
     </div>
