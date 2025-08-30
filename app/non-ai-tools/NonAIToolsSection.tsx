@@ -68,6 +68,17 @@ export default function NonAIToolsSection({
   // Publishing Assistant state
   const [showPublishingAssistant, setShowPublishingAssistant] = useState(false);
 
+  // Helper function to get appropriate file type label
+  const getFileTypeLabel = (toolName: string): string => {
+    if (toolName === 'DOCX: Extract Comments as Text') {
+      return 'Selected DOCX file:';
+    } else if (toolName === 'EPUB to TXT Converter') {
+      return 'Selected EPUB:';
+    } else {
+      return 'Selected file:';
+    }
+  };
+
   const isSetupDisabled = isGoogleDriveOperationPending || toolExecuting || isPublishing || !currentProject || !selectedNonAITool;
   const isClearDisabled = (!selectedManuscriptForTool && !publishResult) || isPublishing;
   const isRunDisabled = !selectedManuscriptForTool || isPublishing || isGoogleDriveOperationPending || toolExecuting || toolJustFinished;
@@ -212,7 +223,7 @@ export default function NonAIToolsSection({
           color: theme.text,
           marginBottom: '8px'
         }}>
-          <strong>Selected manuscript:</strong> {selectedManuscriptForTool.name}
+          <strong>{getFileTypeLabel(selectedNonAITool)}</strong> {selectedManuscriptForTool.name}
         </div>
       )}
 

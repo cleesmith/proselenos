@@ -31,13 +31,23 @@ export default function FileSelectorModal({
 
   // Determine modal title and description based on selected tool
   const isDocxCommentsTool = selectedTool === 'DOCX: Extract Comments as Text';
-  const modalTitle = isDocxCommentsTool ? 'Select DOCX File' : 'Select Manuscript File';
-  const modalDescription = isDocxCommentsTool 
-    ? 'Choose a DOCX file to extract comments from:' 
-    : 'Choose a text file from your project to use as manuscript content:';
-  const noFilesMessage = isDocxCommentsTool 
-    ? 'No DOCX files found in project' 
-    : 'No text files found in project';
+  const isEpubConverterTool = selectedTool === 'EPUB to TXT Converter';
+  
+  let modalTitle, modalDescription, noFilesMessage;
+  
+  if (isDocxCommentsTool) {
+    modalTitle = 'Select DOCX File';
+    modalDescription = 'Choose a DOCX file to extract comments from:';
+    noFilesMessage = 'No DOCX files found in project';
+  } else if (isEpubConverterTool) {
+    modalTitle = 'Select EPUB File';
+    modalDescription = 'Choose an EPUB file from your project to convert:';
+    noFilesMessage = 'No EPUB files found in project';
+  } else {
+    modalTitle = 'Select Manuscript File';
+    modalDescription = 'Choose a text file from your project to use as manuscript content:';
+    noFilesMessage = 'No text files found in project';
+  }
 
   return (
     <div style={{
