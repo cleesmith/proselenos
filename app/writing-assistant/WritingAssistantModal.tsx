@@ -1,3 +1,5 @@
+// app/writing-assistant/WritingAssistantModal.tsx
+
 'use client';
 
 import { useEffect } from 'react';

@@ -1,3 +1,5 @@
+// app/writing-assistant/useWritingAssistant.ts
+
 import { useState, useCallback, useEffect } from 'react';
 import { WorkflowState, WorkflowStep, WorkflowStepId } from './types';
 import { INITIAL_WORKFLOW_STEPS } from './constants';
