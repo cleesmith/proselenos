@@ -1,5 +1,6 @@
-// aiService.ts - AI Provider Factory
-// Migrated from ~/proselenos/client.js for Next.js web environment
+// lib/aiService.ts
+
+// AI Provider Factory
 
 import { getApiKeyAction } from './api-key-actions';
 import { getproselenosConfigAction } from './google-drive-actions';
@@ -22,45 +23,31 @@ interface ServiceCacheEntry {
 }
 
 const serviceCache = new Map<string, ServiceCacheEntry>();
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+// const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+const CACHE_DURATION = 10 * 1000; // 10 seconds
 
-/**
- * AUTOMATIC CACHE CLEANUP SYSTEM
- * 
- * This setInterval creates a background cleanup process that prevents memory leaks
- * in the AI service cache. Here's exactly what happens:
- * 
- * PROBLEM: Without cleanup, the serviceCache Map would grow forever as users
- * create AI service instances. Each user gets entries like "user123:openrouter:gpt-4"
- * and these would accumulate indefinitely, eventually crashing the server.
- * 
- * SOLUTION: Every hour, scan all cache entries and delete any that are
- * older than 3 hours based on their creation timestamp.
- * 
- * FOR ACTIVE USERS: If a user stays in the app for 3+ hours, their cache entry
- * gets deleted after exactly 3 hours, regardless of activity. The next AI request
- * will create a new service instance (adds ~100-500ms delay once), then they get
- * another 3 hours of fast cached responses.
- * 
- * TIMING STRATEGY:
- * - Cache entries expire after 3 hours (creation-based, not access-based)
- * - Cleanup runs every hour
- * - Expired entries persist for at most 1 hour after expiration
- * - This prevents both memory leaks and reduces cleanup overhead
- * 
- * TRADE-OFF: Active users experience one slight delay every 3 hours, but we
- * prevent unbounded memory growth in long-running server processes.
- */
-setInterval(() => {
+// setInterval(() => {
+//   const now = Date.now();
+//   const THREE_HOURS = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
+//   for (const [key, entry] of serviceCache.entries()) {
+//     if (now - entry.created > THREE_HOURS) {
+//       serviceCache.delete(key);
+//     }
+//   }
+// }, 60 * 60 * 1000); // Run cleanup every hour
+
+function cleanupOldEntries() {
   const now = Date.now();
-  const THREE_HOURS = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
+  // const THREE_HOURS = 3 * 60 * 60 * 1000;
+  const THREE_HOURS = 10 * 1000;
+  
   for (const [key, entry] of serviceCache.entries()) {
     if (now - entry.created > THREE_HOURS) {
+      console.log(`Cleaning up old service cache entry: ${key}`);
       serviceCache.delete(key);
     }
   }
-}, 60 * 60 * 1000); // Run cleanup every hour
-
+}
 
 /**
  * Gets the current provider and model from stored config
@@ -108,6 +95,9 @@ export async function getCurrentProviderAndModel(accessToken: string): Promise<{
  * @returns The AI service instance or null if skipped
  */
 export async function createApiService(provider: AIProvider = 'openrouter', modelName?: string, userId?: string): Promise<any | null> {
+  // Clean up old entries on each new service creation
+  cleanupOldEntries();
+
   try {
     if (provider === 'skipped') {
       console.log('AI setup was skipped by user');

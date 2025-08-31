@@ -1,5 +1,4 @@
-// AI Tools Manager Hook
-// Extracted from app/page.tsx - handles all AI tools related state and operations
+// app/ai-tools/useToolsManager.ts
 
 import { useState, useMemo, useCallback } from 'react';
 import { showAlert } from '../shared/alerts';
