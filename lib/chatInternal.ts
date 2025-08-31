@@ -86,7 +86,7 @@ export async function getChatResponseInternal(messages: ChatMessage[]): Promise<
 
     // Call OpenRouter API directly
     const response = await aiService.client.chat.completions.create({
-      model: aiService.config.model_name!,
+      model: providerInfo.model,
       messages: openaiMessages,
       temperature: 0.7,
       max_tokens: 2000,
