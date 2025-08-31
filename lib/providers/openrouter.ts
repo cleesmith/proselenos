@@ -9,9 +9,9 @@ import { OpenAI } from 'openai';
 export interface AIConfig {
   model_name?: string;
   temperature?: number;
-  apiKey?: string; // OPENROUTER_API_KEY if omitted
-  baseURL?: string; // defaults to OpenRouter API
-  headers?: Record<string, string>; // e.g., { 'HTTP-Referer': 'https://your.app', 'X-Title': 'Your App' }
+  apiKey?: string;
+  baseURL?: string;
+  headers?: Record<string, string>;
   [key: string]: any;
 }
 
@@ -48,7 +48,7 @@ export class AiApiService {
   private model: string;
   private temperature: number;
   private apiKeyMissing = false;
-  public prompt: string | null = null; // manuscript buffer
+  public prompt: string | null = null;
   public user: string = "proselenos";
 
   constructor(config: AIConfig = {}) {
@@ -59,7 +59,7 @@ export class AiApiService {
         'X-Title': 'Proselenos'
     };
 
-    this.model = config.model_name ?? 'gpt-5-nano';
+    this.model = config.model_name ?? ' ';
     this.temperature = typeof config.temperature === 'number' ? config.temperature : 0.2;
     this.apiKeyMissing = !apiKey;
 
@@ -143,7 +143,7 @@ export class AiApiService {
     } as any;
   }
 
-  // ---- non-stream completion (optional helper) ---------------------------
+  // ---- non-stream completion ---------------------------
   async completeOnce(prompt: string): Promise<string> {
     if (!this.client || this.apiKeyMissing) throw new Error('OpenRouter client not initialized - missing API key');
     if (!this.prompt) throw new Error('No manuscript loaded.');
@@ -160,7 +160,7 @@ export class AiApiService {
     return typeof text === 'string' ? text : '';
   }
 
-  // ---- stream with robust error handling (NO retries) --------------------
+  // ---- stream with robust error handling --------------------
   async streamWithThinking(
     prompt: string,
     onText: (text: string) => void,
@@ -181,10 +181,10 @@ export class AiApiService {
     let lastFinish: string | undefined;
 
     for await (const chunk of stream) {
-      if (options.logChunks) {
-        console.log('CHUNK:', JSON.stringify(chunk));
-        console.log('..............................');
-      }
+      // if (options.logChunks) {
+      //   console.log('CHUNK:', JSON.stringify(chunk));
+      //   console.log('..............................');
+      // }
 
       // // TEST: Force a 502 error to verify error handling
       // const testChunk = {
