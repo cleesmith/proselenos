@@ -1,3 +1,5 @@
+// lib/writing-assistant/workflow-actions.ts
+
 'use server';
 
 import { WorkflowStepId, WorkflowFile } from '@/app/writing-assistant/types';

@@ -1,21 +1,24 @@
 // @ts-nocheck
 
-// openrouter.ts - OpenRouter AI Provider
-// Migrated from ~/proselenos/client-openrouter.js for Next.js web environment
+// openrouter.ts — OpenRouter provider (OpenAI-compatible) with robust streaming error handling (no retries)
+// Drop-in module for Next.js server-side usage.
 
 import { OpenAI } from 'openai';
 
+// ---- Public types ---------------------------------------------------------
 export interface AIConfig {
   model_name?: string;
   temperature?: number;
-  apiKey?: string;
+  apiKey?: string; // OPENROUTER_API_KEY if omitted
+  baseURL?: string; // defaults to OpenRouter API
+  headers?: Record<string, string>; // e.g., { 'HTTP-Referer': 'https://your.app', 'X-Title': 'Your App' }
   [key: string]: any;
 }
 
 export interface StreamOptions {
   temperature?: number;
-  includeMetaData?: boolean;
-  [key: string]: any;
+  onDone?: (finishReason?: string) => void;
+  logChunks?: boolean;
 }
 
 export interface ModelData {
@@ -23,44 +26,78 @@ export interface ModelData {
   [key: string]: any;
 }
 
-/**
- * OpenRouter API Service
- * Handles interactions with OpenRouter API services using openai-node SDK
- */
+// ---- Helper utilities -----------------------------------------------------
+function isRetryableCode(code: unknown): boolean {
+  const n = Number(code);
+  return [429, 500, 502, 503, 504].includes(n);
+}
+
+function formatProviderError(src: any): Error {
+  const prov = src?.metadata?.provider_name ?? 'provider';
+  const code = src?.code ?? '?';
+  const msg = src?.message ?? 'Stream error';
+  const err: any = new Error(`[${prov}] ${code}: ${msg}`);
+  err.code = code;
+  err.retryable = !!src?.metadata?.raw?.retryable || isRetryableCode(code);
+  return err as Error;
+}
+
+// ---- Provider class -------------------------------------------------------
 export class AiApiService {
-  public config: AIConfig;
-  public client: OpenAI | null = null;
-  public apiKeyMissing: boolean = true;
-  public prompt: string | null = null;
+  private client: OpenAI | null = null;
+  private model: string;
+  private temperature: number;
+  private apiKeyMissing = false;
+  public prompt: string | null = null; // manuscript buffer
   public user: string = "proselenos";
-  public temp: number = 0.3; // 0.0 (conservative) to 2.0 (wild/crazy)
 
   constructor(config: AIConfig = {}) {
-    this.config = {
-      ...config,
+    const apiKey = config.apiKey;
+    const baseURL = "https://openrouter.ai/api/v1";
+    const headers = config.headers ?? {
+        'HTTP-Referer': 'https://www.slipthetrap.com/proselenos.html',
+        'X-Title': 'Proselenos'
     };
 
-    // Initialize client immediately if API key is provided
-    if (config.apiKey) {
-      this.client = new OpenAI({ 
-        apiKey: config.apiKey,
-        baseURL: "https://openrouter.ai/api/v1",
-        defaultHeaders: {
-          'HTTP-Referer': 'https://www.slipthetrap.com/proselenos.html',
-          'X-Title': 'Proselenos'
-        }
-      });
-      this.apiKeyMissing = false;
-    } else {
-      console.error('OpenRouter API key not provided in config');
-      this.apiKeyMissing = true;
+    this.model = config.model_name ?? 'gpt-5-nano';
+    this.temperature = typeof config.temperature === 'number' ? config.temperature : 0.2;
+    this.apiKeyMissing = !apiKey;
+
+    if (apiKey) {
+      this.client = new OpenAI({ apiKey, baseURL, defaultHeaders: headers });
     }
   }
 
-  /**
-   * Get list of available models from OpenRouter API
-   * @returns Array of model objects with id and other properties
-   */
+  // ---- configuration ------------------------------------------------------
+  setPrompt(manuscript: string) {
+    this.prompt = manuscript ?? '';
+  }
+
+  setModel(model: string) {
+    this.model = model;
+  }
+
+  setTemperature(t: number) {
+    this.temperature = t;
+  }
+
+  isChatCompatible(model: string | { id?: string }): boolean {
+    const id = typeof model === 'string' ? model : model?.id ?? '';
+    // exclude obviously non-chat families; allow gpt-5* etc.
+    return !/(embedding|whisper|tts|audio-)/i.test(id);
+  }
+
+  async verifyAiAPI(): Promise<boolean> {
+    if (this.apiKeyMissing || !this.client) return false;
+    try {
+      const models = await this.client.models.list();
+      return !!(models?.data?.length);
+    } catch (err) {
+      console.warn('OpenRouter verifyAiAPI failed:', err);
+      return false;
+    }
+  }
+
   async getAvailableModels(): Promise<ModelData[]> {
     if (this.apiKeyMissing || !this.client) {
       return [];
@@ -80,133 +117,127 @@ export class AiApiService {
     }
   }
 
-  /**
-   * Check if an OpenRouter model is chat-compatible
-   * @param model - Model object from OpenRouter API
-   * @returns True if model supports chat completions
-   */
-  isChatCompatible(model: ModelData): boolean {
-    const modelId = model.id || '';
-    
-    // OpenRouter provides chat-compatible models from various providers
-    // Most models on OpenRouter support chat completions
-    return !modelId.includes('embedding') && !modelId.includes('whisper');
-  }
-
-  /**
-   * Verifies the OpenRouter API key and model access.
-   */
-  async verifyAiAPI(): Promise<boolean> {
-    if (this.apiKeyMissing || !this.client) return false;
-    try {
-      const models = await this.client.models.list();
-      
-      // Check if we got a valid response with models
-      if (models.data && models.data.length > 0) {
-        console.log(`OpenRouter API verified successfully - ${models.data.length} models available`);
-        return true;
-      }
-      
-      console.error('OpenRouter API: No models available');
-      this.apiKeyMissing = true; // Treat as API unavailable
-      return false;
-    } catch (err: any) {
-      console.error('OpenRouter API verify error:', err.message);
-      this.apiKeyMissing = true; // Treat API failures as unavailable
-      return false;
+  // ---- request builders ---------------------------------------------------
+  private buildMessages(userPrompt: string) {
+    // If caller has already embedded manuscript markers, pass-through
+    if (this.prompt?.trimStart().startsWith('=== MANUSCRIPT ===')) {
+      const full = `${this.prompt}\n\n=== INSTRUCTIONS ===\n${userPrompt}\n=== END INSTRUCTIONS ===`;
+      return [
+        { role: 'user', content: full },
+      ];
     }
+
+    // Otherwise, embed manuscript plainly
+    const manuscript = this.prompt ?? '';
+    const combined = `=== MANUSCRIPT ===\n${manuscript}\n=== END MANUSCRIPT ===\n\n=== INSTRUCTIONS ===\n${userPrompt}\n=== END INSTRUCTIONS ===`;
+    return [
+      { role: 'user', content: combined },
+    ];
   }
 
-  /**
-   * Streams a response using OpenRouter Chat Completions API
-   * @param prompt - The user prompt to send (will prepend manuscript)
-   * @param onText - Callback to receive the response as it arrives
-   * @param options - Optional configuration
-   */
+  private buildCreateParams(messages: any[], opts?: Partial<StreamOptions>) {
+    return {
+      model: this.model,
+      temperature: typeof opts?.temperature === 'number' ? opts.temperature : this.temperature,
+      messages,
+    } as any;
+  }
+
+  // ---- non-stream completion (optional helper) ---------------------------
+  async completeOnce(prompt: string): Promise<string> {
+    if (!this.client || this.apiKeyMissing) throw new Error('OpenRouter client not initialized - missing API key');
+    if (!this.prompt) throw new Error('No manuscript loaded.');
+
+    const messages = this.buildMessages(prompt);
+    const params = this.buildCreateParams(messages);
+
+    const res: any = await this.client.chat.completions.create({
+      ...params,
+      stream: false,
+    });
+
+    const text = res?.choices?.[0]?.message?.content ?? '';
+    return typeof text === 'string' ? text : '';
+  }
+
+  // ---- stream with robust error handling (NO retries) --------------------
   async streamWithThinking(
-    prompt: string, 
-    onText: (text: string) => void, 
+    prompt: string,
+    onText: (text: string) => void,
     options: StreamOptions = {}
   ): Promise<void> {
+    if (!this.client || this.apiKeyMissing) throw new Error('OpenRouter client not initialized - missing API key');
+    if (!this.prompt) throw new Error('No manuscript loaded.');
 
-    if (!this.client || this.apiKeyMissing) {
-      throw new Error('OpenRouter client not initialized - missing API key');
-    }
-    if (!this.prompt) {
-      throw new Error('No manuscript loaded.');
-    }
-    // const fullInput = `=== MANUSCRIPT ===\n${this.prompt}\n=== END MANUSCRIPT ===\n\n=== INSTRUCTIONS ===\n${prompt}\n=== END INSTRUCTIONS ===`;
-    let fullInput;
+    const messages = this.buildMessages(prompt);
+    const params = this.buildCreateParams(messages, options);
 
-    if (this.prompt.trimStart().startsWith('=== MANUSCRIPT ===')) {
-      // this.prompt already has manuscript markers
-      fullInput = `${this.prompt}\n\n=== INSTRUCTIONS ===\n${prompt}\n=== END INSTRUCTIONS ===`;
-    } else {
-      // this.prompt needs manuscript markers added
-      fullInput = `=== MANUSCRIPT ===\n${this.prompt}\n=== END MANUSCRIPT ===\n\n=== INSTRUCTIONS ===\n${prompt}\n=== END INSTRUCTIONS ===`;
-    }
+    // Create stream inside the function to avoid TDZ/circular init issues in Next.js
+    const stream: AsyncIterable<any> = await this.client.chat.completions.create({
+      ...params,
+      stream: true,
+    }) as any;
 
-    try {
-      console.time('streamWithThinking');
+    let lastFinish: string | undefined;
 
-      // Create the stream response
-      const response = await this.client.chat.completions.create({
-        model: this.config.model_name!,
-        messages: [
-          {
-            role: "system",
-            content: "You are a very experienced creative fiction writer and editor."
-          },
-          {
-            role: "user",
-            content: fullInput
-          }
-        ],
-        stream: true,
-        temperature: options.temperature || this.temp,
-        // @ts-ignore - reasoning is OpenRouter-specific extension
-        reasoning: {
-          effort: "high", // "high", "medium", or "low" (OpenAI-style)
-          exclude: false, // set to true to exclude reasoning tokens from response
-          enabled: true // inferred from `effort` or `max_tokens`
-        }
-      });
-      
-      // Type assertion to tell TypeScript this is iterable
-      const stream = response as any;
-      
-      for await (const chunk of stream) {
-        const content = chunk.choices?.[0]?.delta?.content || '';
-        if (content) {
-          onText(content);
-        }
+    for await (const chunk of stream) {
+      if (options.logChunks) {
+        console.log('CHUNK:', JSON.stringify(chunk));
+        console.log('..............................');
       }
 
-      console.timeEnd('streamWithThinking');
+      // // TEST: Force a 502 error to verify error handling
+      // const testChunk = {
+      //   choices: [{
+      //     error: {
+      //       message: "Test forced error",
+      //       code: 502,
+      //       metadata: { provider_name: "Google", raw: { retryable: true } }
+      //     }
+      //   }]
+      // };
+      // // Process this fake error chunk instead
+      // const testChoice = testChunk.choices[0];
+      // const testErr = testChoice?.error;
+      // if (testErr) throw formatProviderError(testErr);
 
-      if (options.includeMetaData) {
-        const metadata = '\n\n--- RESPONSE METADATA ---\n' + JSON.stringify({ model: this.config.model_name }, null, 2);
-        onText(metadata);
+      // 1) Top-level streamed error (some providers)
+      const topErr = (chunk as any)?.error;
+      if (topErr) throw formatProviderError(topErr);
+
+      const choice = (chunk as any)?.choices?.[0];
+      if (!choice) continue;
+
+      // 2) Choice-level provider error
+      const chErr = (choice as any)?.error;
+      if (chErr) throw formatProviderError(chErr);
+
+      // 3) finish_reason can be "error" in some streams
+      const finishReason = (choice as any)?.finish_reason;
+      if (finishReason === 'error') {
+        const e: any = new Error('Stream ended with finish_reason=error');
+        e.retryable = true; // informational only; you are NOT retrying
+        throw e;
       }
-    } catch (err: any) {
-      console.error('OpenRouter chat completions error:', err.message);
-      throw err;
+
+      // 4) Normal delta
+      const text = (choice as any)?.delta?.content;
+      if (typeof text === 'string' && text.length) onText(text);
+
+      if (finishReason) lastFinish = finishReason;
     }
+
+    options.onDone?.(lastFinish);
   }
 
-  /**
-   * Count tokens in a text string using OpenRouter API (no extra dependencies).
-   * @param text - Text to count tokens in
-   * @returns Token count (returns -1 on error)
-   */
   async countTokens(text: string): Promise<number> {
     try {
-      if (!this.client || this.apiKeyMissing || !this.config.model_name) {
+      if (!this.client || this.apiKeyMissing || !this.model) {
         throw new Error('OpenRouter client not initialized or model not set');
       }
       
       const response = await this.client.chat.completions.create({
-        model: this.config.model_name,
+        model: this.model,
         messages: [{ role: 'user', content: text }],
         max_tokens: 16, // minimal generation to save costs
         temperature: 0
