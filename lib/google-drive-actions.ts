@@ -6,7 +6,7 @@ import { Readable } from 'stream';
 import {
   getAuthClient,
   getDriveClient,
-  ensureproselenosFolder,
+  ensureProselenosProjectsFolder,
   uploadManuscript,
   readTextFile,
   readGoogleDoc,
@@ -22,7 +22,7 @@ import {
   saveProjectMetadata,
   ProjectMetadata,
 } from '@/lib/googleDrive';
-import { installToolPrompts, checkToolPromptsInstallation } from '@/lib/tool-prompts-installer.server';
+import { installToolPrompts, checkToolPromptsInstallation } from '@/lib/tool-prompts-installer-server';
 
 type ActionResult<T = any> = {
   success: boolean;
@@ -40,8 +40,8 @@ async function getAuthenticatedClients(accessToken: string, rootFolderId: string
     return { error: 'Root folder ID is required' };
   }
 
-  const authClient = getAuthClient(accessToken);
-  const drive = getDriveClient(authClient);
+  const authClient = await getAuthClient(accessToken);
+  const drive = await getDriveClient(authClient);
   
   // Use the provided root folder ID (already ensured to exist in fastInitServer)
   const rootFolder = { id: rootFolderId, name: 'proselenos_projects' };

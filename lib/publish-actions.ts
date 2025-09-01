@@ -11,7 +11,7 @@ import {
   createGoogleDriveFileAction,
   listGoogleDriveFilesAction
 } from '@/lib/google-drive-actions';
-import { getAuthClient, getDriveClient, ensureproselenosFolder } from '@/lib/googleDrive';
+import { getAuthClient, getDriveClient, ensureProselenosProjectsFolder } from '@/lib/googleDrive';
 import * as fs from 'fs';
 import * as path from 'path';
 import PDFDocument from 'pdfkit';
@@ -59,10 +59,14 @@ async function prepareManuscriptData(manuscriptFileId: string, projectFolderId: 
     return { success: false, error: 'Unauthorized - please sign in' };
   }
 
-  // For now, use ensureproselenosFolder to get rootFolderId (like before, but with new HTTP optimizations)
-  const authClient = getAuthClient(session.accessToken as string);
-  const drive = getDriveClient(authClient);
-  const rootFolder = await ensureproselenosFolder(drive);
+  // For now, use ensureProselenosProjectsFolder to get rootFolderId (like before, but with new HTTP optimizations)
+  const authClient = await getAuthClient(session.accessToken as string);
+  const drive = await getDriveClient(authClient);
+  const rootFolder = await ensureProselenosProjectsFolder(drive);
+  
+  if (!rootFolder.id) {
+    return { success: false, error: 'Could not determine root folder ID' };
+  }
 
   // Read manuscript content from Google Drive
   const manuscriptResult = await readGoogleDriveFileAction(session.accessToken as string, rootFolder.id, manuscriptFileId);
@@ -115,6 +119,10 @@ export async function generateHTMLOnlyAction(
     }
 
     const { session, drive, rootFolder, chapters, metadata } = prepResult.data;
+
+    if (!rootFolder.id) {
+      return { success: false, error: 'Could not determine root folder ID' };
+    }
 
     // Generate HTML
     const htmlContent = generateHTML(chapters, metadata);
@@ -227,10 +235,14 @@ export async function publishManuscriptAction(
     return { success: false, error: 'Unauthorized - please sign in' };
   }
 
-  // For now, use ensureproselenosFolder to get rootFolderId (like before, but with new HTTP optimizations)
-  const authClient = getAuthClient(session.accessToken as string);
-  const drive = getDriveClient(authClient);
-  const rootFolder = await ensureproselenosFolder(drive);
+  // For now, use ensureProselenosProjectsFolder to get rootFolderId (like before, but with new HTTP optimizations)
+  const authClient = await getAuthClient(session.accessToken as string);
+  const drive = await getDriveClient(authClient);
+  const rootFolder = await ensureProselenosProjectsFolder(drive);
+  
+  if (!rootFolder.id) {
+    return { success: false, error: 'Could not determine root folder ID' };
+  }
 
   try {
     // Read manuscript content from Google Drive

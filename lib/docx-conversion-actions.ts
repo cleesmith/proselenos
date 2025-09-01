@@ -25,8 +25,8 @@ async function getAuthenticatedClients(accessToken: string) {
     return { error: 'Not authenticated' };
   }
 
-  const authClient = getAuthClient(accessToken);
-  const drive = getDriveClient(authClient);
+  const authClient = await getAuthClient(accessToken);
+  const drive = await getDriveClient(authClient);
   
   return {
     authClient,

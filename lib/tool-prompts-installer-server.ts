@@ -1,4 +1,4 @@
-// lib/tool-prompts-installer.server.ts
+// lib/tool-prompts-installer-server.ts
 // Server-side only - handles file system operations
 
 import { uploadFolderToGoogleDrive } from './uploadToGoogleDrive';

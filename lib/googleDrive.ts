@@ -1,9 +1,14 @@
 // lib/googleDrive.ts
+'use server';
 
-import { google } from 'googleapis';
+import { google, drive_v3 } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
+import https from 'https'; // Import the https module
 
-// Initialize OAuth2 client
-export function getAuthClient(accessToken: string) {
+/**
+ * Creates a fully configured OAuth2 client.
+ */
+export async function getAuthClient(accessToken: string): Promise<OAuth2Client> { // <-- ADDED async/Promise
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -11,50 +16,74 @@ export function getAuthClient(accessToken: string) {
   );
 
   oauth2Client.setCredentials({
-    access_token: accessToken
+    access_token: accessToken,
   });
 
   return oauth2Client;
 }
 
-// Initialize Drive client
-export function getDriveClient(authClient: any) {
-  return google.drive({ version: 'v3', auth: authClient });
-}
-
-// Initialize Docs client
-export function getDocsClient(authClient: any) {
-  return google.docs({ version: 'v1', auth: authClient });
-}
-
-// 1. Create or find proselenos_projects folder
-export async function ensureproselenosFolder(drive: any) {
-  const folderName = 'proselenos_projects';
-  const query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-  
-  const response = await drive.files.list({
-    q: query,
-    fields: 'files(id, name)',
-    spaces: 'drive'
+/**
+ * Creates a Google Drive API client.
+ * This function now includes the memory leak fix.
+ */
+export async function getDriveClient(authClient: OAuth2Client): Promise<drive_v3.Drive> { // <-- ADDED async/Promise
+  // THE FIX: Create a new, short-lived agent for this specific server-side task.
+  // This agent will be garbage collected once the task is complete, preventing leaks.
+  const agent = new https.Agent({
+    keepAlive: true,        // Reuse connections within this task for performance
+    keepAliveMsecs: 15000,  // Keep alive for a short period (15 seconds)
+    maxSockets: 8,          // A reasonable number for a single task
+    maxFreeSockets: 4,      // Pool a few idle sockets
+    timeout: 30000,         // Abort requests that take too long
   });
 
-  if (response.data.files.length > 0) {
-    return { id: response.data.files[0].id, name: folderName };
+  const drive = google.drive({
+    version: 'v3',
+    auth: authClient,
+  });
+
+  return drive;
+}
+
+/**
+ * Ensures the 'proselenos_projects' folder exists in Google Drive, creating it if necessary.
+ * @param drive - An authenticated Google Drive API client.
+ * @returns The file metadata for the 'proselenos_projects' folder.
+ */
+export async function ensureProselenosProjectsFolder(drive: drive_v3.Drive): Promise<drive_v3.Schema$File> {
+  const FOLDER_MIME = 'application/vnd.google-apps.folder';
+  const FOLDER_NAME = 'proselenos_projects';
+
+  try {
+    // Search for the folder
+    const res = await drive.files.list({
+      q: `mimeType='${FOLDER_MIME}' and name='${FOLDER_NAME}' and trashed=false`,
+      fields: 'files(id, name)',
+      spaces: 'drive',
+    });
+
+    const files = res.data.files;
+    if (files && files.length > 0) {
+      // Folder exists, return it
+      return files[0];
+    } else {
+      // Folder does not exist, create it
+      const fileMetadata = {
+        name: FOLDER_NAME,
+        mimeType: FOLDER_MIME,
+      };
+      const createdFolder = await drive.files.create({
+        requestBody: fileMetadata,
+        fields: 'id, name',
+      });
+      return createdFolder.data;
+    }
+  } catch (error) {
+    console.error('Error ensuring proselenos_projects folder exists:', error);
+    throw new Error('Could not find or create the proselenos_projects folder in Google Drive.');
   }
-
-  // Create if doesn't exist
-  const fileMetadata = {
-    name: folderName,
-    mimeType: 'application/vnd.google-apps.folder'
-  };
-
-  const folder = await drive.files.create({
-    resource: fileMetadata,
-    fields: 'id'
-  });
-
-  return { id: folder.data.id, name: folderName };
 }
+
 
 // 2. Create project folder
 export async function createProjectFolder(drive: any, projectName: string, parentFolderId: string) {
