@@ -222,9 +222,16 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         confirmButtonText: "Click to read, write, edit ... repeat",
         allowOutsideClick: false,
         allowEscapeKey: false
+      }).then(() => {
+        setHasShownReadyModal(true);
+        setIsSystemInitializing(false); // Enable buttons
+        
+        // Show welcome guide only for new users
+        const isNewUser = !projectState.currentProject && hasApiKey === false;
+        if (isNewUser) {
+          showWelcomeGuide();
+        }
       });
-      setHasShownReadyModal(true);
-      setIsSystemInitializing(false); // Enable buttons
     } else if (!status.allReady && isSystemInitializing) {
       // Show persistent initializing modal
       Swal.fire({
@@ -696,6 +703,150 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     }
   };
 
+  // Show welcome guide for new users
+  const showWelcomeGuide = () => {
+    Swal.fire({
+      title: '🎉 Welcome to Proselenos!',
+      html: `
+        <div style="text-align: left; line-height: 1.6;">
+          <div style="margin-bottom: 24px;">
+            <p style="margin: 0 0 20px 0; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; font-size: 14px;">
+              Let's get you set up with these 4 essential steps:
+            </p>
+            
+            <!-- Step 1 -->
+            <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+              <div style="
+                background: #4285F4; 
+                color: white; 
+                width: 24px; 
+                height: 24px; 
+                border-radius: 50%; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 12px; 
+                font-weight: 600; 
+                margin-right: 12px; 
+                flex-shrink: 0;
+              ">1</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
+                  Add OpenRouter API Key
+                </div>
+                <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
+                  Click the "AI API key" button in the header to add your <a href="https://openrouter.ai" target="_blank" style="color: #4285F4; text-decoration: none;">OpenRouter</a> API key
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+              <div style="
+                background: #4285F4; 
+                color: white; 
+                width: 24px; 
+                height: 24px; 
+                border-radius: 50%; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 12px; 
+                font-weight: 600; 
+                margin-right: 12px; 
+                flex-shrink: 0;
+              ">2</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
+                  Create First Project
+                </div>
+                <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
+                  Click "Select Project" button to create your first writing project folder
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step 3 -->
+            <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+              <div style="
+                background: #4285F4; 
+                color: white; 
+                width: 24px; 
+                height: 24px; 
+                border-radius: 50%; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 12px; 
+                font-weight: 600; 
+                margin-right: 12px; 
+                flex-shrink: 0;
+              ">3</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
+                  Choose AI Model
+                </div>
+                <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
+                  Click "Models" button and select <strong>google/gemini-2.5-flash</strong> for fast, affordable editing
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step 4 -->
+            <div style="display: flex; align-items: flex-start; margin-bottom: 20px;">
+              <div style="
+                background: #10b981; 
+                color: white; 
+                width: 24px; 
+                height: 24px; 
+                border-radius: 50%; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 12px; 
+                font-weight: 600; 
+                margin-right: 12px; 
+                flex-shrink: 0;
+              ">4</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
+                  Test with Chat
+                </div>
+                <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
+                  Click the "Chat" button to verify your setup is working correctly
+                </div>
+              </div>
+            </div>
+            
+            <!-- Pro Tip -->
+            <div style="
+              background: ${isDarkMode ? '#333' : '#f3f4f6'}; 
+              padding: 12px; 
+              border-radius: 8px; 
+              border-left: 4px solid #10b981;
+            ">
+              <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#10b981' : '#059669'}; font-size: 13px;">
+                💡 Pro Tip
+              </div>
+              <div style="font-size: 12px; color: ${isDarkMode ? '#d1d5db' : '#4b5563'}; line-height: 1.4;">
+                You can upload Word documents, PDFs, or text files to your projects for AI editing and analysis!
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+      icon: 'success',
+      background: isDarkMode ? '#222' : '#fff',
+      color: isDarkMode ? '#fff' : '#333',
+      confirmButtonText: "Let's Get Started!",
+      confirmButtonColor: '#4285F4',
+      width: 600,
+      customClass: {
+        popup: 'swal2-responsive'
+      }
+    });
+  };
+
   if (status === 'loading') {
     return (
       <div style={{ 
@@ -750,39 +901,233 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '100vh',
-          gap: '24px'
+          padding: '20px'
         }}>
-          <img 
-            src="/icon.png" 
-            alt="Proselenos Logo"
-            style={{
-              width: '80px',
-              height: '80px'
-            }}
-          />
-          <h2 style={{ 
-            fontSize: '32px',
-            margin: '0',
-            color: theme.text
+          <div style={{
+            maxWidth: '480px',
+            width: '100%',
+            textAlign: 'center'
           }}>
-            Welcome to Proselenos
-          </h2>
-          <p style={{ color: '#ccc' }}>Sign in to access your writing projects</p>
-          <button 
-            onClick={() => signIn('google')}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: '#4285F4',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: 'bold'
-            }}
-          >
-            Sign in with Google
-          </button>
+            {/* Logo and Title */}
+            <div style={{ 
+              marginBottom: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '20px'
+            }}>
+              <img 
+                src="/icon.png" 
+                alt="Proselenos Logo"
+                style={{
+                  width: '80px',
+                  height: '96px',
+                  objectFit: 'contain'
+                }}
+              />
+              <div style={{ textAlign: 'left' }}>
+                <h1 style={{ 
+                  fontSize: '32px',
+                  fontWeight: '600',
+                  margin: '0 0 8px 0',
+                  color: theme.text
+                }}>
+                  Welcome to Proselenos
+                </h1>
+                <p style={{ 
+                  fontSize: '16px',
+                  color: '#9ca3af',
+                  margin: '0'
+                }}>
+                  Professional manuscript editing powered by AI
+                </p>
+              </div>
+            </div>
+
+            {/* How it Works Section */}
+            <div style={{
+              background: '#242424',
+              border: '1px solid #333',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '32px',
+              textAlign: 'left'
+            }}>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#9ca3af',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '20px',
+                textAlign: 'center'
+              }}>
+                How it works
+              </div>
+
+              {/* Step 1 */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div style={{
+                  background: '#333',
+                  color: '#4285F4',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  marginRight: '12px',
+                  flexShrink: 0
+                }}>1</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#ffffff', marginBottom: '4px' }}>
+                    Sign in with Google
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>
+                    Quick and secure authentication using your Google account
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div style={{
+                  background: '#333',
+                  color: '#4285F4',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  marginRight: '12px',
+                  flexShrink: 0
+                }}>2</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#ffffff', marginBottom: '4px' }}>
+                    Google Drive Integration
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>
+                    We'll create a single "proselenos_projects" folder in your Drive to store your manuscripts and settings
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div style={{
+                  background: '#333',
+                  color: '#4285F4',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  marginRight: '12px',
+                  flexShrink: 0
+                }}>3</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#ffffff', marginBottom: '4px' }}>
+                    Add Your OpenRouter API Key
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>
+                    Use your OpenRouter API key to enable AI-powered editing features
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <div style={{
+                  background: '#333',
+                  color: '#4285F4',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  marginRight: '12px',
+                  flexShrink: 0
+                }}>4</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#ffffff', marginBottom: '4px' }}>
+                    Start Editing
+                    <span style={{
+                      background: '#10b981',
+                      color: 'white',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      marginLeft: '8px',
+                      display: 'inline-block'
+                    }}>FREE APP</span>
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>
+                    Proselenos is free to use. You only pay for AI model usage through OpenRouter
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sign In Button */}
+            <button 
+              onClick={() => signIn('google')}
+              style={{
+                background: '#4285F4',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '14px 32px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#357ae8';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(66, 133, 244, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#4285F4';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              Sign in with Google
+            </button>
+
+            {/* Privacy Note */}
+            <p style={{
+              marginTop: '24px',
+              fontSize: '12px',
+              color: '#6b7280',
+              lineHeight: '1.5'
+            }}>
+              Your manuscripts remain private and secure on your Google Drive.<br/>
+              We only access the "proselenos_projects" folder.
+            </p>
+          </div>
         </div>
       ) : (
         <div style={{ padding: '16px 20px' }}>
