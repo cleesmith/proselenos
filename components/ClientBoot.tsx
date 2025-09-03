@@ -758,32 +758,6 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               ">2</div>
               <div style="flex: 1;">
                 <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
-                  Create First Project
-                </div>
-                <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
-                  Click "Select Project" button to create your first writing project folder
-                </div>
-              </div>
-            </div>
-            
-            <!-- Step 3 -->
-            <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
-              <div style="
-                background: #4285F4; 
-                color: white; 
-                width: 24px; 
-                height: 24px; 
-                border-radius: 50%; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
-                font-size: 12px; 
-                font-weight: 600; 
-                margin-right: 12px; 
-                flex-shrink: 0;
-              ">3</div>
-              <div style="flex: 1;">
-                <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
                   Choose AI Model
                 </div>
                 <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
@@ -792,7 +766,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               </div>
             </div>
             
-            <!-- Step 4 -->
+            <!-- Step 3 -->
             <div style="display: flex; align-items: flex-start; margin-bottom: 20px;">
               <div style="
                 background: #10b981; 
@@ -807,13 +781,39 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                 font-weight: 600; 
                 margin-right: 12px; 
                 flex-shrink: 0;
-              ">4</div>
+              ">3</div>
               <div style="flex: 1;">
                 <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
                   Test with Chat
                 </div>
                 <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
                   Click the "Chat" button to verify your setup is working correctly
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step 4 -->
+            <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
+              <div style="
+                background: #4285F4; 
+                color: white; 
+                width: 24px; 
+                height: 24px; 
+                border-radius: 50%; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 12px; 
+                font-weight: 600; 
+                margin-right: 12px; 
+                flex-shrink: 0;
+              ">4</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
+                  Create First Project
+                </div>
+                <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
+                  Click "Select Project" button to create your first writing project folder
                 </div>
               </div>
             </div>
@@ -829,7 +829,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                 💡 Pro Tip
               </div>
               <div style="font-size: 12px; color: ${isDarkMode ? '#d1d5db' : '#4b5563'}; line-height: 1.4;">
-                You can upload Word documents, PDFs, or text files to your projects for AI editing and analysis!
+                You can upload Word documents or text files to your projects for AI editing and analysis!
               </div>
             </div>
           </div>
@@ -1125,7 +1125,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               lineHeight: '1.5'
             }}>
               Your manuscripts remain private and secure on your Google Drive.<br/>
-              We only access the "proselenos_projects" folder.
+              This app only accesses the "proselenos_projects" folder.
             </p>
           </div>
         </div>
