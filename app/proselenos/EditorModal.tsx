@@ -1,4 +1,4 @@
-// Editor modal component
+// Editor modal component with simplified toolbar and sentence-by-sentence TTS
 
 'use client';
 
@@ -7,6 +7,7 @@ import { useState } from 'react';
 import React from 'react';
 import { ThemeConfig } from '../shared/theme';
 import { showAlert, showInputAlert } from '../shared/alerts';
+import { commands } from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 
@@ -49,12 +50,44 @@ export default function EditorModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   
-  // TTS state variables
+  // TTS state variables for sentence-by-sentence reading
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [currentUtterance, setCurrentUtterance] = useState<any>(null);
+  const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
+  const [sentences, setSentences] = useState<string[]>([]);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
+
+  // Simplified toolbar - removing commands writers rarely use
+  const filteredCommands = [
+    commands.bold,
+    commands.italic,
+    commands.strikethrough,
+    commands.hr,
+    commands.divider,
+    commands.title,
+    commands.quote,
+    commands.unorderedListCommand,
+    commands.orderedListCommand,
+    commands.checkedListCommand,
+    // Excluded: commands.link, commands.code, commands.codeBlock, commands.image
+  ];
+
+  // Parse text into sentences
+  const parseSentences = (text: string): string[] => {
+    if (!text.trim()) return [];
+    
+    // Enhanced sentence splitting that handles abbreviations better
+    const sentences = text
+      .replace(/([.!?])\s*\n+/g, '$1 ') // Handle newlines after sentence endings
+      .replace(/\n+/g, ' ') // Replace other newlines with spaces
+      .split(/(?<=[.!?])\s+(?=[A-Z])/) // Split on sentence boundaries
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    
+    return sentences;
+  };
 
   const handleSave = async () => {
     if (!editorContent.trim()) {
@@ -129,8 +162,103 @@ export default function EditorModal({
     
     setIsSpeaking(false);
     setIsPaused(false);
-    setCurrentUtterance(null);
+    setCurrentSentenceIndex(0);
+    setSentences([]);
     setAudioElement(null);
+    setIsGeneratingSpeech(false);
+  };
+
+  // Generate and play a specific sentence
+  const speakSentence = async (sentenceIndex: number, sentenceArray: string[]): Promise<void> => {
+    if (sentenceIndex >= sentenceArray.length) {
+      // Reached end of sentences
+      cleanupAudio();
+      showAlert('✅ Finished reading all sentences!', 'success', undefined, isDarkMode);
+      return;
+    }
+
+    const sentence = sentenceArray[sentenceIndex];
+    if (!sentence.trim()) {
+      // Skip empty sentences and move to next
+      setCurrentSentenceIndex(sentenceIndex + 1);
+      speakSentence(sentenceIndex + 1, sentenceArray);
+      return;
+    }
+
+    try {
+      setIsGeneratingSpeech(true);
+      
+      // Clean up any existing audio first
+      if (audioElement) {
+        audioElement.onplay = null;
+        audioElement.onended = null;
+        audioElement.onerror = null;
+        audioElement.pause();
+      }
+      
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+      
+      // Dynamic import with proper TypeScript handling
+      const edgeTTSModule: any = await import('edge-tts-universal');
+      const TTSConstructor = edgeTTSModule.EdgeTTS;
+      
+      const tts = new TTSConstructor(
+        sentence, 
+        'en-US-EmmaMultilingualNeural'
+      );
+      
+      const result = await tts.synthesize();
+      
+      // Create audio element and play
+      const audioBlob = new Blob([result.audio], { type: 'audio/mpeg' });
+      const newAudioUrl = URL.createObjectURL(audioBlob);
+      setAudioUrl(newAudioUrl);
+      
+      const audio = new Audio(newAudioUrl);
+      
+      audio.onplay = () => {
+        setIsSpeaking(true);
+        setIsPaused(false);
+        setAudioElement(audio);
+        setIsGeneratingSpeech(false);
+      };
+      
+      audio.onended = () => {
+        // Automatically move to next sentence
+        const nextIndex = sentenceIndex + 1;
+        setCurrentSentenceIndex(nextIndex);
+        
+        // Clean up current audio
+        if (audioUrl) {
+          URL.revokeObjectURL(audioUrl);
+          setAudioUrl(null);
+        }
+        setAudioElement(null);
+        
+        // Continue with next sentence
+        setTimeout(() => speakSentence(nextIndex, sentenceArray), 500);
+      };
+      
+      audio.onerror = (event) => {
+        console.error('Audio error:', event);
+        setIsGeneratingSpeech(false);
+        if (isSpeaking) {
+          showAlert('Error playing audio', 'error', undefined, isDarkMode);
+        }
+        cleanupAudio();
+      };
+      
+      await audio.play();
+      
+    } catch (error: any) {
+      setIsGeneratingSpeech(false);
+      cleanupAudio();
+      console.error('TTS Error details:', error);
+      const message = error instanceof Error ? error.message : 'TTS synthesis failed';
+      showAlert(`Speech error: ${message}`, 'error', undefined, isDarkMode);
+    }
   };
 
   // TTS handler functions
@@ -152,63 +280,18 @@ export default function EditorModal({
       return;
     }
 
-    // Start new speech
-    try {
-      setIsSaving(true); // Reuse loading state for "generating speech"
-      
-      // Clean up any existing audio first
-      cleanupAudio();
-      
-      // Dynamic import with proper TypeScript handling
-      const edgeTTSModule: any = await import('edge-tts-universal');
-      
-      // Find the right constructor (EdgeTTS works based on your logs)
-      const TTSConstructor = edgeTTSModule.EdgeTTS;
-      
-      const tts = new TTSConstructor(
-        editorContent, 
-        'en-US-EmmaMultilingualNeural'
-      );
-      
-      const result = await tts.synthesize();
-      
-      // Create audio element and play
-      const audioBlob = new Blob([result.audio], { type: 'audio/mpeg' });
-      const newAudioUrl = URL.createObjectURL(audioBlob);
-      setAudioUrl(newAudioUrl);
-      
-      const audio = new Audio(newAudioUrl);
-      
-      audio.onplay = () => {
-        setIsSpeaking(true);
-        setIsPaused(false);
-        setCurrentUtterance(audio);
-        setAudioElement(audio);
-      };
-      
-      audio.onended = () => {
-        cleanupAudio();
-      };
-      
-      audio.onerror = (event) => {
-        console.error('Audio error:', event);
-        // Only show error if we're still in a speaking state
-        if (isSpeaking) {
-          showAlert('Error playing audio', 'error', undefined, isDarkMode);
-        }
-        cleanupAudio();
-      };
-      
-      await audio.play();
-      setIsSaving(false);
-      
-    } catch (error: any) {
-      setIsSaving(false);
-      cleanupAudio();
-      console.error('TTS Error details:', error);
-      const message = error instanceof Error ? error.message : 'TTS synthesis failed';
-      showAlert(`Speech error: ${message}`, 'error', undefined, isDarkMode);
+    // Start new speech - parse sentences and begin
+    const parsedSentences = parseSentences(editorContent);
+    if (parsedSentences.length === 0) {
+      showAlert('No sentences found to read!', 'error', undefined, isDarkMode);
+      return;
     }
+
+    setSentences(parsedSentences);
+    setCurrentSentenceIndex(0);
+    
+    // Start speaking from the first sentence
+    await speakSentence(0, parsedSentences);
   };
 
   const handlePause = (): void => {
@@ -227,6 +310,48 @@ export default function EditorModal({
 
   const handleStop = (): void => {
     cleanupAudio();
+  };
+
+  const handleSkipSentence = (): void => {
+    if (isSpeaking && sentences.length > 0) {
+      // Stop current sentence and move to next
+      if (audioElement) {
+        audioElement.onended = null; // Prevent automatic progression
+        audioElement.pause();
+      }
+      
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+        setAudioUrl(null);
+      }
+      
+      const nextIndex = currentSentenceIndex + 1;
+      setCurrentSentenceIndex(nextIndex);
+      
+      // Continue with next sentence
+      setTimeout(() => speakSentence(nextIndex, sentences), 100);
+    }
+  };
+
+  const handlePreviousSentence = (): void => {
+    if (isSpeaking && sentences.length > 0 && currentSentenceIndex > 0) {
+      // Stop current sentence and go to previous
+      if (audioElement) {
+        audioElement.onended = null; // Prevent automatic progression
+        audioElement.pause();
+      }
+      
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+        setAudioUrl(null);
+      }
+      
+      const prevIndex = currentSentenceIndex - 1;
+      setCurrentSentenceIndex(prevIndex);
+      
+      // Continue with previous sentence
+      setTimeout(() => speakSentence(prevIndex, sentences), 100);
+    }
   };
 
   // Cleanup audio when component unmounts
@@ -252,8 +377,8 @@ export default function EditorModal({
       zIndex: 1000
     }}>
       <div style={{
-        width: '95%',
-        height: '95%',
+        width: '100%',
+        height: '100%',
         backgroundColor: theme.modalBg,
         borderRadius: '8px',
         display: 'flex',
@@ -276,6 +401,11 @@ export default function EditorModal({
           }}>
             📝 Editor: {currentProject || 'New Project'} 
             {currentFileName && ` - ${currentFileName}`}
+            {isSpeaking && sentences.length > 0 && (
+              <span style={{ fontSize: '12px', color: theme.text, opacity: 0.7, marginLeft: '10px' }}>
+                (Sentence {currentSentenceIndex + 1} of {sentences.length})
+              </span>
+            )}
           </div>
           
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -311,9 +441,28 @@ export default function EditorModal({
               {isOpening ? 'Opening…' : 'Open'}
             </button>
 
+            {/* Previous sentence button */}
+            <button
+              onClick={handlePreviousSentence}
+              disabled={!isSpeaking || currentSentenceIndex <= 0 || isGeneratingSpeech}
+              title="Previous Sentence"
+              style={{
+                padding: '3px 8px',
+                backgroundColor: '#fd7e14',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '3px',
+                fontSize: '11px',
+                cursor: (!isSpeaking || currentSentenceIndex <= 0 || isGeneratingSpeech) ? 'not-allowed' : 'pointer',
+                opacity: (!isSpeaking || currentSentenceIndex <= 0 || isGeneratingSpeech) ? 0.6 : 1
+              }}
+            >
+              ⏮️ Prev
+            </button>
+
             <button
               onClick={handleSpeak}
-              disabled={isSaving || isOpening}
+              disabled={isSaving || isOpening || isGeneratingSpeech}
               title={isSpeaking ? (isPaused ? 'Resume' : 'Pause') : 'Speak'}
               style={{
                 padding: '3px 8px',
@@ -324,12 +473,31 @@ export default function EditorModal({
                 border: 'none',
                 borderRadius: '3px',
                 fontSize: '11px',
-                cursor: (isSaving || isOpening) ? 'not-allowed' : 'pointer',
-                opacity: (isSaving || isOpening) ? 0.6 : 1
+                cursor: (isSaving || isOpening || isGeneratingSpeech) ? 'not-allowed' : 'pointer',
+                opacity: (isSaving || isOpening || isGeneratingSpeech) ? 0.6 : 1
               }}
             >
-              {isSaving && !isSpeaking ? 'Generating…' : 
+              {isGeneratingSpeech ? 'Generating…' : 
                isSpeaking ? (isPaused ? '▶️ Resume' : '⏸️ Pause') : '🔊 Speak'}
+            </button>
+
+            {/* Skip sentence button */}
+            <button
+              onClick={handleSkipSentence}
+              disabled={!isSpeaking || currentSentenceIndex >= sentences.length - 1 || isGeneratingSpeech}
+              title="Next Sentence"
+              style={{
+                padding: '3px 8px',
+                backgroundColor: '#fd7e14',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '3px',
+                fontSize: '11px',
+                cursor: (!isSpeaking || currentSentenceIndex >= sentences.length - 1 || isGeneratingSpeech) ? 'not-allowed' : 'pointer',
+                opacity: (!isSpeaking || currentSentenceIndex >= sentences.length - 1 || isGeneratingSpeech) ? 0.6 : 1
+              }}
+            >
+              ⏭️ Next
             </button>
 
             <button
@@ -351,7 +519,10 @@ export default function EditorModal({
             </button>
             
             <button
-              onClick={onClose}
+              onClick={() => {
+                cleanupAudio();
+                onClose();
+              }}
               style={{
                 padding: '3px 8px',
                 backgroundColor: '#6c757d',
@@ -379,6 +550,7 @@ export default function EditorModal({
             height={window.innerHeight - 120}
             preview="edit"
             hideToolbar={false}
+            commands={filteredCommands}
             textareaProps={{
               placeholder: `Write your content for ${currentProject || 'your project'}...`,
               style: {
