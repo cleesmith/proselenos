@@ -21,6 +21,7 @@ import NonAIToolsSection from '../app/non-ai-tools/NonAIToolsSection';
 import { useNonAITools } from '../app/non-ai-tools/useNonAITools';
 import { getTheme } from '../app/shared/theme';
 import { showAlert } from '../app/shared/alerts';
+import AboutModal from '../components/AboutModal';
 import {
   getproselenosConfigAction,
   validateCurrentProjectAction,
@@ -73,6 +74,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   const [projectMetadata, setProjectMetadata] = useState<ProjectMetadata | undefined>(undefined);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [isSavingMetadata, setIsSavingMetadata] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const theme = getTheme(isDarkMode);
 
@@ -478,6 +480,10 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       await loadFullConfig();
     }
     setShowSettingsDialog(true);
+  };
+
+  const handleOpenAbout = () => {
+    setShowAboutModal(true);
   };
 
   const handleModelsClick = () => {
@@ -890,6 +896,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
           onModelsClick={handleModelsClick}
           onSettingsClick={handleOpenSettings}
           onEditorClick={openEditor}
+          onAboutClick={handleOpenAbout}
           onSignOut={handleSignOut}
         />
       )}
@@ -1364,6 +1371,14 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         initialMetadata={projectMetadata}
         onClose={handleProjectSettingsClose}
         onSave={handleProjectSettingsSave}
+      />
+
+      {/* About Modal */}
+      <AboutModal
+        isOpen={showAboutModal}
+        onClose={() => setShowAboutModal(false)}
+        isDarkMode={isDarkMode}
+        theme={theme}
       />
     </div>
   );

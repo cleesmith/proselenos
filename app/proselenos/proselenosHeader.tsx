@@ -23,6 +23,7 @@ interface ProselenosHeaderProps {
   onModelsClick: () => void;
   onSettingsClick: () => void;
   onEditorClick: () => void;
+  onAboutClick: () => void;
   onSignOut: () => void;
 }
 
@@ -44,6 +45,7 @@ export default function ProselenosHeader({
   onModelsClick,
   onSettingsClick,
   onEditorClick,
+  onAboutClick,
   onSignOut
 }: ProselenosHeaderProps) {
   return (
@@ -193,6 +195,21 @@ export default function ProselenosHeader({
             }}
           >
             Editor
+          </button>
+          <button 
+            onClick={onAboutClick}
+            disabled={isSystemInitializing}
+            style={{
+              padding: '3px 8px',
+              backgroundColor: isSystemInitializing ? '#666' : '#6366f1',
+              color: isSystemInitializing ? '#999' : '#fff',
+              border: 'none',
+              borderRadius: '3px',
+              fontSize: '11px',
+              cursor: isSystemInitializing ? 'not-allowed' : 'pointer'
+            }}
+          >
+            About
           </button>
           <button 
             onClick={onSignOut}
