@@ -228,6 +228,7 @@ export class AiApiService {
     }
 
     options.onDone?.(lastFinish);
+
   }
 
   async countTokens(text: string): Promise<number> {

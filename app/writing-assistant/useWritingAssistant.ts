@@ -81,7 +81,7 @@ export function useWritingAssistant(
       if (!brainstormFile || !brainstormFile.id) {
         return { 
           canRun: false, 
-          errorMessage: 'Error: brainstorm.txt must exist. Please create it in the Editor first with your story ideas.'
+          errorMessage: `Error: brainstorm.txt must exist.\nClick on Chat or Editor to create some story ideas in a brainstorm.txt file.`
         };
       }
       return { canRun: true };
@@ -411,7 +411,7 @@ export function useWritingAssistant(
       if (!brainstormFile || !brainstormFile.id) {
         return { 
           canRun: false, 
-          errorMessage: 'Error: brainstorm.txt must exist. Please create it in the Editor first with your story ideas.'
+          errorMessage: `Error: brainstorm.txt must exist.\nClick on Chat or Editor to create some story ideas in a brainstorm.txt file.`
         };
       }
       return { canRun: true };
