@@ -832,10 +832,13 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               border-left: 4px solid #10b981;
             ">
               <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#10b981' : '#059669'}; font-size: 13px;">
-                💡 Pro Tip
+                💡 Tip
               </div>
               <div style="font-size: 12px; color: ${isDarkMode ? '#d1d5db' : '#4b5563'}; line-height: 1.4;">
                 You can upload Word documents or text files to your projects for AI editing and analysis!
+              </div>
+              <div style="font-size: 12px; color: ${isDarkMode ? '#d1d5db' : '#4b5563'}; line-height: 1.3;">
+                Just in case, these 4 steps are repeated on the About page!
               </div>
             </div>
           </div>
