@@ -258,7 +258,7 @@ export default function ProselenosHeader({
               marginBottom: '16px',
               textAlign: 'center'
             }}>
-              Confirm Logout
+              Confirm Log out
             </div>
             <div style={{
               fontSize: '14px',
@@ -266,7 +266,7 @@ export default function ProselenosHeader({
               marginBottom: '20px',
               textAlign: 'center'
             }}>
-              Are you sure you want to log out?
+              Are you sure you want to Log out?
             </div>
             <div style={{
               display: 'flex',
