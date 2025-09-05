@@ -88,8 +88,8 @@ export async function getChatResponseInternal(messages: ChatMessage[]): Promise<
     const response = await aiService.client.chat.completions.create({
       model: providerInfo.model,
       messages: openaiMessages,
-      temperature: 0.7,
-      max_tokens: 2000,
+      // temperature: 0.7,
+      // max_tokens: 2000,
       stream: false
     });
 
