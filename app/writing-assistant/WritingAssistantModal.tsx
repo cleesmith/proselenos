@@ -39,7 +39,6 @@ export default function WritingAssistantModal({
     }
   }, [isOpen, state.isModalOpen, actions.openModal]);
 
-
   if (!isOpen) return null;
 
   return (
@@ -125,7 +124,6 @@ export default function WritingAssistantModal({
           Create your story from scratch with guided AI assistance. Follow the workflow to build from idea to rough draft chapters.
         </p>
 
-
         {/* Loading State */}
         {state.isLoading && (
           <div
@@ -181,6 +179,7 @@ export default function WritingAssistantModal({
                   onClose();
                   actions.closeModal();
                 }}
+                onOpenChatForBrainstorm={actions.openChatForBrainstorm}
               />
             ))}
           </div>

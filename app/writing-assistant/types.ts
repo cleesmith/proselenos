@@ -1,3 +1,5 @@
+// app/writing-assistant/types.ts
+
 export type WorkflowStepId = 'brainstorm' | 'outline' | 'world' | 'chapters';
 
 export type StepStatus = 
@@ -71,6 +73,7 @@ export interface WorkflowStepProps {
   isLoadingPrompt: boolean;
   theme: any;
   onClose?: () => void;
+  onOpenChatForBrainstorm?: (onClose?: () => void) => void; // Updated to accept onClose parameter
 }
 
 export interface StepActionsProps {
@@ -82,4 +85,5 @@ export interface StepActionsProps {
   isAnyStepExecuting: boolean;
   theme: any;
   onClose?: () => void;
+  onOpenChatForBrainstorm?: (onClose?: () => void) => void; // Updated to accept onClose parameter
 }

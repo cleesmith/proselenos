@@ -70,6 +70,71 @@ export function useWritingAssistant(
     setState(prev => ({ ...prev, isModalOpen: false }));
   }, []);
 
+  // Open Chat for Brainstorm - closes modal and clicks existing Chat button
+  const openChatForBrainstorm = useCallback((onClose?: () => void) => {
+    // Close the modal first (both internal state and parent modal)
+    closeModal();
+    if (onClose) {
+      onClose();
+    }
+    
+    // Small delay to ensure modal is closed before trying to find and click Chat button
+    setTimeout(() => {
+      try {
+        // Try different selectors to find the existing Chat button
+        let chatButton = null;
+        
+        // Try by ID first
+        chatButton = document.getElementById('chat-button');
+        
+        // Try by common class names
+        if (!chatButton) {
+          chatButton = document.querySelector('.chat-button');
+        }
+        
+        // Try by data attribute
+        if (!chatButton) {
+          chatButton = document.querySelector('[data-component="chat"]');
+        }
+        
+        // Try by text content (less reliable but covers more cases)
+        if (!chatButton) {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          chatButton = buttons.find(button => 
+            button.textContent?.toLowerCase().includes('chat') ||
+            button.getAttribute('aria-label')?.toLowerCase().includes('chat')
+          );
+        }
+        
+        // Try to find any button with "Chat" in it (broader search)
+        if (!chatButton) {
+          const allElements = Array.from(document.querySelectorAll('*'));
+          chatButton = allElements.find(el => 
+            (el.tagName === 'BUTTON' || el.tagName === 'DIV' || el.tagName === 'A') &&
+            el.textContent?.trim() === 'Chat'
+          ) as HTMLElement;
+        }
+        
+        if (chatButton && typeof (chatButton as HTMLElement).click === 'function') {
+          (chatButton as HTMLElement).click();
+        } else {
+          console.warn('Chat button not found. Available buttons:', 
+            Array.from(document.querySelectorAll('button')).map(btn => ({
+              text: btn.textContent,
+              id: btn.id,
+              className: btn.className
+            }))
+          );
+          
+          showAlert('Chat button not found. Please click the Chat button manually.', 'error', undefined, isDarkMode);
+        }
+      } catch (error) {
+        console.error('Error finding/clicking Chat button:', error);
+        showAlert('Could not open Chat. Please click the Chat button manually.', 'error', undefined, isDarkMode);
+      }
+    }, 100);
+  }, [closeModal, isDarkMode]);
+
   // Check file prerequisites
   const checkPrerequisites = useCallback((stepId: WorkflowStepId): { canRun: boolean; errorMessage?: string } => {
     const step = state.steps.find(s => s.id === stepId);
@@ -143,127 +208,6 @@ export function useWritingAssistant(
     }));
   }, []);
 
-  // Execute workflow step with prerequisite check
-  // const executeStep = useCallback(async (stepId: WorkflowStepId) => {
-  //   if (!currentProjectId) return;
-
-  //   // Check prerequisites
-  //   const { canRun, errorMessage } = checkPrerequisites(stepId);
-  //   if (!canRun) {
-  //     showAlert(errorMessage || 'Cannot run this step', 'error', undefined, isDarkMode);
-  //     return;
-  //   }
-
-  //   const now = Date.now();
-  //   const interval = setInterval(() => {
-  //     setState(prev => ({
-  //       ...prev,
-  //       steps: prev.steps.map(step =>
-  //         step.id === stepId && step.status === 'executing'
-  //           ? { ...step, elapsedTime: Math.floor((Date.now() - now) / 1000) }
-  //           : step
-  //       )
-  //     }));
-  //   }, 1000) as unknown as number;
-
-  //   setState(prev => ({
-  //     ...prev,
-  //     steps: prev.steps.map(step =>
-  //       step.id === stepId 
-  //         ? { 
-  //             ...step, 
-  //             status: 'executing',
-  //             startTime: now,
-  //             elapsedTime: 0,
-  //             timerInterval: interval
-  //           } : step
-  //     )
-  //   }));
-
-  //   try {
-  //     const result = await executeWorkflowStepAction(
-  //       session.accessToken as string,
-  //       rootFolderId,
-  //       stepId,
-  //       '', // No userInput needed - files contain the content
-  //       currentProjectId,
-  //       currentProvider,
-  //       currentModel,
-  //       state.projectFiles
-  //     );
-
-  //     if (result.success) {
-  //       // Refresh project files to ensure all files are up to date for next steps
-  //       const refreshedFiles = await detectExistingWorkflowFilesAction(session.accessToken as string, rootFolderId, currentProjectId!);
-        
-  //       setState(prev => ({
-  //         ...prev,
-  //         steps: prev.steps.map(step => {
-  //           if (step.id === stepId) {
-  //             // Clear timer
-  //             if (step.timerInterval) {
-  //               clearInterval(step.timerInterval);
-  //             }
-  //             return {
-  //               ...step, 
-  //               status: 'completed',
-  //               fileName: result.fileName,
-  //               fileId: result.fileId,
-  //               createdAt: new Date().toISOString(),
-  //               timerInterval: undefined
-  //             };
-  //           }
-  //           return step;
-  //         }),
-  //         projectFiles: refreshedFiles.success && refreshedFiles.data ? refreshedFiles.data : {
-  //           ...prev.projectFiles,
-  //           [stepId]: result.file
-  //         }
-  //       }));
-        
-  //       // Update dependent steps
-  //       updateDependentSteps(stepId);
-  //     } else {
-  //       setState(prev => ({
-  //         ...prev,
-  //         steps: prev.steps.map(step => {
-  //           if (step.id === stepId) {
-  //             // Clear timer on error
-  //             if (step.timerInterval) {
-  //               clearInterval(step.timerInterval);
-  //             }
-  //             return {
-  //               ...step, 
-  //               status: 'error', 
-  //               error: result.error,
-  //               timerInterval: undefined
-  //             };
-  //           }
-  //           return step;
-  //         })
-  //       }));
-  //     }
-  //   } catch (error) {
-  //     setState(prev => ({
-  //       ...prev,
-  //       steps: prev.steps.map(step => {
-  //         if (step.id === stepId) {
-  //           // Clear timer on error
-  //           if (step.timerInterval) {
-  //             clearInterval(step.timerInterval);
-  //           }
-  //           return {
-  //             ...step, 
-  //             status: 'error', 
-  //             error: 'Execution failed',
-  //             timerInterval: undefined
-  //           };
-  //         }
-  //         return step;
-  //       })
-  //     }));
-  //   }
-  // }, [currentProjectId, currentProvider, currentModel, state.projectFiles]);
   // Execute workflow step with prerequisite check
   const executeStep = useCallback(async (stepId: WorkflowStepId) => {
     if (!currentProjectId) return;
@@ -564,7 +508,8 @@ export function useWritingAssistant(
       executeStep,
       viewFile,
       redoStep,
-      editPrompt
+      editPrompt,
+      openChatForBrainstorm // New action for Chat button
     }
   };
 }

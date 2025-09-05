@@ -1,3 +1,5 @@
+// app/writing-assistant/WorkflowStep.tsx
+
 'use client';
 
 import { WorkflowStepProps } from './types';
@@ -14,7 +16,8 @@ export default function WorkflowStep({
   isAnyStepExecuting,
   isLoadingPrompt,
   theme,
-  onClose
+  onClose,
+  onOpenChatForBrainstorm // Add this new prop
 }: WorkflowStepProps) {
   const getStepBorderColor = () => {
     switch (step.status) {
@@ -205,6 +208,7 @@ export default function WorkflowStep({
         isAnyStepExecuting={isAnyStepExecuting}
         theme={theme}
         onClose={onClose}
+        onOpenChatForBrainstorm={onOpenChatForBrainstorm} // Pass it down here
       />
     </div>
   );
