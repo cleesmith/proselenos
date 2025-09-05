@@ -24,13 +24,14 @@ export async function getChatResponseAction(messages: ChatMessage[]): Promise<Ch
 }
 
 /**
- * Server action to save chat to brainstorm.txt
+ * Server action to save chat with custom filename
  */
 export async function saveChatToBrainstormAction(
   messages: ChatMessage[], 
   providerModel: string,
   currentProjectId: string,
-  rootFolderId: string
+  rootFolderId: string,
+  filename: string = 'brainstorm'
 ): Promise<{ success: boolean; message: string }> {
-  return await saveChatToBrainstormInternal(messages, providerModel, currentProjectId, rootFolderId);
+  return await saveChatToBrainstormInternal(messages, providerModel, currentProjectId, rootFolderId, filename);
 }

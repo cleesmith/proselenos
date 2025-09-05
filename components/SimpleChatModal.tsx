@@ -19,6 +19,11 @@ interface SimpleChatModalProps {
   rootFolderId?: string;
 }
 
+// Extend ChatMessage to include elapsed time
+interface ChatMessageWithTimer extends ChatMessage {
+  elapsedTime?: number;
+}
+
 export default function SimpleChatModal({ 
   isOpen, 
   onClose, 
@@ -28,26 +33,54 @@ export default function SimpleChatModal({
   rootFolderId
 }: SimpleChatModalProps): React.JSX.Element | null {
   const [input, setInput] = useState<string>('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessageWithTimer[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [providerModel, setProviderModel] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  // Filename input state
+  const [showFilenameInput, setShowFilenameInput] = useState<boolean>(false);
+  const [filename, setFilename] = useState<string>('');
+  
+  // Timer state for current request
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [timerInterval, setTimerInterval] = useState<number | null>(null);
+  
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const filenameInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
       setInput('');
       setMessages([]);
       setProviderModel('');
+      setShowFilenameInput(false);
+      setFilename('');
+      // Clear timer when modal closes
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        setTimerInterval(null);
+      }
+      setStartTime(null);
+      setElapsedTime(0);
     } else {
       loadProviderModel();
     }
-  }, [isOpen]);
+  }, [isOpen, timerInterval]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Focus filename input when it appears
+  useEffect(() => {
+    if (showFilenameInput && filenameInputRef.current) {
+      filenameInputRef.current.focus();
+      filenameInputRef.current.select();
+    }
+  }, [showFilenameInput]);
 
   const scrollToBottom = (): void => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,7 +120,7 @@ export default function SimpleChatModal({
     
     if (!input.trim() || isLoading) return;
     
-    const userMessage: ChatMessage = { role: 'user', content: input.trim() };
+    const userMessage: ChatMessageWithTimer = { role: 'user', content: input.trim() };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput('');
@@ -99,13 +132,27 @@ export default function SimpleChatModal({
     
     setIsLoading(true);
     
+    // Start timer
+    if (timerInterval) {
+      clearInterval(timerInterval);
+    }
+    const now = Date.now();
+    setStartTime(now);
+    setElapsedTime(0);
+    const interval = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - now) / 1000));
+    }, 1000) as unknown as number;
+    setTimerInterval(interval);
+    
     try {
       const response = await getChatResponseAction(updatedMessages);
       
       if (response.response) {
-        const assistantMessage: ChatMessage = { 
+        const finalElapsedTime = Math.floor((Date.now() - now) / 1000);
+        const assistantMessage: ChatMessageWithTimer = { 
           role: 'assistant', 
-          content: response.response 
+          content: response.response,
+          elapsedTime: finalElapsedTime
         };
         setMessages([...updatedMessages, assistantMessage]);
         
@@ -115,17 +162,22 @@ export default function SimpleChatModal({
       }
     } catch (error: unknown) {
       console.error('Chat error:', error);
-      const errorMessage: ChatMessage = {
+      const finalElapsedTime = Math.floor((Date.now() - now) / 1000);
+      const errorMessage: ChatMessageWithTimer = {
         role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'Failed to get response'}`
+        content: `Error: ${error instanceof Error ? error.message : 'Failed to get response'}`,
+        elapsedTime: finalElapsedTime
       };
       setMessages([...updatedMessages, errorMessage]);
     } finally {
+      // Stop timer and loading
       setIsLoading(false);
+      clearInterval(interval);
+      setTimerInterval(null);
     }
   };
 
-  const handleSaveChat = async (): Promise<void> => {
+  const handleSaveChat = (): void => {
     if (!currentProjectId || !rootFolderId) {
       showAlert('No project selected', 'error', undefined, isDarkMode);
       return;
@@ -135,20 +187,48 @@ export default function SimpleChatModal({
       showAlert('No messages to save', 'warning', undefined, isDarkMode);
       return;
     }
-    
+
+    setFilename('brainstorm');
+    setShowFilenameInput(true);
+  };
+
+  const handleFilenameSubmit = async (): Promise<void> => {
+    if (!filename.trim()) {
+      showAlert('Please enter a filename', 'warning', undefined, isDarkMode);
+      return;
+    }
+
+    // Type guard to ensure we have valid strings
+    if (!currentProjectId || !rootFolderId) {
+      showAlert('No project selected', 'error', undefined, isDarkMode);
+      return;
+    }
+
     setIsSaving(true);
+    setShowFilenameInput(false);
     
     try {
+      // Convert messages back to regular ChatMessage format for saving
+      const messagesForSaving = messages.map(({ elapsedTime, ...msg }) => msg);
+      
       const result = await saveChatToBrainstormAction(
-        messages, 
+        messagesForSaving, 
         providerModel,
         currentProjectId,
-        rootFolderId
+        rootFolderId,
+        filename.trim()
       );
       
       if (result.success) {
         showAlert(result.message, 'success', undefined, isDarkMode);
         setMessages([]);
+        // Reset timer when clearing chat
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          setTimerInterval(null);
+        }
+        setStartTime(null);
+        setElapsedTime(0);
       } else {
         showAlert(`Failed to save: ${result.message}`, 'error', undefined, isDarkMode);
       }
@@ -156,6 +236,21 @@ export default function SimpleChatModal({
       showAlert(`Error saving chat: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error', undefined, isDarkMode);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleFilenameCancel = (): void => {
+    setShowFilenameInput(false);
+    setFilename('');
+  };
+
+  const handleFilenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleFilenameSubmit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleFilenameCancel();
     }
   };
 
@@ -173,15 +268,106 @@ export default function SimpleChatModal({
       display: 'flex',
       flexDirection: 'column'
     }}>
-      <style>
-        {`
-          @keyframes pulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
-          }
-        `}
-      </style>
-      
+      {/* Filename Input Overlay */}
+      {showFilenameInput && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          zIndex: 3000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            backgroundColor: isDarkMode ? '#2d3748' : '#ffffff',
+            padding: '20px',
+            borderRadius: '8px',
+            minWidth: '400px',
+            border: `1px solid ${isDarkMode ? '#4a5568' : '#e2e8f0'}`
+          }}>
+            <h3 style={{
+              margin: '0 0 16px 0',
+              fontSize: '16px',
+              color: isDarkMode ? '#ffffff' : '#1a202c'
+            }}>
+              Save Chat
+            </h3>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '8px',
+                fontSize: '14px',
+                color: isDarkMode ? '#e2e8f0' : '#4a5568'
+              }}>
+                Filename:
+              </label>
+              <input
+                ref={filenameInputRef}
+                type="text"
+                value={filename}
+                onChange={(e) => setFilename(e.target.value)}
+                onKeyDown={handleFilenameKeyDown}
+                placeholder="Enter filename..."
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: `1px solid ${isDarkMode ? '#4a5568' : '#cbd5e0'}`,
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+                  color: isDarkMode ? '#ffffff' : '#1a202c',
+                  outline: 'none'
+                }}
+              />
+              <div style={{
+                fontSize: '12px',
+                color: isDarkMode ? '#a0aec0' : '#718096',
+                marginTop: '4px'
+              }}>
+                .txt extension will be added automatically if not provided
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={handleFilenameCancel}
+                style={{
+                  padding: '6px 16px',
+                  backgroundColor: isDarkMode ? '#4a5568' : '#e2e8f0',
+                  color: isDarkMode ? '#ffffff' : '#1a202c',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFilenameSubmit}
+                disabled={!filename.trim()}
+                style={{
+                  padding: '6px 16px',
+                  backgroundColor: !filename.trim() ? '#666' : '#28a745',
+                  color: !filename.trim() ? '#999' : '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  cursor: !filename.trim() ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{
         backgroundColor: isDarkMode ? '#2d3748' : '#f7fafc',
@@ -264,73 +450,75 @@ export default function SimpleChatModal({
           </div>
         )}
         
-        {messages.map((message: ChatMessage, index: number) => (
-          <div
-            key={index}
-            style={{
-              display: 'flex',
-              justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
-              marginBottom: '12px'
-            }}
-          >
+        {messages.map((message: ChatMessageWithTimer, index: number) => (
+          <div key={index}>
             <div
               style={{
-                maxWidth: '70%',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                whiteSpace: 'pre-wrap',
-                fontSize: '14px',
-                lineHeight: '1.5',
-                backgroundColor: message.role === 'user'
-                  ? '#3182ce'
-                  : isDarkMode 
-                    ? '#4a5568'
-                    : '#f7fafc',
-                color: message.role === 'user'
-                  ? '#ffffff'
-                  : isDarkMode
-                    ? '#e2e8f0'
-                    : '#1a202c'
+                display: 'flex',
+                justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
+                marginBottom: message.role === 'assistant' && message.elapsedTime !== undefined ? '4px' : '12px'
               }}
             >
-              {message.content}
+              <div
+                style={{
+                  maxWidth: '70%',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  whiteSpace: 'pre-wrap',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  backgroundColor: message.role === 'user'
+                    ? '#3182ce'
+                    : isDarkMode 
+                      ? '#4a5568'
+                      : '#f7fafc',
+                  color: message.role === 'user'
+                    ? '#ffffff'
+                    : isDarkMode
+                      ? '#e2e8f0'
+                      : '#1a202c'
+                }}
+              >
+                {message.content}
+              </div>
             </div>
+            
+            {/* Show timer for assistant messages */}
+            {message.role === 'assistant' && message.elapsedTime !== undefined && (
+              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+                <div style={{
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  backgroundColor: isDarkMode ? '#2d3748' : '#edf2f7'
+                }}>
+                  <span style={{
+                    fontSize: '10px',
+                    color: isDarkMode ? '#a0aec0' : '#718096',
+                    fontFamily: 'monospace'
+                  }}>
+                    {Math.floor(message.elapsedTime / 60).toString().padStart(2, '0')}:{(message.elapsedTime % 60).toString().padStart(2, '0')}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         ))}
         
-        {/* Typing Indicator */}
+        {/* Current timer while loading */}
         {isLoading && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
             <div style={{
               padding: '8px 12px',
               borderRadius: '8px',
               backgroundColor: isDarkMode ? '#4a5568' : '#f7fafc'
             }}>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: isDarkMode ? '#a0aec0' : '#718096',
-                  animation: 'pulse 1.5s infinite'
-                }}></div>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: isDarkMode ? '#a0aec0' : '#718096',
-                  animation: 'pulse 1.5s infinite',
-                  animationDelay: '0.1s'
-                }}></div>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: isDarkMode ? '#a0aec0' : '#718096',
-                  animation: 'pulse 1.5s infinite',
-                  animationDelay: '0.2s'
-                }}></div>
-              </div>
+              <span style={{
+                fontSize: '11px',
+                color: isDarkMode ? '#a0aec0' : '#718096',
+                fontFamily: 'monospace'
+              }}>
+                {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:{(elapsedTime % 60).toString().padStart(2, '0')}
+              </span>
             </div>
           </div>
         )}

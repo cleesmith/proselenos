@@ -109,13 +109,14 @@ export async function getChatResponseInternal(messages: ChatMessage[]): Promise<
 }
 
 /**
- * Internal function to save chat to brainstorm.txt - NOT a public API endpoint
+ * Internal function to save chat with custom filename - NOT a public API endpoint
  */
 export async function saveChatToBrainstormInternal(
   messages: ChatMessage[], 
   providerModel: string,
   currentProjectId: string,
-  rootFolderId: string
+  rootFolderId: string,
+  filename: string = 'brainstorm'
 ): Promise<{ success: boolean; message: string }> {
   const session: any = await getServerSession(authOptions);
   
@@ -128,6 +129,12 @@ export async function saveChatToBrainstormInternal(
   }
 
   try {
+    // Ensure filename has .txt extension
+    let finalFilename = filename.trim();
+    if (!finalFilename.endsWith('.txt')) {
+      finalFilename += '.txt';
+    }
+
     // Format chat content
     const now: Date = new Date();
     const timestamp: string = now.toLocaleString();
@@ -140,31 +147,31 @@ export async function saveChatToBrainstormInternal(
     
     const newChatContent: string = chatHeader + chatBody + '\n\n';
 
-    // Try to find and read existing brainstorm.txt
+    // Try to find and read existing file with the same name
     try {
       const filesList = await listGoogleDriveFilesAction(session.accessToken, rootFolderId, currentProjectId);
       
       if (filesList.success && filesList.data?.files) {
-        const brainstormFile = filesList.data.files.find((file: any) => 
-          file.name === 'brainstorm.txt' && !file.isFolder
+        const existingFile = filesList.data.files.find((file: any) => 
+          file.name === finalFilename && !file.isFolder
         );
         
-        if (brainstormFile) {
-          const existingFile = await readGoogleDriveFileAction(session.accessToken, rootFolderId, brainstormFile.id);
+        if (existingFile) {
+          const existingFileContent = await readGoogleDriveFileAction(session.accessToken, rootFolderId, existingFile.id);
           
-          if (existingFile.success && existingFile.data?.content) {
+          if (existingFileContent.success && existingFileContent.data?.content) {
             // Append to existing file
-            const updatedContent: string = existingFile.data.content + newChatContent;
+            const updatedContent: string = existingFileContent.data.content + newChatContent;
             const result = await updateGoogleDriveFileAction(
               session.accessToken,
               rootFolderId,
-              brainstormFile.id,
+              existingFile.id,
               updatedContent
             );
             
             return result.success 
-              ? { success: true, message: 'Chat appended to brainstorm.txt' }
-              : { success: false, message: result.error || 'Failed to update brainstorm.txt' };
+              ? { success: true, message: `Chat appended to ${finalFilename}` }
+              : { success: false, message: result.error || `Failed to update ${finalFilename}` };
           }
         }
       }
@@ -172,18 +179,18 @@ export async function saveChatToBrainstormInternal(
       // File doesn't exist or error occurred, will create new one
     }
 
-    // Create new brainstorm.txt file
+    // Create new file with custom filename
     const result = await createGoogleDriveFileAction(
       session.accessToken,
       rootFolderId,
       newChatContent,
-      'brainstorm.txt',
+      finalFilename,
       currentProjectId
     );
     
     return result.success 
-      ? { success: true, message: 'Chat saved to brainstorm.txt' }
-      : { success: false, message: result.error || 'Failed to create brainstorm.txt' };
+      ? { success: true, message: `Chat saved to ${finalFilename}` }
+      : { success: false, message: result.error || `Failed to create ${finalFilename}` };
     
   } catch (error: unknown) {
     const errorMessage: string = error instanceof Error ? error.message : 'Unknown error occurred';
