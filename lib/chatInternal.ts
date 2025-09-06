@@ -90,7 +90,7 @@ export async function getChatResponseInternal(messages: ChatMessage[]): Promise<
       messages: openaiMessages,
       // temperature: 0.7,
       max_tokens: 8000,
-      stream: true
+      stream: false
     });
 
     const aiResponse: string = response.choices[0]?.message?.content || 'No response generated';
