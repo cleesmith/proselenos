@@ -139,9 +139,8 @@
         <h2>1. Information We Access</h2>
         <p>When you sign in with Google, we request permission to:</p>
         <ul>
-            <li><strong>View your basic profile information:</strong> Your name and email address for authentication purposes</li>
-            <li><strong>Access your Google Drive:</strong> To create, read, and modify writing projects stored in your Drive</li>
-            <li><strong>Access Google Docs:</strong> To create and edit documents for your manuscripts</li>
+            <li><strong>Sign-in:</strong> openid, email, profile (basic account identity).</li>
+            <li><strong>Files:</strong> https://www.googleapis.com/auth/drive.file: (create, read, and update only the specific Google Drive files and folders used with Proselenos).</li>
         </ul>
         <p>You can revoke these permissions at any time through your Google Account security settings.</p>
         
@@ -160,6 +159,8 @@
             <li><strong>General settings:</strong> Your preferences like selected AI model, author name, and current project</li>
             <li><strong>Sensitive settings:</strong> API keys for AI services are encrypted before storage using industry-standard encryption (AES-256)</li>
         </ul>
+        <p>We do not store or cache file contents on our servers. Processing is in memory only; files remain in your Google Drive.</p>
+        <p>Configuration is stored in <b>proselenos-config.json</b> within your <b>proselenos_projects</b> folder.</p>
         
         <h2>4. AI Services and API Keys</h2>
         <p>If you choose to use AI-powered features:</p>
@@ -175,7 +176,7 @@
         <p>We implement multiple security measures:</p>
         <ul>
             <li><strong>Encryption:</strong> Sensitive data like API keys are encrypted before storage</li>
-            <li><strong>Server-side operations:</strong> All Drive and AI interactions happen on our secure servers, not in your browser</li>
+            <li><strong>Server-side operations:</strong> All Drive and AI interactions happen on our secure servers, not in your browser. We do not store or cache file contents on our servers. Processing is in memory only; files remain in your Google Drive.</li>
             <li><strong>Minimal access:</strong> We only request the Google permissions necessary for the app to function</li>
             <li><strong>Token management:</strong> Authentication tokens are handled securely and refreshed automatically</li>
         </ul>
@@ -184,13 +185,15 @@
         <ul>
             <li>We don't store your manuscripts on our servers</li>
             <li>We don't sell or share your personal information</li>
-            <li>We don't use your content to train AI models</li>
+            <li>We don't use your content to train AI models, but OpenRouter may so check their privacy/terms.</li>
             <li>We don't access your Drive content for any purpose other than app functionality</li>
             <li>We don't track your writing or analyze your content</li>
+            <li>We don't knowingly collect information from children.</li>
         </ul>
         
         <h2>7. Your Rights and Control</h2>
         <p>You have complete control over your data:</p>
+        <p><a href="https://myaccount.google.com/permissions">You can revoke access anytime.</a></p>
         <ul>
             <li><strong>Access:</strong> View all your files directly in Google Drive</li>
             <li><strong>Portability:</strong> Your manuscripts are in standard formats you can use anywhere</li>
