@@ -887,355 +887,180 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         />
       )}
 
-      {!session ? (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          padding: '20px'
+{!session ? (
+  <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: isDarkMode ? '#e2e8f0' : '#2d3748' }}>
+    {/* Logo and Title */}
+    <div style={{ 
+      marginBottom: '40px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '20px'
+    }}>
+      <img 
+        src="/icon.png" 
+        alt="Proselenos Logo"
+        style={{
+          width: '80px',
+          height: '96px',
+          objectFit: 'contain'
+        }}
+      />
+      <div style={{ textAlign: 'left' }}>
+        <h1 style={{ 
+          fontSize: '32px',
+          fontWeight: '600',
+          margin: '0 0 8px 0',
+          color: theme.text
         }}>
-          <div style={{
-            maxWidth: '480px',
-            width: '100%',
-            textAlign: 'center'
-          }}>
-            {/* Logo and Title */}
-            <div style={{ 
-              marginBottom: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '20px'
-            }}>
-              <img 
-                src="/icon.png" 
-                alt="Proselenos Logo"
-                style={{
-                  width: '80px',
-                  height: '96px',
-                  objectFit: 'contain'
-                }}
-              />
-              <div style={{ textAlign: 'left' }}>
-                <h1 style={{ 
-                  fontSize: '32px',
-                  fontWeight: '600',
-                  margin: '0 0 8px 0',
-                  color: theme.text
-                }}>
-                  Welcome to Proselenos
-                </h1>
-                <p style={{ 
-                  fontSize: '16px',
-                  color: '#9ca3af',
-                  margin: '0'
-                }}>
-                  Professional manuscript editing powered by AI
-                </p>
-              </div>
-            </div>
+          Welcome to Proselenos
+        </h1>
+        <p style={{ 
+          fontSize: '16px',
+          color: '#9ca3af',
+          margin: '0'
+        }}>
+          Professional manuscript editing powered by AI
+        </p>
+      </div>
+    </div>
 
-            {/* How it Works Section */}
-            <div style={{
-              background: '#242424',
-              border: '1px solid #333',
-              borderRadius: '12px',
-              padding: '24px',
-              marginBottom: '32px',
-              textAlign: 'left'
-            }}>
-              <div style={{
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#9ca3af',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '20px',
-                textAlign: 'center'
-              }}>
-                How it works
-              </div>
+    <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>
+      Proselenos is a powerful manuscript‑editing platform designed specifically for writers working on full‑length writing projects.
+      Whether you're editing a novel, memoir, or non‑fiction work, Proselenos provides comprehensive tools to refine and polish your complete manuscript. 
+      Upload your entire manuscript and get detailed editing assistance, structural analysis, and formatting help to bring your work to professional publishing standards.
+    </p>
 
-              {/* Step 1 */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div style={{
-                  background: '#333',
-                  color: '#4285F4',
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  marginRight: '12px',
-                  flexShrink: 0
-                }}>1</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#ffffff', marginBottom: '4px' }}>
-                    Sign in with Google
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>
-                    Quick and secure authentication using your Google account
-                  </div>
-                </div>
-              </div>
+    <h2 style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Key Features</h2>
+    <ul style={{ marginLeft: '1.25rem', marginBottom: '1.5rem' }}>
+      <li><strong>Secure storage:</strong> your manuscripts and settings are stored in your personal Google Drive and secured by Google.</li>
+      <br />
+      <li><strong>Full manuscript editing:</strong> consistency checking and narrative flow optimisation.</li>
+      <br />
+      <li><strong>Advanced editing tools:</strong> grammar checking, style analysis, pacing optimisation, structural improvements, as well as your own customized AI prompts.</li>
+      <br />
+      <li><strong>Document management:</strong> import/export Word <em>.docx</em> documents, to manage your flow with other writing applications.</li>
+      <br />
+      <li><strong>Project organisation:</strong> organise multiple manuscript projects with easy switching between writing projects.</li>
+      <br />
+      <li><strong>Publishing preparation:</strong> generate publication‑ready EPUB and PDF files for digital and print publishing.</li>
+    </ul>
 
-              {/* Step 2 */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div style={{
-                  background: '#333',
-                  color: '#4285F4',
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  marginRight: '12px',
-                  flexShrink: 0
-                }}>2</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#ffffff', marginBottom: '4px' }}>
-                    Google Drive Integration
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>
-                    We'll create a single "proselenos_projects" folder in your Drive to store your manuscripts and settings
-                  </div>
-                </div>
-              </div>
+    <h2 style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Privacy & Security</h2>
+    <p style={{ marginBottom: '1rem' }}>
+      Your manuscripts remain private and secure on your Google Drive, which is the only storage available for this app.
+      Proselenos requests only the Google permissions necessary to function:
+    </p>
+    <ul style={{ marginLeft: '1.25rem', marginBottom: '1.5rem' }}>
+      <li><code>openid, email, profile</code> – used to authenticate you and display your basic account information.</li>
+      <br />
+      <li><code>https://www.googleapis.com/auth/drive.file</code> – allows us to create, read, and update files in the dedicated <em>proselenos_projects</em> folder in your Drive.
+      All other folders and files created by you, can not be accessed by this app!
+      </li>
+    </ul>
+    <p style={{ marginBottom: '1.5rem' }}>
+      You can <a href="https://myaccount.google.com/permissions" style={{ color: '#4299e1' }}>revoke these permissions</a> at any time through your Google Account settings.
+      <br />
+      For full details, see our
+      <a href="/privacy.html" style={{ color: '#4299e1' }}> Privacy Policy</a> 
+      &nbsp;and&nbsp;  
+      <a href="/terms.html" style={{ color: '#4299e1' }}> Terms of Service</a>.
+    </p>
 
-              {/* Step 3 */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
-                <div style={{
-                  background: '#333',
-                  color: '#4285F4',
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  marginRight: '12px',
-                  flexShrink: 0
-                }}>3</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#ffffff', marginBottom: '4px' }}>
-                    Add Your OpenRouter API Key
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>
-                    Use your OpenRouter API key to enable AI-powered editing features
-                  </div>
-                </div>
-              </div>
+    <button
+      onClick={() => signIn('google')}
+      style={{
+        background: '#4285F4',
+        color: '#fff',
+        padding: '14px 32px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        fontWeight: 600,
+        cursor: 'pointer',
+        border: 'none'
+      }}
+    >
+      Sign in with Google
+    </button>
+  </div>
+) : (
+  <div style={{ padding: '16px 20px' }}>
+    {/* Projects Section */}
+    <ProjectSection
+      currentProject={projectState.currentProject}
+      uploadStatus={projectState.uploadStatus}
+      isLoadingConfig={isLoadingConfig}
+      isGoogleDriveOperationPending={isGoogleDriveOperationPending}
+      toolExecuting={toolsState.toolExecuting}
+      theme={theme}
+      isDarkMode={isDarkMode}
+      isSystemInitializing={isSystemInitializing}
+      onSelectProject={handleSelectProject}
+      onProjectSettings={handleProjectSettings}
+      onFileUpload={handleFileUpload}
+      onDocxImport={handleDocxImport}
+      onTxtExport={handleTxtExport}
+    />
 
-              {/* Step 4 */}
-              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                <div style={{
-                  background: '#333',
-                  color: '#4285F4',
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  marginRight: '12px',
-                  flexShrink: 0
-                }}>4</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#ffffff', marginBottom: '4px' }}>
-                    Start Editing
-                    <span style={{
-                      background: '#10b981',
-                      color: 'white',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      marginLeft: '8px',
-                      display: 'inline-block'
-                    }}>FREE APP</span>
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.4' }}>
-                    Proselenos is free to use. You only pay for AI model usage through OpenRouter
-                  </div>
-                </div>
-              </div>
-            </div>
+    {/* AI Tools Section */}
+    <AIToolsSection
+      session={session}
+      selectedCategory={toolsState.selectedCategory}
+      selectedTool={toolsState.selectedTool}
+      toolsInCategory={toolsState.toolsInCategory}
+      toolsReady={toolsState.toolsReady}
+      isInstallingToolPrompts={isInstallingToolPrompts}
+      selectedManuscriptForTool={toolsState.selectedManuscriptForTool}
+      toolExecuting={toolsState.toolExecuting}
+      toolResult={toolsState.toolResult}
+      toolJustFinished={toolsState.toolJustFinished}
+      savedReportFileName={toolsState.savedReportFileName}
+      elapsedTime={toolsState.elapsedTime}
+      manuscriptContent={toolsState.manuscriptContent}
+      currentProject={projectState.currentProject}
+      currentProjectId={projectState.currentProjectId}
+      isGoogleDriveOperationPending={isGoogleDriveOperationPending}
+      rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
+      isSystemInitializing={isSystemInitializing}
+      theme={theme}
+      isDarkMode={isDarkMode}
+      currentProvider={currentProvider}
+      currentModel={currentModel}
+      onCategoryChange={handleCategoryChange}
+      onToolChange={toolsActions.setSelectedTool}
+      onSetupTool={handleSetupTool}
+      onClearTool={toolsActions.clearTool}
+      onExecuteTool={handleExecuteTool}
+      onLoadFileIntoEditor={handleLoadFileIntoEditor}
+    />
 
-            {/* Sign In Button */}
-            <button 
-              onClick={() => signIn('google')}
-              style={{
-                background: '#4285F4',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '14px 32px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#357ae8';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(66, 133, 244, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#4285F4';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-              </svg>
-              Sign in with Google
-            </button>
+    {/* Non-AI Tools Section */}
+    <div style={{ marginBottom: '20px' }}>
+      <NonAIToolsSection
+        selectedNonAITool={nonAIToolsState.selectedNonAITool}
+        selectedManuscriptForTool={nonAIToolsState.selectedManuscriptForTool}
+        isPublishing={nonAIToolsState.isPublishing}
+        publishResult={nonAIToolsState.publishResult}
+        toolJustFinished={nonAIToolsState.toolJustFinished}
+        currentProject={projectState.currentProject}
+        currentProjectId={projectState.currentProjectId}
+        rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
+        isGoogleDriveOperationPending={isGoogleDriveOperationPending}
+        theme={theme}
+        isDarkMode={isDarkMode}
+        toolExecuting={toolsState.toolExecuting}
+        session={session}
+        onToolChange={handleNonAIToolChange}
+        onSetupTool={handleNonAISetupTool}
+        onClearTool={handleNonAIClearTool}
+        onExecuteTool={handleNonAIExecuteTool}
+        onShowAlert={(type, message, isDarkMode) => showAlert(message, type, undefined, isDarkMode)}
+      />
+    </div>
+  </div>
+)}
 
-            {/* Privacy Note and Footer Links */}
-            <div style={{ marginTop: '24px' }}>
-              <p style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                lineHeight: '1.5',
-                marginBottom: '16px'
-              }}>
-                Your manuscripts remain private and secure on your Google Drive.<br/>
-                This app only has access to the "proselenos_projects" folder,<br/> 
-                and the files it creates within that folder.
-              </p>
-              
-              {/* Footer Links */}
-              <div style={{
-                fontSize: '13px',
-                color: '#6b7280',
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '20px'
-              }}>
-                <a 
-                  href="/privacy.html" 
-                  style={{
-                    color: '#9ca3af',
-                    textDecoration: 'none',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = '#9ca3af'; }}
-                >
-                  Privacy Policy
-                </a>
-                <span style={{ color: '#4b5563' }}>|</span>
-                <a 
-                  href="/terms.html" 
-                  style={{
-                    color: '#9ca3af',
-                    textDecoration: 'none',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = '#9ca3af'; }}
-                >
-                  Terms of Service
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div style={{ padding: '16px 20px' }}>
-          {/* Projects Section */}
-          <ProjectSection
-            currentProject={projectState.currentProject}
-            uploadStatus={projectState.uploadStatus}
-            isLoadingConfig={isLoadingConfig}
-            isGoogleDriveOperationPending={isGoogleDriveOperationPending}
-            toolExecuting={toolsState.toolExecuting}
-            theme={theme}
-            isDarkMode={isDarkMode}
-            isSystemInitializing={isSystemInitializing}
-            onSelectProject={handleSelectProject}
-            onProjectSettings={handleProjectSettings}
-            onFileUpload={handleFileUpload}
-            onDocxImport={handleDocxImport}
-            onTxtExport={handleTxtExport}
-          />
 
-          {/* AI Tools Section */}
-          <AIToolsSection
-            session={session}
-            selectedCategory={toolsState.selectedCategory}
-            selectedTool={toolsState.selectedTool}
-            toolsInCategory={toolsState.toolsInCategory}
-            toolsReady={toolsState.toolsReady}
-            isInstallingToolPrompts={isInstallingToolPrompts}
-            selectedManuscriptForTool={toolsState.selectedManuscriptForTool}
-            toolExecuting={toolsState.toolExecuting}
-            toolResult={toolsState.toolResult}
-            toolJustFinished={toolsState.toolJustFinished}
-            savedReportFileName={toolsState.savedReportFileName}
-            elapsedTime={toolsState.elapsedTime}
-            manuscriptContent={toolsState.manuscriptContent}
-            currentProject={projectState.currentProject}
-            currentProjectId={projectState.currentProjectId}
-            isGoogleDriveOperationPending={isGoogleDriveOperationPending}
-            rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
-            isSystemInitializing={isSystemInitializing}
-            theme={theme}
-            isDarkMode={isDarkMode}
-            currentProvider={currentProvider}
-            currentModel={currentModel}
-            onCategoryChange={handleCategoryChange}
-            onToolChange={toolsActions.setSelectedTool}
-            onSetupTool={handleSetupTool}
-            onClearTool={toolsActions.clearTool}
-            onExecuteTool={handleExecuteTool}
-            onLoadFileIntoEditor={handleLoadFileIntoEditor}
-          />
-
-          {/* Non-AI Tools Section */}
-          <div style={{ marginBottom: '20px' }}>
-            <NonAIToolsSection
-              selectedNonAITool={nonAIToolsState.selectedNonAITool}
-              selectedManuscriptForTool={nonAIToolsState.selectedManuscriptForTool}
-              isPublishing={nonAIToolsState.isPublishing}
-              publishResult={nonAIToolsState.publishResult}
-              toolJustFinished={nonAIToolsState.toolJustFinished}
-              currentProject={projectState.currentProject}
-              currentProjectId={projectState.currentProjectId}
-              rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
-              isGoogleDriveOperationPending={isGoogleDriveOperationPending}
-              theme={theme}
-              isDarkMode={isDarkMode}
-              toolExecuting={toolsState.toolExecuting}
-              session={session}
-              onToolChange={handleNonAIToolChange}
-              onSetupTool={handleNonAISetupTool}
-              onClearTool={handleNonAIClearTool}
-              onExecuteTool={handleNonAIExecuteTool}
-              onShowAlert={(type, message, isDarkMode) => showAlert(message, type, undefined, isDarkMode)}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Settings Dialog */}
       <SettingsDialog
