@@ -1,4 +1,5 @@
 // components/ClientBoot.tsx
+
 'use client';
 
 import { useEffect, useCallback } from 'react';
@@ -888,102 +889,356 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       )}
 
 {!session ? (
-  <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: isDarkMode ? '#e2e8f0' : '#2d3748' }}>
-    {/* Logo and Title */}
-    <div style={{ 
-      marginBottom: '40px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '20px'
-    }}>
-      <img 
-        src="/icon.png" 
-        alt="Proselenos Logo"
-        style={{
-          width: '80px',
-          height: '96px',
-          objectFit: 'contain'
-        }}
-      />
-      <div style={{ textAlign: 'left' }}>
-        <h1 style={{ 
-          fontSize: '32px',
-          fontWeight: '600',
-          margin: '0 0 8px 0',
-          color: theme.text
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#0f0f0f',
+        color: '#ffffff',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      }}>
+        {/* Header Bar */}
+        <header style={{
+          borderBottom: '1px solid #2a2a2a',
+          padding: '0 24px',
+          height: '60px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: '#1a1a1a'
         }}>
-          Welcome to Proselenos
-        </h1>
-        <p style={{ 
-          fontSize: '16px',
-          color: '#9ca3af',
-          margin: '0'
-        }}>
-          Professional manuscript editing powered by AI
-        </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              fontWeight: 'bold'
+            }}>
+              <img 
+                src="/icon.png" 
+                alt="Proselenos Logo"
+                style={{
+                  width: '80px',
+                  height: '96px',
+                  objectFit: 'contain'
+                }}
+              />
+            </div>
+            <span style={{ fontSize: '18px', fontWeight: '600' }}>Proselenos</span>
+          </div>
+          
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+            <a href="#features" style={{ color: '#a0a0a0', textDecoration: 'none', fontSize: '14px' }}>Features</a>
+            <a href="#pricing" style={{ color: '#a0a0a0', textDecoration: 'none', fontSize: '14px' }}>Pricing</a>
+            <button
+              onClick={() => signIn('google')}
+              style={{
+                backgroundColor: '#4285f4',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#3367d6'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4285f4'}
+            >
+              Sign in with Google
+            </button>
+          </nav>
+        </header>
+
+        {/* Main Content */}
+        <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '80px 24px' }}>
+          {/* Hero Section */}
+          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+            <h1 style={{
+              fontSize: '48px',
+              fontWeight: '700',
+              margin: '0 0 16px 0',
+              background: 'linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              lineHeight: '1.2'
+            }}>
+              Welcome to Proselenos
+            </h1>
+            <p style={{
+              fontSize: '20px',
+              color: '#a0a0a0',
+              margin: '0 0 40px 0',
+              maxWidth: '600px',
+              marginLeft: 'auto',
+              marginRight: 'auto'
+            }}>
+              Professional manuscript editing powered by AI
+            </p>
+          </div>
+
+          {/* Description */}
+          <div style={{
+            backgroundColor: '#1a1a1a',
+            borderRadius: '16px',
+            padding: '40px',
+            marginBottom: '60px',
+            border: '1px solid #2a2a2a'
+          }}>
+            <p style={{
+              fontSize: '16px',
+              lineHeight: '1.7',
+              color: '#e0e0e0',
+              margin: 0,
+              textAlign: 'left',
+              maxWidth: '800px',
+              marginLeft: 'auto',
+              marginRight: 'auto'
+            }}>
+              Proselenos is a powerful manuscript-editing platform designed specifically for writers working 
+              on full-length writing projects. Whether you're editing a novel, memoir, or non-fiction work, 
+              Proselenos provides comprehensive tools to refine and polish your complete manuscript. 
+              Upload your entire manuscript and get detailed editing assistance, structural analysis, and 
+              formatting help to bring your work to professional publishing standards.
+            </p>
+          </div>
+
+          {/* Features Section */}
+          <section id="features" style={{ marginBottom: '60px' }}>
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '600',
+              textAlign: 'center',
+              marginBottom: '40px',
+              color: '#ffffff'
+            }}>
+              Key Features
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '24px'
+            }}>
+              {[
+                {
+                  title: 'Secure storage',
+                  description: 'Your manuscripts and settings are stored in your personal Google Drive and secured by Google.'
+                },
+                {
+                  title: 'Full manuscript editing',
+                  description: 'Including consistency checking and narrative flow optimisation.'
+                },
+                {
+                  title: 'Advanced editing tools',
+                  description: 'Grammar checking, style analysis, pacing optimisation, structural improvements, as well as your own customized AI prompts.'
+                },
+                {
+                  title: 'Document management',
+                  description: 'Import/Export Word .docx documents, to manage your flow with other writing applications.'
+                },
+                {
+                  title: 'Project organisation',
+                  description: 'Organise multiple manuscript projects with easy switching between writing projects.'
+                },
+                {
+                  title: 'Publishing preparation',
+                  description: 'Generate publication-ready EPUB and PDF files for digital and print publishing.'
+                }
+              ].map((feature, index) => (
+                <div key={index} style={{
+                  backgroundColor: '#1a1a1a',
+                  borderRadius: '12px',
+                  padding: '24px',
+                  border: '1px solid #2a2a2a',
+                  transition: 'border-color 0.2s'
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    marginBottom: '12px',
+                    color: '#ffffff'
+                  }}>
+                    {feature.title}:
+                  </h3>
+                  <p style={{
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    color: '#a0a0a0',
+                    margin: 0
+                  }}>
+                    {feature.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Pricing Section */}
+          <section id="pricing" style={{ marginBottom: '60px' }}>
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '600',
+              textAlign: 'center',
+              marginBottom: '40px',
+              color: '#ffffff'
+            }}>
+              Pricing
+            </h2>
+            <div style={{
+              backgroundColor: '#1a1a1a',
+              borderRadius: '16px',
+              padding: '40px',
+              border: '1px solid #2a2a2a',
+              textAlign: 'center',
+              maxWidth: '500px',
+              margin: '0 auto'
+            }}>
+              <h3 style={{
+                fontSize: '24px',
+                fontWeight: '600',
+                marginBottom: '16px',
+                color: '#4285f4'
+              }}>
+                Free
+              </h3>
+              <p style={{
+                fontSize: '16px',
+                color: '#e0e0e0',
+                lineHeight: '1.6',
+                margin: 0
+              }}>
+                Proselenos is free to use!
+                <br /><br />
+                OpenRouter charges for API key usage based on your AI model selection and usage.
+              </p>
+            </div>
+          </section>
+
+          {/* Privacy & Security Section */}
+          <section style={{ marginBottom: '60px' }}>
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '600',
+              textAlign: 'center',
+              marginBottom: '40px',
+              color: '#ffffff'
+            }}>
+              Privacy & Security
+            </h2>
+            <div style={{
+              backgroundColor: '#1a1a1a',
+              borderRadius: '16px',
+              padding: '40px',
+              border: '1px solid #2a2a2a'
+            }}>
+              <p style={{
+                fontSize: '16px',
+                lineHeight: '1.7',
+                color: '#e0e0e0',
+                marginBottom: '24px',
+                textAlign: 'left'
+              }}>
+                Your manuscripts remain private and secure on your Google Drive, which is the only storage available for this app due to the costs of online hosting.
+                <br /><br />
+                Proselenos requests only the Google permissions necessary to function:
+              </p>
+              <div style={{ marginBottom: '24px' }}>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#a0a0a0',
+                  margin: '0 0 8px 0',
+                  fontFamily: 'monospace',
+                  backgroundColor: '#0f0f0f',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #2a2a2a'
+                }}>
+                  openid, email, profile
+                </p>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#e0e0e0',
+                  margin: '8px 0 0 0'
+                }}>
+                  - used to authenticate you and display your basic account information
+                </p>
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#a0a0a0',
+                  margin: '0 0 8px 0',
+                  fontFamily: 'monospace',
+                  backgroundColor: '#0f0f0f',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #2a2a2a'
+                }}>
+                  https://www.googleapis.com/auth/drive.file
+                </p>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#e0e0e0',
+                  margin: '8px 0 0 0'
+                }}>
+                  - allows the app to create, read, and update files in the dedicated <b>proselenos_projects</b> folder in your Google Drive
+                  <br /><br />
+                  <b><i>All other folders and files created by you on Google Drive, can not be accessed by this app!</i></b>
+                </p>
+              </div>
+              <p style={{
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: '#a0a0a0',
+                margin: 0,
+                textAlign: 'center'
+              }}>
+                You can <a href="https://myaccount.google.com/permissions" style={{ color: '#4299e1' }}>revoke these permissions</a> at any time through your Google Account settings.
+                <br /><br />
+                For more information, see our
+                <a href="/privacy.html" style={{ color: '#4299e1' }}> Privacy Policy</a> 
+                &nbsp;and&nbsp;  
+                <a href="/terms.html" style={{ color: '#4299e1' }}> Terms of Service</a>.
+              </p>
+            </div>
+          </section>
+
+          {/* Final CTA */}
+          <div style={{ textAlign: 'center' }}>
+            <button
+              onClick={() => signIn('google')}
+              style={{
+                backgroundColor: '#4285f4',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '16px 32px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 12px rgba(66, 133, 244, 0.3)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = '#3367d6';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#4285f4';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              Sign in with Google
+            </button>
+          </div>
+        </main>
       </div>
-    </div>
 
-    <p style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>
-      Proselenos is a powerful manuscript‑editing platform designed specifically for writers working on full‑length writing projects.
-      Whether you're editing a novel, memoir, or non‑fiction work, Proselenos provides comprehensive tools to refine and polish your complete manuscript. 
-      Upload your entire manuscript and get detailed editing assistance, structural analysis, and formatting help to bring your work to professional publishing standards.
-    </p>
-
-    <h2 style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Key Features</h2>
-    <ul style={{ marginLeft: '1.25rem', marginBottom: '1.5rem' }}>
-      <li><strong>Secure storage:</strong> your manuscripts and settings are stored in your personal Google Drive and secured by Google.</li>
-      <br />
-      <li><strong>Full manuscript editing:</strong> consistency checking and narrative flow optimisation.</li>
-      <br />
-      <li><strong>Advanced editing tools:</strong> grammar checking, style analysis, pacing optimisation, structural improvements, as well as your own customized AI prompts.</li>
-      <br />
-      <li><strong>Document management:</strong> import/export Word <em>.docx</em> documents, to manage your flow with other writing applications.</li>
-      <br />
-      <li><strong>Project organisation:</strong> organise multiple manuscript projects with easy switching between writing projects.</li>
-      <br />
-      <li><strong>Publishing preparation:</strong> generate publication‑ready EPUB and PDF files for digital and print publishing.</li>
-    </ul>
-
-    <h2 style={{ fontSize: '1.5rem', marginTop: '2rem' }}>Privacy & Security</h2>
-    <p style={{ marginBottom: '1rem' }}>
-      Your manuscripts remain private and secure on your Google Drive, which is the only storage available for this app.
-      Proselenos requests only the Google permissions necessary to function:
-    </p>
-    <ul style={{ marginLeft: '1.25rem', marginBottom: '1.5rem' }}>
-      <li><code>openid, email, profile</code> – used to authenticate you and display your basic account information.</li>
-      <br />
-      <li><code>https://www.googleapis.com/auth/drive.file</code> – allows us to create, read, and update files in the dedicated <em>proselenos_projects</em> folder in your Drive.
-      All other folders and files created by you, can not be accessed by this app!
-      </li>
-    </ul>
-    <p style={{ marginBottom: '1.5rem' }}>
-      You can <a href="https://myaccount.google.com/permissions" style={{ color: '#4299e1' }}>revoke these permissions</a> at any time through your Google Account settings.
-      <br />
-      For full details, see our
-      <a href="/privacy.html" style={{ color: '#4299e1' }}> Privacy Policy</a> 
-      &nbsp;and&nbsp;  
-      <a href="/terms.html" style={{ color: '#4299e1' }}> Terms of Service</a>.
-    </p>
-
-    <button
-      onClick={() => signIn('google')}
-      style={{
-        background: '#4285F4',
-        color: '#fff',
-        padding: '14px 32px',
-        borderRadius: '8px',
-        fontSize: '16px',
-        fontWeight: 600,
-        cursor: 'pointer',
-        border: 'none'
-      }}
-    >
-      Sign in with Google
-    </button>
-  </div>
 ) : (
+
   <div style={{ padding: '16px 20px' }}>
     {/* Projects Section */}
     <ProjectSection
