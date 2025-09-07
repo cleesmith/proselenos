@@ -1,3 +1,4 @@
+// components/ClientBoot.tsx
 'use client';
 
 import { useEffect, useCallback } from 'react';
@@ -413,24 +414,6 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   };
 
   // Settings save handler (API key only)
-  // const handleSettingsSave = async (provider: string) => {
-  //   if (!session?.accessToken) {
-  //     projectActions.setUploadStatus('❌ Not authenticated');
-  //     return;
-  //   }
-    
-  //   projectActions.setUploadStatus(`Saving API key for ${provider}...`);
-    
-  //   try {
-  //     setCurrentProvider(provider);
-  //     setHasConfiguredProvider(true);
-  //     // Check API key status after save
-  //     await checkApiKey();
-  //     projectActions.setUploadStatus(`✅ API key saved for ${provider}`);
-  //   } catch (error) {
-  //     projectActions.setUploadStatus(`❌ Failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
-  //   }
-  // };
   const handleSettingsSave = async (provider: string) => {
     if (!session?.accessToken) {
       projectActions.setUploadStatus('❌ Not authenticated');
@@ -1127,16 +1110,54 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               Sign in with Google
             </button>
 
-            {/* Privacy Note */}
-            <p style={{
-              marginTop: '24px',
-              fontSize: '12px',
-              color: '#6b7280',
-              lineHeight: '1.5'
-            }}>
-              Your manuscripts remain private and secure on your Google Drive.<br/>
-              This app only accesses the "proselenos_projects" folder.
-            </p>
+            {/* Privacy Note and Footer Links */}
+            <div style={{ marginTop: '24px' }}>
+              <p style={{
+                fontSize: '12px',
+                color: '#6b7280',
+                lineHeight: '1.5',
+                marginBottom: '16px'
+              }}>
+                Your manuscripts remain private and secure on your Google Drive.<br/>
+                This app only has access to the "proselenos_projects" folder,<br/> 
+                and the files it creates within that folder.
+              </p>
+              
+              {/* Footer Links */}
+              <div style={{
+                fontSize: '13px',
+                color: '#6b7280',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '20px'
+              }}>
+                <a 
+                  href="/privacy.html" 
+                  style={{
+                    color: '#9ca3af',
+                    textDecoration: 'none',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#9ca3af'; }}
+                >
+                  Privacy Policy
+                </a>
+                <span style={{ color: '#4b5563' }}>|</span>
+                <a 
+                  href="/terms.html" 
+                  style={{
+                    color: '#9ca3af',
+                    textDecoration: 'none',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#9ca3af'; }}
+                >
+                  Terms of Service
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       ) : (
