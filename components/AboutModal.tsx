@@ -87,12 +87,12 @@ export default function AboutModal({
           <div style={{ marginBottom: '32px' }}>
             <div style={{ marginBottom: '24px' }}>
               <p style={{ margin: '0 0 16px 0', color: isDarkMode ? '#9ca3af' : '#6b7280', fontSize: '14px' }}>
-                You can <a href="https://myaccount.google.com/permissions" style={{ color: '#4299e1' }}>revoke these permissions</a> at any time through your Google Account settings.
+                You can <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" style={{ color: '#4299e1' }}>revoke these permissions</a> at any time through your Google Account settings.
                 <br /><br />
                 For more information, see our
-                <a href="/privacy.html" style={{ color: '#4299e1' }}> Privacy Policy</a> 
+                <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: '#4299e1' }}> Privacy Policy</a> 
                 &nbsp;and&nbsp;  
-                <a href="/terms.html" style={{ color: '#4299e1' }}> Terms of Service</a>.
+                <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: '#4299e1' }}> Terms of Service</a>.
               </p>
               <div style={{ borderTop: `1px solid ${isDarkMode ? '#333' : '#e5e7eb'}`, marginTop: '16px' }} />
             </div>
@@ -100,18 +100,18 @@ export default function AboutModal({
               fontSize: '20px',
               fontWeight: '600',
               marginBottom: '16px',
-              color: '#4285F4'
+              color: '#10b981'
             }}>
               🎉 Getting Started
             </h3>
-            <p style={{ margin: '0 0 20px 0', color: isDarkMode ? '#9ca3af' : '#6b7280', fontSize: '14px' }}>
+            <p style={{ margin: '0 0 20px 0', color: isDarkMode ? '#9ca3af' : '#6b7280', fontSize: '14px', paddingLeft: '36px' }}>
               Follow these 4 essential steps to set up Proselenos:
             </p>
             
             {/* Step 1: Add OpenRouter API Key */}
             <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{
-                background: '#4285F4',
+                background: '#10b981',
                 color: 'white',
                 width: '24px',
                 height: '24px',
@@ -137,7 +137,7 @@ export default function AboutModal({
             {/* Step 2: Choose AI Model */}
             <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{
-                background: '#4285F4',
+                background: '#10b981',
                 color: 'white',
                 width: '24px',
                 height: '24px',
@@ -189,7 +189,7 @@ export default function AboutModal({
             {/* Step 4: Create First Project */}
             <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div style={{
-                background: '#4285F4',
+                background: '#10b981',
                 color: 'white',
                 width: '24px',
                 height: '24px',
@@ -219,11 +219,11 @@ export default function AboutModal({
               fontSize: '18px',
               fontWeight: '600',
               marginBottom: '12px',
-              color: '#4285F4'
+              color: '#10b981'
             }}>
               📁 How Projects Work
             </h3>
-            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px' }}>
+            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px', paddingLeft: '20px' }}>
               Projects are individual folders in your Google Drive that organize your writing work:
             </p>
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
@@ -240,11 +240,11 @@ export default function AboutModal({
               fontSize: '18px',
               fontWeight: '600',
               marginBottom: '12px',
-              color: '#4285F4'
+              color: '#10b981'
             }}>
               ✏️ Editing Manuscripts with AI
             </h3>
-            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px' }}>
+            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px', paddingLeft: '20px' }}>
               Proselenos offers powerful AI-powered editing tools:
             </p>
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
@@ -261,11 +261,11 @@ export default function AboutModal({
               fontSize: '18px',
               fontWeight: '600',
               marginBottom: '12px',
-              color: '#4285F4'
+              color: '#10b981'
             }}>
               🤖 Why OpenRouter?
             </h3>
-            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px' }}>
+            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px', paddingLeft: '20px' }}>
               OpenRouter provides the best AI experience for writers:
             </p>
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
@@ -282,11 +282,11 @@ export default function AboutModal({
               fontSize: '18px',
               fontWeight: '600',
               marginBottom: '12px',
-              color: '#4285F4'
+              color: '#10b981'
             }}>
               ✍️ AI Writing Assistant
             </h3>
-            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px' }}>
+            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px', paddingLeft: '20px' }}>
               Proselenos isn't just for editing - it's also a powerful writing companion:
             </p>
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
@@ -303,11 +303,11 @@ export default function AboutModal({
               fontSize: '18px',
               fontWeight: '600',
               marginBottom: '12px',
-              color: '#4285F4'
+              color: '#10b981'
             }}>
               📚 Publishing Assistant
             </h3>
-            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px' }}>
+            <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px', paddingLeft: '20px' }}>
               Get your manuscript ready for Kindle Direct Publishing (KDP):
             </p>
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
