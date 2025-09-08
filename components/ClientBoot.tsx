@@ -33,7 +33,9 @@ import {
   createGoogleDriveFileAction,
   updateGoogleDriveFileAction,
   loadProjectMetadataAction,
-  saveProjectMetadataAction
+  saveProjectMetadataAction,
+  listGoogleDriveFilesAction,
+  readGoogleDriveFileAction
 } from '@/lib/google-drive-actions';
 import { hasApiKeyAction } from '@/lib/api-key-actions';
 import ProjectSettingsModal, { ProjectMetadata } from '../app/projects/ProjectSettingsModal';
@@ -77,6 +79,9 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [isSavingMetadata, setIsSavingMetadata] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  // Editor TXT file selector state
+  const [showEditorFileSelector, setShowEditorFileSelector] = useState(false);
+  const [editorFileSelectorFiles, setEditorFileSelectorFiles] = useState<any[]>([]);
 
   const theme = getTheme(isDarkMode);
 
@@ -411,7 +416,74 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   };
 
   const handleEditorBrowseFiles = async () => {
-    await projectActions.browseProjectFiles(session, init?.config?.settings.proselenos_root_folder_id || '', isDarkMode);
+    if (!session?.accessToken) {
+      projectActions.setUploadStatus('❌ Not authenticated');
+      showAlert('You must sign in first!', 'error', undefined, isDarkMode);
+      return;
+    }
+    if (!projectState.currentProjectId) {
+      showAlert('Select a project first!', 'info', undefined, isDarkMode);
+      return;
+    }
+
+    setIsGoogleDriveOperationPending(true);
+    projectActions.setUploadStatus('Loading TXT files...');
+    try {
+      const result = await listGoogleDriveFilesAction(
+        session.accessToken,
+        init?.config?.settings.proselenos_root_folder_id || '',
+        projectState.currentProjectId
+      );
+      if (result.success && result.data?.files) {
+        const txtFiles = result.data.files.filter((file: any) =>
+          (typeof file.name === 'string' && file.name.toLowerCase().endsWith('.txt')) ||
+          file.mimeType === 'text/plain'
+        );
+        if (txtFiles.length === 0) {
+          showAlert('No TXT files found in the current project. Please add a .txt file first.', 'info', undefined, isDarkMode);
+          return;
+        }
+        setEditorFileSelectorFiles(txtFiles);
+        setShowEditorFileSelector(true);
+        projectActions.setUploadStatus(`Found ${txtFiles.length} TXT files`);
+      } else {
+        showAlert(`Failed to load project files: ${result.error}`, 'error', undefined, isDarkMode);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      showAlert(`Error loading project files: ${msg}`, 'error', undefined, isDarkMode);
+    } finally {
+      setIsGoogleDriveOperationPending(false);
+    }
+  };
+
+  const handleEditorFileSelectorClose = () => {
+    setShowEditorFileSelector(false);
+  };
+
+  const handleEditorFileSelect = async (file: any) => {
+    if (!session?.accessToken) {
+      showAlert('Not authenticated!', 'error', undefined, isDarkMode);
+      return;
+    }
+    try {
+      const result = await readGoogleDriveFileAction(
+        session.accessToken,
+        init?.config?.settings.proselenos_root_folder_id || '',
+        file.id
+      );
+      if (result.success) {
+        const content = result.data && (result.data as any).content ? (result.data as any).content : '';
+        handleLoadFileIntoEditor(content, file.name, file.id);
+      } else {
+        showAlert(`Failed to load file: ${result.error}`, 'error', undefined, isDarkMode);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      showAlert(`Error reading file: ${msg}`, 'error', undefined, isDarkMode);
+    } finally {
+      setShowEditorFileSelector(false);
+    }
   };
 
   // Settings save handler (API key only)
@@ -1338,7 +1410,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       />
 
       {/* Editor Modal */}
-      <EditorModal
+  <EditorModal
         isOpen={showEditorModal}
         theme={theme}
         isDarkMode={isDarkMode}
@@ -1352,6 +1424,17 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         onContentChange={setEditorContent}
         onSaveFile={handleEditorSaveFile}
         onBrowseFiles={handleEditorBrowseFiles}
+      />
+
+      {/* Editor TXT File Selector Modal */}
+      <FileSelectorModal
+        isOpen={showEditorFileSelector}
+        theme={theme}
+        isDarkMode={isDarkMode}
+        fileSelectorFiles={editorFileSelectorFiles}
+        selectedManuscriptForTool={null}
+        onClose={handleEditorFileSelectorClose}
+        onSelectFile={handleEditorFileSelect}
       />
 
       {/* Project Selector Modal */}

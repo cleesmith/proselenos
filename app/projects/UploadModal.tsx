@@ -37,12 +37,12 @@ export default function UploadModal({
     const file = event.target.files?.[0];
     if (file) {
       // Validate file type
-      const allowedExtensions = ['.docx', '.txt'];
+      const allowedExtensions = ['.txt', '.docx', '.epub', '.pdf'];
       const fileName = file.name.toLowerCase();
       const isValidFile = allowedExtensions.some(ext => fileName.endsWith(ext));
       
       if (!isValidFile) {
-        alert('Please select a .docx or .txt file only.');
+        alert('Please select a .txt, .docx, .epub, or .pdf file only.');
         return;
       }
       
@@ -124,13 +124,13 @@ export default function UploadModal({
             fontSize: '14px',
             color: theme.textMuted
           }}>
-            Select a .docx or .txt file to upload to your project:
+            Select a .txt, .docx, .epub, or .pdf file to upload to your project:
           </p>
           
           <input
             ref={fileInputRef}
             type="file"
-            accept=".docx,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+            accept=".txt,.docx,.epub,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/epub+zip,application/pdf"
             onChange={handleFileChange}
             style={{ display: 'none' }}
             disabled={isUploading}

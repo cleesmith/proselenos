@@ -400,13 +400,18 @@ export async function uploadFileToProjectAction(accessToken: string, rootFolderI
     }
 
     // Validate file type
-    const allowedTypes = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-    const allowedExtensions = ['.docx', '.txt'];
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'application/epub+zip',
+      'application/pdf'
+    ];
+    const allowedExtensions = ['.docx', '.txt', '.epub', '.pdf'];
     const fileName = file.name.toLowerCase();
     const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
     
     if (!allowedTypes.includes(file.type) && !hasValidExtension) {
-      return { success: false, error: 'Only .docx and .txt files are allowed' };
+      return { success: false, error: 'Only .txt, .docx, .epub, and .pdf files are allowed' };
     }
 
     // Convert File to buffer and then to readable stream
@@ -428,8 +433,16 @@ export async function uploadFileToProjectAction(accessToken: string, rootFolderI
       fields: 'files(id)'
     });
 
+    const computedMimeType = file.type || (
+      fileName.endsWith('.txt') ? 'text/plain' :
+      fileName.endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+      fileName.endsWith('.epub') ? 'application/epub+zip' :
+      fileName.endsWith('.pdf') ? 'application/pdf' :
+      'application/octet-stream'
+    );
+
     const media = {
-      mimeType: file.type || (fileName.endsWith('.txt') ? 'text/plain' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+      mimeType: computedMimeType,
       body: bufferToStream(buffer)
     };
 
