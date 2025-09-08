@@ -85,6 +85,17 @@ export default function AboutModal({
         }}>
           {/* Welcome Guide Section */}
           <div style={{ marginBottom: '32px' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <p style={{ margin: '0 0 16px 0', color: isDarkMode ? '#9ca3af' : '#6b7280', fontSize: '14px' }}>
+                You can <a href="https://myaccount.google.com/permissions" style={{ color: '#4299e1' }}>revoke these permissions</a> at any time through your Google Account settings.
+                <br /><br />
+                For more information, see our
+                <a href="/privacy.html" style={{ color: '#4299e1' }}> Privacy Policy</a> 
+                &nbsp;and&nbsp;  
+                <a href="/terms.html" style={{ color: '#4299e1' }}> Terms of Service</a>.
+              </p>
+              <div style={{ borderTop: `1px solid ${isDarkMode ? '#333' : '#e5e7eb'}`, marginTop: '16px' }} />
+            </div>
             <h3 style={{
               fontSize: '20px',
               fontWeight: '600',
@@ -93,11 +104,7 @@ export default function AboutModal({
             }}>
               🎉 Getting Started
             </h3>
-            <p style={{
-              margin: '0 0 20px 0',
-              color: isDarkMode ? '#9ca3af' : '#6b7280',
-              fontSize: '14px'
-            }}>
+            <p style={{ margin: '0 0 20px 0', color: isDarkMode ? '#9ca3af' : '#6b7280', fontSize: '14px' }}>
               Follow these 4 essential steps to set up Proselenos:
             </p>
             
