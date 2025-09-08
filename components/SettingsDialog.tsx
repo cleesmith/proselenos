@@ -1,7 +1,10 @@
+// components/SettingsDialog.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { storeApiKeyAction, removeApiKeyAction, getBatchSettingsDataAction } from '@/lib/api-key-actions';
+import { showAlert, showConfirm } from '@/app/shared/alerts';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -59,12 +62,12 @@ export default function SettingsDialog({
 
   const handleSave = async () => {
     if (!selectedProvider) {
-      alert('No provider selected');
+      showAlert('No provider selected', 'error', undefined, isDarkMode);
       return;
     }
 
     if (!apiKey.trim() && !hasKey) {
-      alert('Please enter an API key');
+      showAlert('Please enter an API key', 'warning', undefined, isDarkMode);
       return;
     }
 
@@ -75,7 +78,7 @@ export default function SettingsDialog({
       if (apiKey.trim()) {
         const result = await storeApiKeyAction(selectedProvider, apiKey.trim());
         if (!result.success) {
-          alert(`Failed to save API key: ${result.error}`);
+          showAlert(`Failed to save API key: ${result.error}`, 'error', undefined, isDarkMode);
           setSaving(false);
           return;
         }
@@ -88,37 +91,36 @@ export default function SettingsDialog({
       setApiKey('');
       onClose();
     } catch (error) {
-      alert(`Error saving settings: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setSaving(false);
-    }
-  };
+      showAlert(`Error saving settings: ${error instanceof Error ? error.message : String(error)}`, 'error', undefined, isDarkMode);
+      } finally {
+        setSaving(false);
+      }
+    };
 
   const handleRemoveKey = async () => {
     if (!selectedProvider) {
-      alert('No provider selected');
+      showAlert('No provider selected', 'error', undefined, isDarkMode);
       return;
     }
 
     if (!hasKey) {
-      alert('No API key configured for this provider');
+      showAlert('No API key configured for this provider', 'info', undefined, isDarkMode);
       return;
     }
 
-    if (!confirm(`Remove API key for ${PROVIDER_DISPLAY_NAMES[selectedProvider as keyof typeof PROVIDER_DISPLAY_NAMES]}?`)) {
-      return;
-    }
+    const ok = await showConfirm(`Remove API key for ${PROVIDER_DISPLAY_NAMES[selectedProvider as keyof typeof PROVIDER_DISPLAY_NAMES]}?`, isDarkMode);
+    if (!ok) return;
 
     try {
       const result = await removeApiKeyAction(selectedProvider);
       if (result.success) {
         await loadSettings(); // Refresh settings
-        alert('API key removed successfully');
+        showAlert('API key removed successfully', 'success', undefined, isDarkMode);
       } else {
-        alert(`Failed to remove API key: ${result.error}`);
+        showAlert(`Failed to remove API key: ${result.error}`, 'error', undefined, isDarkMode);
       }
     } catch (error) {
-      alert(`Error removing API key: ${error instanceof Error ? error.message : String(error)}`);
+      showAlert(`Error removing API key: ${error instanceof Error ? error.message : String(error)}`, 'error', undefined, isDarkMode);
     }
   };
 

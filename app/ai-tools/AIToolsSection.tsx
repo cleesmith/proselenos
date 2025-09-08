@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { ThemeConfig } from '../shared/theme';
+import { showAlert } from '../shared/alerts';
 import ToolProgressIndicator from './ToolProgressIndicator';
 import ToolResponseDisplay from './ToolResponseDisplay';
 import DualPanelView from './DualPanelView';
@@ -210,10 +211,10 @@ https://proselenos.onrender.com
         const toolPromptPath = `tool-prompts/${selectedTool}`;
         onLoadFileIntoEditor(result.content, toolPromptPath, result.fileId);
       } else {
-        alert(result.error || 'Failed to load tool prompt');
+        showAlert(result.error || 'Failed to load tool prompt', 'error', undefined, isDarkMode);
       }
     } catch (error) {
-      alert('Error loading tool prompt');
+      showAlert('Error loading tool prompt', 'error', undefined, isDarkMode);
     } finally {
       setIsLoadingPrompt(false);
     }

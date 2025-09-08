@@ -67,3 +67,28 @@ export const showInputAlert = async (
 
   return result.isConfirmed ? result.value : null;
 };
+
+export const showConfirm = async (
+  message: string,
+  isDarkMode: boolean = true,
+  title: string = 'Confirm',
+  confirmText: string = 'Yes',
+  cancelText: string = 'Cancel'
+): Promise<boolean> => {
+  document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+
+  const result = await Swal.fire({
+    title,
+    text: message,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: confirmText,
+    cancelButtonText: cancelText,
+    background: isDarkMode ? '#222' : '#fff',
+    color: isDarkMode ? '#fff' : '#333',
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#6c757d'
+  });
+
+  return result.isConfirmed === true;
+};

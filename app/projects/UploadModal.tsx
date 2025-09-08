@@ -5,6 +5,7 @@
 
 import { useRef } from 'react';
 import { ThemeConfig } from '../shared/theme';
+import { showAlert } from '../shared/alerts';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ export default function UploadModal({
       const isValidFile = allowedExtensions.some(ext => fileName.endsWith(ext));
       
       if (!isValidFile) {
-        alert('Please select a .txt, .docx, .epub, or .pdf file only.');
+        showAlert('Please select a .txt, .docx, .epub, or .pdf file only.', 'warning', undefined, isDarkMode);
         return;
       }
       
