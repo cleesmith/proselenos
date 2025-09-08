@@ -1,7 +1,9 @@
 // components/SimpleChatModal.tsx
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import renderWriterMarkdown from '@/lib/writerMarkdown';
 import { 
   getChatProviderModelAction,
   getChatResponseAction,
@@ -464,22 +466,14 @@ export default function SimpleChatModal({
                   maxWidth: '70%',
                   padding: '8px 12px',
                   borderRadius: '8px',
-                  whiteSpace: 'pre-wrap',
                   fontSize: '14px',
                   lineHeight: '1.5',
-                  backgroundColor: message.role === 'user'
-                    ? '#3182ce'
-                    : isDarkMode 
-                      ? '#4a5568'
-                      : '#f7fafc',
-                  color: message.role === 'user'
-                    ? '#ffffff'
-                    : isDarkMode
-                      ? '#e2e8f0'
-                      : '#1a202c'
+                  border: `1px solid ${isDarkMode ? '#4a5568' : '#e2e8f0'}`,
+                  color: isDarkMode ? '#e2e8f0' : '#1a202c',
+                  backgroundColor: 'transparent'
                 }}
               >
-                {message.content}
+                {renderWriterMarkdown(message.content, !!isDarkMode)}
               </div>
             </div>
             
