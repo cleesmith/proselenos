@@ -22,7 +22,7 @@ import { useToolsManager } from '../app/ai-tools/useToolsManager';
 import NonAIToolsSection from '../app/non-ai-tools/NonAIToolsSection';
 import { useNonAITools } from '../app/non-ai-tools/useNonAITools';
 import { getTheme } from '../app/shared/theme';
-import { showAlert } from '../app/shared/alerts';
+import { showAlert, showStickyErrorWithLogout } from '../app/shared/alerts';
 import AboutModal from '../components/AboutModal';
 import {
   getproselenosConfigAction,
@@ -74,6 +74,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   const [hasShownReadyModal, setHasShownReadyModal] = useState(false);
   const [isSystemInitializing, setIsSystemInitializing] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [initFailed, setInitFailed] = useState(false);
   const [showProjectSettingsModal, setShowProjectSettingsModal] = useState(false);
   const [projectMetadata, setProjectMetadata] = useState<ProjectMetadata | undefined>(undefined);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
@@ -84,6 +85,19 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   const [editorFileSelectorFiles, setEditorFileSelectorFiles] = useState<any[]>([]);
 
   const theme = getTheme(isDarkMode);
+
+  // Utility: add a timeout to any promise to prevent hangs during initialization
+  const withTimeout = useCallback(async <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        const id = setTimeout(() => {
+          clearTimeout(id);
+          reject(new Error(`${label} timed out after ${ms}ms`));
+        }, ms);
+      })
+    ]) as T;
+  }, []);
 
   // Initialize from fast init payload
   useEffect(() => {
@@ -155,7 +169,11 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
           });
           
           try {
-            const installResult = await installToolPromptsAction(session.accessToken as string, init.config?.settings.proselenos_root_folder_id || '');
+            const installResult = await withTimeout(
+              installToolPromptsAction(session.accessToken as string, init.config?.settings.proselenos_root_folder_id || ''),
+              45000,
+              'Google Drive initialization'
+            );
             
             if (installResult.success) {
               setIsGoogleDriveReady(true);
@@ -163,13 +181,28 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               // Don't load tools yet - wait until first project is created
             } else {
               Swal.close();
-              showAlert(`Tool-prompts install failed: ${installResult.message || installResult.error}`, 'error', undefined, isDarkMode);
               setIsGoogleDriveOperationPending(false);
+              setIsInstallingToolPrompts(false);
+              setInitFailed(true);
+              showStickyErrorWithLogout(
+                'Initialization failed',
+                `Tool-prompts install failed: ${installResult.message || installResult.error || 'Unknown error'}`,
+                isDarkMode
+              );
+              return;
             }
           } catch (error) {
             Swal.close();
-            showAlert(`Tool-prompts install error: ${error instanceof Error ? error.message : String(error)}`, 'error', undefined, isDarkMode);
             setIsGoogleDriveOperationPending(false);
+            setIsInstallingToolPrompts(false);
+            setInitFailed(true);
+            const msg = error instanceof Error ? error.message : String(error);
+            showStickyErrorWithLogout(
+              'Initialization error',
+              `Problem preparing Google Drive.\n${msg}`,
+              isDarkMode
+            );
+            return;
           } finally {
             setIsInstallingToolPrompts(false);
           }
@@ -197,7 +230,6 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       { name: 'Google Drive', ready: isGoogleDriveReady },
       { name: 'AI Tools', ready: toolsState.toolsReady },
       { name: 'Authentication', ready: !!session?.accessToken },
-      { name: 'API Configuration', ready: hasApiKey !== null },
       { name: 'Project', ready: projectState.currentProject || !init?.config?.settings.current_project }
     ];
     
@@ -216,6 +248,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   useEffect(() => {
     if (!session) return; // Don't run initialization logic without session
     if (isLoggingOut) return; // Skip initialization logic during logout
+    if (initFailed) return; // Don't show init modals after failure
     
     const status = getLoadingStatus();
 
@@ -235,13 +268,13 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         setHasShownReadyModal(true);
         setIsSystemInitializing(false); // Enable buttons
         
-        // Show welcome guide only for new users
-        const isNewUser = !projectState.currentProject && hasApiKey === false;
+        // Show welcome guide only for new users (treat unknown as missing)
+        const isNewUser = !projectState.currentProject && (hasApiKey === false || hasApiKey === null);
         if (isNewUser) {
           showWelcomeGuide();
         }
       });
-    } else if (!status.allReady && isSystemInitializing) {
+    } else if (!status.allReady && isSystemInitializing && !initFailed) {
       // Show persistent initializing modal
       Swal.fire({
         title: 'Initializing Proselenos...',
@@ -267,7 +300,8 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     hasShownReadyModal,
     isSystemInitializing,
     isLoggingOut,
-    isDarkMode
+    isDarkMode,
+    initFailed
   ]);
 
   // Check if API key exists for Models button visibility
@@ -275,12 +309,15 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     if (!session?.accessToken || !currentProvider) return;
     
     try {
-      const result = await hasApiKeyAction(currentProvider);
+      const result = await withTimeout(hasApiKeyAction(currentProvider), 8000, 'Checking API key');
       if (result.success) {
         setHasApiKey(result.hasKey || false);
+      } else {
+        setHasApiKey(false);
       }
     } catch (error) {
       console.error('Error checking API key:', error);
+      setHasApiKey(false);
     }
   }, [session?.accessToken, currentProvider]);
 
@@ -304,7 +341,11 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       if (!session?.accessToken || !projectState.currentProject || !projectState.currentProjectId) return;
 
       try {
-        const validateResult = await validateCurrentProjectAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || '');
+        const validateResult = await withTimeout(
+          validateCurrentProjectAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || ''),
+          12000,
+          'Validating project'
+        );
         if (validateResult.success && validateResult.data?.isValid) {
           projectActions.setUploadStatus(`✅ Project loaded: ${projectState.currentProject}`);
         } else {
@@ -325,7 +366,11 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     setIsLoadingConfig(true);
     
     try {
-      const result = await getproselenosConfigAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || '');
+      const result = await withTimeout(
+        getproselenosConfigAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || ''),
+        15000,
+        'Loading configuration'
+      );
       
       if (result.success && result.data?.config) {
         const config = result.data.config;
@@ -343,7 +388,11 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         // Only set project if it exists and is valid
         if (current_project && current_project_folder_id) {
           // Validate project still exists
-          const validateResult = await validateCurrentProjectAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || '');
+          const validateResult = await withTimeout(
+            validateCurrentProjectAction(session.accessToken as string, init?.config?.settings.proselenos_root_folder_id || ''),
+            12000,
+            'Validating project'
+          );
           
           if (validateResult.success && validateResult.data?.isValid) {
             projectActions.setCurrentProject(current_project);

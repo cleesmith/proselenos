@@ -92,3 +92,36 @@ export const showConfirm = async (
 
   return result.isConfirmed === true;
 };
+
+// Sticky error alert that can only be dismissed via Log out
+export const showStickyErrorWithLogout = (
+  title: string,
+  message: string,
+  isDarkMode: boolean = true
+) => {
+  document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+
+  const hasNewlines = message.includes('\n');
+  const alertOptions: any = {
+    title,
+    icon: 'error',
+    background: isDarkMode ? '#222' : '#fff',
+    color: isDarkMode ? '#fff' : '#333',
+    confirmButtonColor: '#dc3545',
+    confirmButtonText: 'Log out',
+    showCancelButton: false,
+    allowOutsideClick: false,
+    allowEscapeKey: false
+  };
+
+  if (hasNewlines) {
+    alertOptions.html = message.replace(/\n/g, '<br>');
+  } else {
+    alertOptions.text = message;
+  }
+
+  Swal.fire(alertOptions).then(() => {
+    // Force logout route navigation
+    window.location.href = '/api/auth/signout?callbackUrl=/';
+  });
+};

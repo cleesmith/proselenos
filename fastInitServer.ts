@@ -96,7 +96,7 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
   try {
     const authClient = await getAuthClient(accessToken);
     const drive = await getDriveClient(authClient);
-
+    
     const rootFolder = await ensureProselenosProjectsFolder(drive);
     const rootId = rootFolder.id;
     if (!rootId) {
@@ -174,6 +174,7 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
     const durationMs = Date.now() - startTime;
     const memEnd = process.memoryUsage().heapUsed / 1024 / 1024;
     console.log(`fastInit Memory: ${memStart.toFixed(1)}MB -> ${memEnd.toFixed(1)}MB (+${(memEnd - memStart).toFixed(1)}MB)`);
+
 
     return {
       config: {

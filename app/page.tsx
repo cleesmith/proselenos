@@ -12,7 +12,10 @@ import ClientBoot from '@/components/ClientBoot';
 
 export default async function proselenosHome() {
   const session = await getServerSession(authOptions);
-  
+  if (session?.user?.email) { 
+    console.log('>>> user email=', session.user.email);
+  }
+
   if (!session?.accessToken) {
     // Let ClientBoot handle the sign-in UI
     return <ClientBoot init={null} />;

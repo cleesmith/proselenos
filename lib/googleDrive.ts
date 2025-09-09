@@ -54,6 +54,9 @@ export async function ensureProselenosProjectsFolder(drive: drive_v3.Drive): Pro
   const FOLDER_MIME = 'application/vnd.google-apps.folder';
   const FOLDER_NAME = 'proselenos_projects';
 
+  // test google scopes and 403 error:
+  // throw Object.assign(new Error('Request had insufficient authentication scopes. [FORCED 403]'), { code: 403, status: 403 });
+
   try {
     // Search for the folder
     const res = await drive.files.list({
@@ -62,10 +65,10 @@ export async function ensureProselenosProjectsFolder(drive: drive_v3.Drive): Pro
       spaces: 'drive',
     });
 
-    const files = res.data.files;
-    if (files && files.length > 0) {
+    const files = res.data.files ?? [];
+    if (files.length > 0) {
       // Folder exists, return it
-      return files[0];
+      return files[0]!;
     } else {
       // Folder does not exist, create it
       const fileMetadata = {
