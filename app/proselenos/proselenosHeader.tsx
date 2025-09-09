@@ -223,7 +223,7 @@ export default function ProselenosHeader({
                 cursor: 'pointer'
               }}
             >
-              Log out
+              Sign out
             </button>
           </div>
         )}
@@ -258,7 +258,7 @@ export default function ProselenosHeader({
               marginBottom: '16px',
               textAlign: 'center'
             }}>
-              Confirm Log out
+              Confirm Sign out
             </div>
             <div style={{
               fontSize: '14px',
@@ -266,7 +266,7 @@ export default function ProselenosHeader({
               marginBottom: '20px',
               textAlign: 'center'
             }}>
-              Are you sure you want to Log out?
+              Are you sure you want to Sign out?
             </div>
             <div style={{
               display: 'flex',
@@ -299,7 +299,7 @@ export default function ProselenosHeader({
                   cursor: 'pointer'
                 }}
               >
-                Log out
+                Sign out
               </button>
             </div>
           </div>

@@ -93,7 +93,7 @@ export const showConfirm = async (
   return result.isConfirmed === true;
 };
 
-// Sticky error alert that can only be dismissed via Log out
+// Sticky error alert that can only be dismissed via Sign out
 export const showStickyErrorWithLogout = (
   title: string,
   message: string,
@@ -108,7 +108,7 @@ export const showStickyErrorWithLogout = (
     background: isDarkMode ? '#222' : '#fff',
     color: isDarkMode ? '#fff' : '#333',
     confirmButtonColor: '#dc3545',
-    confirmButtonText: 'Log out',
+    confirmButtonText: 'Sign out',
     showCancelButton: false,
     allowOutsideClick: false,
     allowEscapeKey: false

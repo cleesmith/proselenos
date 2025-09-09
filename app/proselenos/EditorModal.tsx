@@ -415,7 +415,9 @@ export default function EditorModal({
       return;
     }
     console.log('🚀 Starting TTS...');
-    const parsedSentences = parseSentences(editorContent);
+    // const parsedSentences = parseSentences(editorContent);
+    const parsedSentences = parseSentences(editorContent.replace(/^(?:[ \t]*\r?\n){1,2}/, ''));
+
     if (parsedSentences.length === 0) {
       showAlert('No sentences found!', 'error', undefined, isDarkMode);
       return;
