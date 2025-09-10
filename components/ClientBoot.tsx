@@ -245,15 +245,76 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   };
 
   // Show Ready modal when all systems are ready
-  useEffect(() => {
-    if (!session) return; // Don't run initialization logic without session
-    if (isLoggingOut) return; // Skip initialization logic during logout
-    if (initFailed) return; // Don't show init modals after failure
+  // useEffect(() => {
+  //   if (!session) return; // Don't run initialization logic without session
+  //   if (isLoggingOut) return; // Skip initialization logic during logout
+  //   if (initFailed) return; // Don't show init modals after failure
     
+  //   const status = getLoadingStatus();
+
+  //   if (status.allReady && !hasShownReadyModal) {
+  //     Swal.close(); // Close initializing alert
+  //     Swal.fire({
+  //       title: 'Ready!',
+  //       html: `All systems loaded successfully!<br><br>Loading... (${status.readyCount}/${status.totalCount}) - Complete!`,
+  //       icon: 'success',
+  //       background: isDarkMode ? '#222' : '#fff',
+  //       color: isDarkMode ? '#fff' : '#333',
+  //       confirmButtonColor: '#10b981',
+  //       confirmButtonText: "Click to read, write, edit ... repeat",
+  //       allowOutsideClick: false,
+  //       allowEscapeKey: false
+  //     }).then(() => {
+  //       setHasShownReadyModal(true);
+  //       setIsSystemInitializing(false); // Enable buttons
+        
+  //       // Show welcome guide only for new users (treat unknown as missing)
+  //       const isNewUser = !projectState.currentProject && (hasApiKey === false || hasApiKey === null);
+  //       if (isNewUser) {
+  //         showWelcomeGuide();
+  //       }
+  //     });
+  //   } else if (!status.allReady && isSystemInitializing && !initFailed) {
+  //     // Show persistent initializing modal
+  //     Swal.fire({
+  //       title: 'Initializing Proselenos...',
+  //       html: `Loading... (${status.readyCount}/${status.totalCount})<br>Waiting for: ${status.notReady.join(', ')}`,
+  //       icon: 'info',
+  //       background: isDarkMode ? '#222' : '#fff',
+  //       color: isDarkMode ? '#fff' : '#333',
+  //       showConfirmButton: false,
+  //       allowOutsideClick: false,
+  //       allowEscapeKey: false,
+  //       didOpen: () => {
+  //         Swal.showLoading();
+  //       }
+  //     });
+  //   }
+  // }, [
+  //   isGoogleDriveReady, 
+  //   toolsState.toolsReady, 
+  //   session?.accessToken,
+  //   hasApiKey,
+  //   projectState.currentProject,
+  //   init?.config?.settings.current_project,
+  //   hasShownReadyModal,
+  //   isSystemInitializing,
+  //   isLoggingOut,
+  //   isDarkMode,
+  //   initFailed
+  // ]);
+  // Show Ready modal when all systems are ready
+  useEffect(() => {
+    if (!session) return;          // Don't run initialization logic without session
+    if (isLoggingOut) return;      // Skip initialization logic during logout
+    if (initFailed) return;        // Don't show init modals after failure
+
     const status = getLoadingStatus();
 
     if (status.allReady && !hasShownReadyModal) {
-      Swal.close(); // Close initializing alert
+      // Mark as shown before opening the Ready modal so it fires only once
+      setHasShownReadyModal(true);
+      Swal.close(); // Close any initializing alert
       Swal.fire({
         title: 'Ready!',
         html: `All systems loaded successfully!<br><br>Loading... (${status.readyCount}/${status.totalCount}) - Complete!`,
@@ -261,15 +322,15 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         background: isDarkMode ? '#222' : '#fff',
         color: isDarkMode ? '#fff' : '#333',
         confirmButtonColor: '#10b981',
-        confirmButtonText: "Click to read, write, edit ... repeat",
+        confirmButtonText: 'Click to read, write, edit ... repeat',
         allowOutsideClick: false,
-        allowEscapeKey: false
+        allowEscapeKey: false,
       }).then(() => {
-        setHasShownReadyModal(true);
-        setIsSystemInitializing(false); // Enable buttons
-        
+        setIsSystemInitializing(false); // Enable UI buttons
         // Show welcome guide only for new users (treat unknown as missing)
-        const isNewUser = !projectState.currentProject && (hasApiKey === false || hasApiKey === null);
+        const isNewUser =
+          !projectState.currentProject &&
+          (hasApiKey === false || hasApiKey === null);
         if (isNewUser) {
           showWelcomeGuide();
         }
@@ -287,12 +348,12 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         allowEscapeKey: false,
         didOpen: () => {
           Swal.showLoading();
-        }
+        },
       });
     }
   }, [
-    isGoogleDriveReady, 
-    toolsState.toolsReady, 
+    isGoogleDriveReady,
+    toolsState.toolsReady,
     session?.accessToken,
     hasApiKey,
     projectState.currentProject,
@@ -301,8 +362,9 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     isSystemInitializing,
     isLoggingOut,
     isDarkMode,
-    initFailed
+    initFailed,
   ]);
+
 
   // Check if API key exists for Models button visibility
   const checkApiKey = useCallback(async () => {
