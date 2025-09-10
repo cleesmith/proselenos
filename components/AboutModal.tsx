@@ -332,6 +332,21 @@ export default function AboutModal({
               Start with uploading a chapter or section of your work to test different AI models and find the one that best matches your writing style and needs. You can upload Word documents (.docx) or text files (.txt) to get started!
             </div>
           </div>
+
+          {/* --- Ko-fi Donate (scoped to About modal) --- */}
+          <div className="mt-6 flex items-center justify-center">
+            <a
+              href="https://ko-fi.com/slipthetrap"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium shadow hover:opacity-90 focus:outline-none focus:ring"
+              style={{ backgroundColor: '#794bc4', color: '#fff' }}
+              aria-label="Donate on Ko-fi"
+            >
+              Donate
+            </a>
+          </div>
+
         </div>
       </div>
     </div>
