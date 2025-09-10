@@ -784,7 +784,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     );
   };
 
-  // Non-AI Tools Setup handler
+  // Non-AI Tools Select handler
   const handleNonAISetupTool = () => {
     nonAIToolsActions.setupNonAITool(
       session,

@@ -1,5 +1,5 @@
 // Non-AI Tools Section Component
-// Following the established AI Tools pattern with Setup, Clear, Run buttons
+// Following the established AI Tools pattern with Select, Clear, Run buttons
 
 'use client';
 
@@ -162,7 +162,7 @@ export default function NonAIToolsSection({
             cursor: isSetupDisabled ? 'not-allowed' : 'pointer'
           }}
         >
-          Setup
+          Select
         </button>
 
         <button 

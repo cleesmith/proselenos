@@ -364,7 +364,7 @@ https://proselenos.onrender.com
             cursor: (selectedTool && toolsReady && currentProject && !isGoogleDriveOperationPending) ? 'pointer' : 'not-allowed'
           }}
         >
-          Setup
+          Select
         </button>
 
         <button 

@@ -49,7 +49,7 @@ export function useNonAITools(): [NonAIToolsManagerState, NonAIToolsManagerActio
   const [publishResult, setPublishResult] = useState<string | null>(null);
   const [toolJustFinished, setToolJustFinished] = useState(false);
 
-  // Setup non-AI tool - show file selector (exactly like AI Tools)
+  // Select non-AI tool - show file selector (exactly like AI Tools)
   const setupNonAITool = async (
     session: any,
     currentProject: string | null, 

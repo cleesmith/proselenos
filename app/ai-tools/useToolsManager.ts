@@ -118,7 +118,7 @@ export function useToolsManager(): [ToolsManagerState, ToolsManagerActions] {
     }
   }, []);
 
-  // Setup AI tool - show file selector
+  // Select AI tool - show file selector
   const setupAITool = useCallback(async (
     session: any,
     rootFolderId: string,
@@ -160,8 +160,8 @@ export function useToolsManager(): [ToolsManagerState, ToolsManagerActions] {
         showAlert('Failed to load project files', 'error', undefined, isDarkMode);
       }
     } catch (error) {
-      showAlert(`Setup error: ${error instanceof Error ? error.message : String(error)}`, 'error', undefined, isDarkMode);
-      console.error('Setup error:', error);
+      showAlert(`Select error: ${error instanceof Error ? error.message : String(error)}`, 'error', undefined, isDarkMode);
+      console.error('Select error:', error);
     } finally {
       setIsGoogleDriveOperationPending(false);
     }
