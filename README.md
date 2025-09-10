@@ -18,3 +18,7 @@ If you find Proselenos helpful, just tell another writer about it.
 *- From a retired programmer who reads too much*
 
 ---
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O5O3S5FOF)
+
+---
