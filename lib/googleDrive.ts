@@ -1,9 +1,11 @@
 // lib/googleDrive.ts
+
 'use server';
 
 import { google, drive_v3 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
-import https from 'https'; // Import the https module
+import https from 'https';
+import { Readable } from 'stream';
 
 /**
  * Creates a fully configured OAuth2 client.
@@ -105,63 +107,122 @@ export async function createProjectFolder(drive: any, projectName: string, paren
 }
 
 // 3. Upload/Update manuscript.txt
-export async function uploadManuscript(drive: any, content: string, projectFolderId: string, fileName = 'manuscript.txt') {
-  // Check if file exists
-  const query = `name='${fileName}' and '${projectFolderId}' in parents and trashed=false`;
-  
-  const existing = await drive.files.list({
-    q: query,
-    fields: 'files(id)'
-  });
-
-  const media = {
-    mimeType: 'text/plain',
-    body: content
-  };
-
-  if (existing.data.files.length > 0) {
-    // Update existing
-    const response = await drive.files.update({
-      fileId: existing.data.files[0].id,
-      media: media,
-      fields: 'id, name, modifiedTime'
+/**
+ * Uploads manuscript content to a file in Google Drive.
+ * Updates the file if it exists, otherwise creates a new one.
+ * @param drive The authenticated Google Drive API client.
+ * @param content The text content of the manuscript.
+ * @param projectFolderId The ID of the parent folder in Google Drive.
+ * @param fileName The name for the file (defaults to 'manuscript.txt').
+ * @returns The metadata of the created or updated file.
+ */
+export async function uploadManuscript(
+  drive: drive_v3.Drive,
+  content: string,
+  projectFolderId: string,
+  fileName = 'manuscript.txt'
+): Promise<drive_v3.Schema$File> {
+  try {
+    // 1. Check if the file already exists
+    const query = `'${fileName}' in name and '${projectFolderId}' in parents and trashed = false`;
+    const listResponse = await drive.files.list({
+      q: query,
+      fields: 'files(id)',
+      pageSize: 1,
     });
-    return response.data;
-  } else {
-    // Create new
-    const fileMetadata = {
-      name: fileName,
-      parents: [projectFolderId]
+
+    const existingFile = listResponse.data.files?.[0];
+
+    // Prepare the content for upload as a stream.
+    // A new stream is needed for each API call as they are consumed on use.
+    const createContentStream = () => {
+        const stream = new Readable();
+        stream.push(content);
+        stream.push(null); // Signal end of stream
+        return stream;
     };
 
-    const response = await drive.files.create({
-      resource: fileMetadata,
-      media: media,
-      fields: 'id, name, modifiedTime'
-    });
-    return response.data;
+    if (existingFile?.id) {
+      // 2. If it exists, UPDATE the file content
+      console.log(`Updating existing file: ${fileName} (ID: ${existingFile.id})`);
+      const response = await drive.files.update({
+        fileId: existingFile.id,
+        media: {
+          mimeType: 'text/plain',
+          body: createContentStream(),
+        },
+        fields: 'id, name, modifiedTime',
+      });
+      return response.data;
+
+    } else {
+      // 3. If it does not exist, CREATE a new file
+      console.log(`Creating new file: ${fileName}`);
+      const fileMetadata: drive_v3.Schema$File = {
+        name: fileName,
+        parents: [projectFolderId],
+      };
+      const response = await drive.files.create({
+        requestBody: fileMetadata, // Use 'requestBody' instead of 'resource'
+        media: {
+          mimeType: 'text/plain',
+          body: createContentStream(),
+        },
+        fields: 'id, name, modifiedTime',
+      });
+      return response.data;
+    }
+  } catch (err) {
+    console.error('Error during manuscript upload:', err);
+    throw new Error('Failed to upload manuscript to Google Drive.');
   }
 }
 
 // Direct file creation - no existence check needed for unique filenames (like tool reports with timestamps)
-export async function createNewFile(drive: any, content: string, projectFolderId: string, fileName: string) {
-  const media = {
-    mimeType: 'text/plain',
-    body: content
-  };
-  
-  const fileMetadata = {
+/**
+ * Creates a new file in a specific Google Drive folder with the given content.
+ * @param drive The authenticated Google Drive API client.
+ * @param content The text content of the file.
+ * @param projectFolderId The ID of the parent folder in Google Drive.
+ * @param fileName The name for the new file.
+ * @returns The metadata of the created file.
+ */
+export async function createNewFile(drive: drive_v3.Drive, content: string, projectFolderId: string, fileName:string): Promise<drive_v3.Schema$File> {
+  // In a server environment, it's more memory-efficient to stream the upload body
+  // rather than passing the entire string directly.
+  const contentStream = new Readable();
+  contentStream.push(content);
+  contentStream.push(null); // This signals the end of the stream.
+
+  const fileMetadata: drive_v3.Schema$File = {
     name: fileName,
-    parents: [projectFolderId]
+    parents: [projectFolderId],
+    // You could also specify a different mimeType here if creating a Google Doc, etc.
+    // mimeType: 'application/vnd.google-apps.document',
   };
 
-  const response = await drive.files.create({
-    resource: fileMetadata,
-    media: media,
-    fields: 'id, name, modifiedTime'
-  });
-  
-  return response.data;
+  const media = {
+    mimeType: 'text/plain',
+    body: contentStream,
+  };
+
+  try {
+    const response = await drive.files.create({
+      // 'requestBody' is the modern and correctly typed parameter for file metadata.
+      // The older 'resource' parameter is deprecated.
+      requestBody: fileMetadata,
+      media: media,
+      fields: 'id, name, modifiedTime', // Specify which fields to return
+    });
+
+    console.log('File created:', response.data);
+    return response.data;
+
+  } catch (err) {
+    // It's good practice to catch and log errors on the server.
+    console.error('Error creating Google Drive file:', err);
+    throw new Error('Failed to create file in Google Drive.');
+  }
 }
 
 // 4. Create report file

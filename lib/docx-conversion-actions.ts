@@ -112,6 +112,127 @@ export async function listTxtFilesAction(accessToken: string, projectFolderId: s
 }
 
 // Convert DOCX file to TXT
+// export async function convertDocxToTxtAction(
+//   accessToken: string,
+//   docxFileId: string,
+//   outputFileName: string,
+//   projectFolderId: string
+// ): Promise<ActionResult> {
+//   try {
+//     const clients = await getAuthenticatedClients(accessToken);
+//     if ('error' in clients) {
+//       return { success: false, error: clients.error };
+//     }
+
+//     const { drive } = clients;
+    
+//     if (!docxFileId || !outputFileName || !projectFolderId) {
+//       return { success: false, error: 'Missing required parameters' };
+//     }
+
+//     // Ensure output filename has .txt extension
+//     let finalOutputName = outputFileName.trim();
+//     if (!finalOutputName.toLowerCase().endsWith('.txt')) {
+//       finalOutputName += '.txt';
+//     }
+
+//     try {
+//       // Download the DOCX file from Google Drive
+//       const response = await drive.files.get({
+//         fileId: docxFileId,
+//         alt: 'media'
+//       }, {
+//         responseType: 'arraybuffer'
+//       });
+
+//       if (!response.data) {
+//         throw new Error('Failed to download DOCX file');
+//       }
+
+//       // Convert ArrayBuffer to Buffer for mammoth
+//       const buffer = Buffer.from(response.data as ArrayBuffer);
+      
+//       // Use mammoth to convert DOCX to plain text
+//       const result = await mammoth.extractRawText({ buffer });
+//       let textContent = result.value;
+
+// const processedText = result.value;
+
+//       // if (!textContent || textContent.trim().length === 0) {
+//       //   throw new Error('No text content found in DOCX file');
+//       // }
+
+//       // // Normalize line endings and clean up basic spacing
+//       // textContent = textContent
+//       //   .replace(/\r\n/g, '\n')  // CRLF -> LF
+//       //   .replace(/\r/g, '\n')    // CR   -> LF
+//       //   .replace(/\n{3,}/g, '\n\n'); // collapse 3+ consecutive newlines to exactly two
+
+//       // // Split on "Chapter" but keep the "Chapter" text with each part
+//       // const parts = textContent.split(/(\bChapter\s*\d+[^\n]*)/);
+      
+//       // let processedText = '';
+      
+//       // for (let i = 0; i < parts.length; i++) {
+//       //   const part = parts[i];
+//       //   // Check if this part is a chapter heading
+//       //   if (/^\bChapter\s*\d+/.test(part.trim())) {
+//       //     // This is a chapter heading - ALWAYS add 2 blank lines before it (3 newlines total)
+//       //     // Remove any trailing whitespace from previous content (if any)
+//       //     processedText = processedText.replace(/\s+$/, '');
+//       //     // Add 3 newlines to create 2 blank lines before this chapter
+//       //     processedText += '\n\n\n';
+//       //     processedText += part;
+//       //   } else {
+//       //     // Regular content - add as is
+//       //     processedText += part;
+//       //   }
+//       // }
+
+//       // // Ensure the file ends with exactly 2 blank lines (3 newlines total)
+//       // processedText = processedText.replace(/\s+$/, '') + '\n\n\n';
+
+//       // // Count chapters (only 'Chapter')
+//       // const chapterMatches = processedText.match(/\bChapter\s*\d+/g);
+//       // const chapterCount = chapterMatches ? chapterMatches.length : 0;
+
+// const chapterCount = 999;
+
+//       // Save the converted text to Google Drive (no metadata header)
+//       const file = await uploadManuscript(
+//         drive,
+//         processedText,
+//         projectFolderId,
+//         finalOutputName
+//       );
+      
+//       return { 
+//         success: true, 
+//         data: {
+//           fileId: file.id,
+//           fileName: file.name || finalOutputName,
+//           chapterCount,
+//           characterCount: processedText.length
+//         },
+//         message: `Successfully converted DOCX to TXT. Found ${chapterCount} chapters.` 
+//       };
+
+//     } catch (conversionError: any) {
+//       console.error('DOCX conversion error:', conversionError);
+//       return { 
+//         success: false, 
+//         error: `Conversion failed: ${conversionError.message || 'Unknown error'}` 
+//       };
+//     }
+
+//   } catch (error: any) {
+//     console.error('Error in convertDocxToTxtAction:', error);
+//     return { 
+//       success: false, 
+//       error: error.message || 'Failed to convert DOCX file' 
+//     };
+//   }
+// }
 export async function convertDocxToTxtAction(
   accessToken: string,
   docxFileId: string,
@@ -123,19 +244,16 @@ export async function convertDocxToTxtAction(
     if ('error' in clients) {
       return { success: false, error: clients.error };
     }
-
     const { drive } = clients;
     
     if (!docxFileId || !outputFileName || !projectFolderId) {
       return { success: false, error: 'Missing required parameters' };
     }
-
     // Ensure output filename has .txt extension
     let finalOutputName = outputFileName.trim();
     if (!finalOutputName.toLowerCase().endsWith('.txt')) {
       finalOutputName += '.txt';
     }
-
     try {
       // Download the DOCX file from Google Drive
       const response = await drive.files.get({
@@ -144,61 +262,112 @@ export async function convertDocxToTxtAction(
       }, {
         responseType: 'arraybuffer'
       });
-
       if (!response.data) {
         throw new Error('Failed to download DOCX file');
       }
-
       // Convert ArrayBuffer to Buffer for mammoth
       const buffer = Buffer.from(response.data as ArrayBuffer);
       
-      // Use mammoth to convert DOCX to plain text
-      const result = await mammoth.extractRawText({ buffer });
-      let textContent = result.value;
-
-      if (!textContent || textContent.trim().length === 0) {
-        throw new Error('No text content found in DOCX file');
-      }
-
-      // Normalize line endings and clean up basic spacing
-      textContent = textContent
-        .replace(/\r\n/g, '\n')  // CRLF -> LF
-        .replace(/\r/g, '\n')    // CR   -> LF
-        .replace(/\n{3,}/g, '\n\n'); // collapse 3+ consecutive newlines to exactly two
-
-      // Split on "Chapter" but keep the "Chapter" text with each part
-      const parts = textContent.split(/(\bChapter\s*\d+[^\n]*)/);
+      // DOCX to HTML conversion code
+      const mammoth = require('mammoth');
+      const jsdom = require('jsdom');
+      const { JSDOM } = jsdom;
       
-      let processedText = '';
+      // Load the docx file
+      const result = await mammoth.convertToHtml({ buffer });
+      const htmlContent = result.value;
       
-      for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
+      // Parse the HTML
+      const dom = new JSDOM(htmlContent);
+      const document = dom.window.document;
+      
+      // Get all block elements
+      const blocks = document.querySelectorAll("p, h1, h2, h3, h4, h5, h6") as NodeListOf<HTMLElement>;
+      
+      // Process blocks to extract chapters
+      let chapters: any[] = [];
+      let currentChapter: any = null;
+      let ignoreFrontMatter = true;
+      let ignoreRest = false;
+      
+      // Stop headings
+      const STOP_TITLES = ["about the author", "website", "acknowledgments", "appendix"];
+      
+      // Convert NodeList to Array for iteration
+      Array.from(blocks).forEach((block: HTMLElement) => {
+        if (ignoreRest) return;
         
-        // Check if this part is a chapter heading
-        if (/^\bChapter\s*\d+/.test(part.trim())) {
-          // This is a chapter heading - ALWAYS add 2 blank lines before it (3 newlines total)
-          // Remove any trailing whitespace from previous content (if any)
-          processedText = processedText.replace(/\s+$/, '');
-          // Add 3 newlines to create 2 blank lines before this chapter
-          processedText += '\n\n\n';
-          processedText += part;
-        } else {
-          // Regular content - add as is
-          processedText += part;
+        const tagName = block.tagName.toLowerCase();
+        const textRaw = block.textContent?.trim() || '';
+        const textLower = textRaw.toLowerCase();
+        
+        // Skip everything until first <h1>
+        if (ignoreFrontMatter) {
+          if (tagName === "h1") {
+            ignoreFrontMatter = false;
+          } else {
+            return;
+          }
         }
-      }
-
+        
+        // If this heading is a "stop" heading, ignore the rest
+        if (tagName.startsWith("h") && STOP_TITLES.some(title => textLower.startsWith(title))) {
+          ignoreRest = true;
+          return;
+        }
+        
+        // If we see a new <h1>, that means a new chapter
+        if (tagName === "h1") {
+          currentChapter = {
+            title: textRaw,
+            textBlocks: []
+          };
+          chapters.push(currentChapter);
+        }
+        else {
+          // If there's no current chapter yet, create one
+          if (!currentChapter) {
+            currentChapter = { title: "Untitled Chapter", textBlocks: [] };
+            chapters.push(currentChapter);
+          }
+          // Add the block text if not empty
+          if (textRaw) {
+            currentChapter.textBlocks.push(textRaw);
+          }
+        }
+      });
+      
+      // Build the manuscript text with proper spacing
+      let manuscriptText = "";
+      
+      chapters.forEach((ch, idx) => {
+        // Two newlines before each chapter title
+        if (idx === 0) {
+          manuscriptText += "\n\n";
+        } else {
+          manuscriptText += "\n\n\n";
+        }
+        
+        // Add chapter title with numbering if not already present
+        const formattedTitle = ch.title.match(/^Chapter\s+\d+/i) ? ch.title : `Chapter ${idx + 1}: ${ch.title}`;
+        manuscriptText += formattedTitle;
+        
+        // One newline after chapter title
+        manuscriptText += "\n\n";
+        
+        // Add paragraphs with one blank line between them
+        manuscriptText += ch.textBlocks.join("\n\n");
+      });
+      
       // Ensure the file ends with exactly 2 blank lines (3 newlines total)
-      processedText = processedText.replace(/\s+$/, '') + '\n\n\n';
-
-      // Count chapters (only 'Chapter')
-      const chapterMatches = processedText.match(/\bChapter\s*\d+/g);
-      const chapterCount = chapterMatches ? chapterMatches.length : 0;
-
+      manuscriptText = manuscriptText + '\n\n\n';
+      
+      const chapterCount = chapters.length;
+      
       // Save the converted text to Google Drive (no metadata header)
       const file = await uploadManuscript(
         drive,
-        processedText,
+        manuscriptText,
         projectFolderId,
         finalOutputName
       );
@@ -209,11 +378,10 @@ export async function convertDocxToTxtAction(
           fileId: file.id,
           fileName: file.name || finalOutputName,
           chapterCount,
-          characterCount: processedText.length
+          characterCount: manuscriptText.length
         },
         message: `Successfully converted DOCX to TXT. Found ${chapterCount} chapters.` 
       };
-
     } catch (conversionError: any) {
       console.error('DOCX conversion error:', conversionError);
       return { 
@@ -221,7 +389,6 @@ export async function convertDocxToTxtAction(
         error: `Conversion failed: ${conversionError.message || 'Unknown error'}` 
       };
     }
-
   } catch (error: any) {
     console.error('Error in convertDocxToTxtAction:', error);
     return { 

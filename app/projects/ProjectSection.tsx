@@ -14,13 +14,15 @@ interface ProjectSectionProps {
   theme: ThemeConfig;
   isDarkMode: boolean;
   isSystemInitializing: boolean;
-  isDocxConverting: boolean; // converting DOCX->TXT in progress
-  isDocxDialogOpen?: boolean; // selector or filename dialog open
+  isDocxConverting: boolean; // DOCX -> TXT conversion pending
+  isDocxDialogOpen?: boolean; // DOCX selector or filename dialog open
+  isTxtConverting: boolean; // TXT -> DOCX conversion pending
+  isTxtDialogOpen?: boolean; // TXT selector or filename dialog open
   onSelectProject: () => void;
   onProjectSettings: () => void;
   onFileUpload: () => void;
   onDocxImport: () => void | Promise<void>;
-  onTxtExport: () => void;
+  onTxtExport: () => void | Promise<void>;
 }
 
 export default function ProjectSection({
@@ -34,6 +36,8 @@ export default function ProjectSection({
   isSystemInitializing,
   isDocxConverting,
   isDocxDialogOpen = false,
+  isTxtConverting,
+  isTxtDialogOpen = false,
   onSelectProject,
   onProjectSettings,
   onFileUpload,
@@ -47,6 +51,14 @@ export default function ProjectSection({
     !currentProject ||
     isDocxConverting ||
     isDocxDialogOpen;
+
+  const exportDisabled =
+    isSystemInitializing ||
+    isGoogleDriveOperationPending ||
+    toolExecuting ||
+    !currentProject ||
+    isTxtConverting ||
+    isTxtDialogOpen;
 
   return (
     <div style={{ 
@@ -146,18 +158,20 @@ export default function ProjectSection({
           
           <button 
             onClick={onTxtExport}
-            disabled={isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject}
+            disabled={exportDisabled}
+            aria-busy={isTxtConverting}
+            title={exportDisabled ? 'Please wait…' : 'Export a TXT to DOCX'}
             style={{
               padding: '3px 8px',
-              backgroundColor: (isGoogleDriveOperationPending || !currentProject) ? '#666' : '#9C27B0',
-              color: (isGoogleDriveOperationPending || !currentProject) ? '#999' : '#fff',
+              backgroundColor: exportDisabled ? '#666' : '#9C27B0',
+              color: exportDisabled ? '#999' : '#fff',
               border: 'none',
               borderRadius: '3px',
               fontSize: '11px',
-              cursor: (isGoogleDriveOperationPending || !currentProject) ? 'not-allowed' : 'pointer'
+              cursor: exportDisabled ? 'not-allowed' : 'pointer'
             }}
           >
-            EXPORT .docx
+            {isTxtConverting ? 'Exporting…' : 'EXPORT .docx'}
           </button>
         </div>
       </div>
@@ -202,3 +216,4 @@ export default function ProjectSection({
     </div>
   );
 }
+

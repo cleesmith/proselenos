@@ -1,4 +1,5 @@
 // lib/docx-comments-actions.ts
+
 'use server';
 
 import {
@@ -118,7 +119,7 @@ ${cleanupText(extractionResult.documentContent)}`;
         return { 
           success: true, 
           data: {
-            fileId: file.id,
+            fileId: file.id!,
             fileName: file.name || noCommentsFileName,
             commentCount: 0,
             hasComments: false
@@ -141,7 +142,7 @@ ${cleanupText(extractionResult.documentContent)}`;
       return { 
         success: true, 
         data: {
-          fileId: file.id,
+          fileId: file.id!,
           fileName: file.name || finalOutputName,
           commentCount: extractionResult.comments.length,
           hasComments: true

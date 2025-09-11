@@ -1435,6 +1435,8 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       isSystemInitializing={isSystemInitializing}
       isDocxConverting={projectState.isConverting}
       isDocxDialogOpen={projectState.showDocxSelector || projectState.showFilenameDialog}
+      isTxtConverting={projectState.isConvertingTxt}
+      isTxtDialogOpen={projectState.showTxtSelector || projectState.showTxtFilenameDialog}
       onSelectProject={handleSelectProject}
       onProjectSettings={handleProjectSettings}
       onFileUpload={handleFileUpload}

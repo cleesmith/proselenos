@@ -1,4 +1,5 @@
 // lib/epub-conversion-actions.ts
+
 'use server';
 
 import {
@@ -136,7 +137,7 @@ export async function convertEpubToTextAction(
       return { 
         success: true, 
         data: {
-          fileId: file.id,
+          fileId: file.id!,
           fileName: file.name || timestampedOutputName,
           chapterCount: result.chapters.length,
           wordCount: countWords(allText)
