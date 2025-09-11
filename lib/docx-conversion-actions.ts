@@ -1,4 +1,5 @@
 // lib/docx-conversion-actions.ts
+
 'use server';
 
 // Session is now passed as accessToken parameter
@@ -159,23 +160,45 @@ export async function convertDocxToTxtAction(
         throw new Error('No text content found in DOCX file');
       }
 
-      // Normalize and shape final spacing
+      // Normalize line endings and clean up basic spacing
       textContent = textContent
-        .replace(/\r\n/g, '\n')  // Normalize CRLF to LF
-        .replace(/\r/g, '\n')    // Normalize CR to LF
-        .replace(/\n{3,}/g, '\n\n') // Collapse 3+ newlines to exactly two
-        // Ensure exactly two newlines before every chapter heading (including first)
-        .replace(/(?:^|\n+)\s*((?:Chapter|CHAPTER|Ch\.|CH\.)\s*\d+)/g, '\n\n$1')
-        .replace(/\s+$/g, ''); // Trim only end, preserve leading newlines
+        .replace(/\r\n/g, '\n')  // CRLF -> LF
+        .replace(/\r/g, '\n')    // CR   -> LF
+        .replace(/\n{3,}/g, '\n\n'); // collapse 3+ consecutive newlines to exactly two
 
-      // Count chapters
-      const chapterMatches = textContent.match(/(^|\n)\s*(Chapter|CHAPTER|Ch\.|CH\.)\s*\d+/gi);
+      // Split on "Chapter" but keep the "Chapter" text with each part
+      const parts = textContent.split(/(\bChapter\s*\d+[^\n]*)/);
+      
+      let processedText = '';
+      
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        
+        // Check if this part is a chapter heading
+        if (/^\bChapter\s*\d+/.test(part.trim())) {
+          // This is a chapter heading - ALWAYS add 2 blank lines before it (3 newlines total)
+          // Remove any trailing whitespace from previous content (if any)
+          processedText = processedText.replace(/\s+$/, '');
+          // Add 3 newlines to create 2 blank lines before this chapter
+          processedText += '\n\n\n';
+          processedText += part;
+        } else {
+          // Regular content - add as is
+          processedText += part;
+        }
+      }
+
+      // Ensure the file ends with exactly 2 blank lines (3 newlines total)
+      processedText = processedText.replace(/\s+$/, '') + '\n\n\n';
+
+      // Count chapters (only 'Chapter')
+      const chapterMatches = processedText.match(/\bChapter\s*\d+/g);
       const chapterCount = chapterMatches ? chapterMatches.length : 0;
 
       // Save the converted text to Google Drive (no metadata header)
       const file = await uploadManuscript(
         drive,
-        textContent,
+        processedText,
         projectFolderId,
         finalOutputName
       );
@@ -186,7 +209,7 @@ export async function convertDocxToTxtAction(
           fileId: file.id,
           fileName: file.name || finalOutputName,
           chapterCount,
-          characterCount: textContent.length
+          characterCount: processedText.length
         },
         message: `Successfully converted DOCX to TXT. Found ${chapterCount} chapters.` 
       };
@@ -270,7 +293,7 @@ export async function convertTxtToDocxAction(
         .trim();
 
       // Count chapters and paragraphs
-      const chapterMatches = textContent.match(/(^|\n)\s*(Chapter|CHAPTER|Ch\.|CH\.)\s*\d+/gi);
+      const chapterMatches = textContent.match(/(^|\n)\s*Chapter\s*\d+/g);
       const chapterCount = chapterMatches ? chapterMatches.length : 0;
       
       // Split into paragraphs (non-empty lines or double line breaks)
@@ -286,7 +309,7 @@ export async function convertTxtToDocxAction(
 
       paragraphs.forEach((paragraph) => {
         // Check if this looks like a chapter heading
-        const isChapterHeading = /^\s*(Chapter|CHAPTER|Ch\.|CH\.)\s*\d+/i.test(paragraph);
+        const isChapterHeading = /^\s*Chapter\s*\d+/i.test(paragraph);
         
         if (isChapterHeading) {
           // Create a heading paragraph
@@ -392,4 +415,3 @@ export async function convertTxtToDocxAction(
     };
   }
 }
-
