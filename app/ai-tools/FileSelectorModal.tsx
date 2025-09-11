@@ -67,7 +67,7 @@ export default function FileSelectorModal({
         border: `2px solid ${theme.border}`,
         borderRadius: '8px',
         padding: '20px',
-        maxWidth: '500px',
+        maxWidth: 'min(900px, 95vw)', //'500px',
         width: '90%',
         maxHeight: '60vh',
         overflowY: 'auto'
@@ -145,16 +145,19 @@ export default function FileSelectorModal({
                     }
                   }}
                 >
+
                   <div style={{ 
                     flex: '1',
                     color: isDoc ? '#4285F4' : '#34A853',
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
+                    alignItems: 'flex-start',
+                    gap: '8px',
+                    wordBreak: 'break-word'
                   }}>
                     {isDoc ? <span>📝</span> : <span>📄</span>}
                     {file.name}
                   </div>
+
                   <div style={{
                     padding: '4px 8px',
                     backgroundColor: isSelected ? '#198754' : '#28a745',
