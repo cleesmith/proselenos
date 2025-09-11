@@ -14,10 +14,12 @@ interface ProjectSectionProps {
   theme: ThemeConfig;
   isDarkMode: boolean;
   isSystemInitializing: boolean;
+  isDocxConverting: boolean; // converting DOCX->TXT in progress
+  isDocxDialogOpen?: boolean; // selector or filename dialog open
   onSelectProject: () => void;
   onProjectSettings: () => void;
   onFileUpload: () => void;
-  onDocxImport: () => void;
+  onDocxImport: () => void | Promise<void>;
   onTxtExport: () => void;
 }
 
@@ -30,12 +32,22 @@ export default function ProjectSection({
   theme,
   isDarkMode,
   isSystemInitializing,
+  isDocxConverting,
+  isDocxDialogOpen = false,
   onSelectProject,
   onProjectSettings,
   onFileUpload,
   onDocxImport,
   onTxtExport
 }: ProjectSectionProps) {
+  const importDisabled =
+    isSystemInitializing ||
+    isGoogleDriveOperationPending ||
+    toolExecuting ||
+    !currentProject ||
+    isDocxConverting ||
+    isDocxDialogOpen;
+
   return (
     <div style={{ 
       marginBottom: '12px',
@@ -116,18 +128,20 @@ export default function ProjectSection({
           
           <button 
             onClick={onDocxImport}
-            disabled={isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject}
+            disabled={importDisabled}
+            aria-busy={isDocxConverting}
+            title={importDisabled ? 'Please wait…' : 'Import a DOCX file'}
             style={{
               padding: '3px 8px',
-              backgroundColor: (isGoogleDriveOperationPending || !currentProject) ? '#666' : '#9C27B0',
-              color: (isGoogleDriveOperationPending || !currentProject) ? '#999' : '#fff',
+              backgroundColor: importDisabled ? '#666' : '#9C27B0',
+              color: importDisabled ? '#999' : '#fff',
               border: 'none',
               borderRadius: '3px',
               fontSize: '11px',
-              cursor: (isGoogleDriveOperationPending || !currentProject) ? 'not-allowed' : 'pointer'
+              cursor: importDisabled ? 'not-allowed' : 'pointer'
             }}
           >
-            IMPORT .docx
+            {isDocxConverting ? 'Converting…' : 'IMPORT .docx'}
           </button>
           
           <button 

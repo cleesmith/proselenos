@@ -1433,6 +1433,8 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
       theme={theme}
       isDarkMode={isDarkMode}
       isSystemInitializing={isSystemInitializing}
+      isDocxConverting={projectState.isConverting}
+      isDocxDialogOpen={projectState.showDocxSelector || projectState.showFilenameDialog}
       onSelectProject={handleSelectProject}
       onProjectSettings={handleProjectSettings}
       onFileUpload={handleFileUpload}
