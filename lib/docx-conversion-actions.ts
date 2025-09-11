@@ -159,33 +159,23 @@ export async function convertDocxToTxtAction(
         throw new Error('No text content found in DOCX file');
       }
 
-      // Clean up the text content
+      // Normalize and shape final spacing
       textContent = textContent
-        .replace(/\r\n/g, '\n')  // Normalize line endings
-        .replace(/\r/g, '\n')    // Convert remaining \r to \n
-        .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines with double newlines
-        .trim();
+        .replace(/\r\n/g, '\n')  // Normalize CRLF to LF
+        .replace(/\r/g, '\n')    // Normalize CR to LF
+        .replace(/\n{3,}/g, '\n\n') // Collapse 3+ newlines to exactly two
+        // Ensure exactly two newlines before every chapter heading (including first)
+        .replace(/(?:^|\n+)\s*((?:Chapter|CHAPTER|Ch\.|CH\.)\s*\d+)/g, '\n\n$1')
+        .replace(/\s+$/g, ''); // Trim only end, preserve leading newlines
 
-      // Count chapters (assuming chapters start with "Chapter" or similar)
+      // Count chapters
       const chapterMatches = textContent.match(/(^|\n)\s*(Chapter|CHAPTER|Ch\.|CH\.)\s*\d+/gi);
       const chapterCount = chapterMatches ? chapterMatches.length : 0;
 
-      // Add metadata header
-      const metadata = `=== DOCX CONVERSION METADATA ===
-Original File: ${docxFileId}
-Converted: ${new Date().toISOString()}
-Chapters Found: ${chapterCount}
-Character Count: ${textContent.length}
-===================================
-
-`;
-
-      const finalContent = metadata + textContent;
-
-      // Save the converted text to Google Drive
+      // Save the converted text to Google Drive (no metadata header)
       const file = await uploadManuscript(
         drive,
-        finalContent,
+        textContent,
         projectFolderId,
         finalOutputName
       );
@@ -402,3 +392,4 @@ export async function convertTxtToDocxAction(
     };
   }
 }
+

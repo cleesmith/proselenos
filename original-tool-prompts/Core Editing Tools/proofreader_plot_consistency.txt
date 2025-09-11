@@ -28,7 +28,7 @@ APPROACH:
    - Information revealed to different characters and when
    - Rules established for how the world functions
    - Cause-and-effect relationships between events
-   - Setup elements that promise later payoff
+   - Set up elements that promise later payoff
 3. Identify contradictions, logical gaps, or inconsistencies in these elements
 4. Present specific instances where plot elements appear inconsistent
 
