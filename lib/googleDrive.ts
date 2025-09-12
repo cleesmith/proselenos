@@ -4,7 +4,6 @@
 
 import { google, drive_v3 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
-import https from 'https';
 import { Readable } from 'stream';
 
 /**
@@ -29,16 +28,6 @@ export async function getAuthClient(accessToken: string): Promise<OAuth2Client> 
  * This function now includes the memory leak fix.
  */
 export async function getDriveClient(authClient: OAuth2Client): Promise<drive_v3.Drive> { // <-- ADDED async/Promise
-  // THE FIX: Create a new, short-lived agent for this specific server-side task.
-  // This agent will be garbage collected once the task is complete, preventing leaks.
-  const agent = new https.Agent({
-    keepAlive: true,        // Reuse connections within this task for performance
-    keepAliveMsecs: 15000,  // Keep alive for a short period (15 seconds)
-    maxSockets: 8,          // A reasonable number for a single task
-    maxFreeSockets: 4,      // Pool a few idle sockets
-    timeout: 30000,         // Abort requests that take too long
-  });
-
   const drive = google.drive({
     version: 'v3',
     auth: authClient,
@@ -565,6 +554,34 @@ export async function clearCurrentProject(drive: any, rootFolderId: string): Pro
   config.settings.current_project = null;
   config.settings.current_project_folder_id = null;
   await saveproselenosConfig(drive, rootFolderId, config);
+}
+
+// -----------------------------------------------------------------------------
+// withDrive helper: builds a short-lived Drive client for a single action and
+// ensures cleanup via an AbortController. This function does not modify any
+// existing logic; it simply provides an alternative way to run Drive operations
+// using an access token (and optional refresh/expiry) without creating long-lived
+// objects. It is safe to add and will not affect current exports.
+// -----------------------------------------------------------------------------
+export async function withDrive<T>(
+  tokens: { access_token: string; refresh_token?: string; expiry_date?: number },
+  action: (drive: drive_v3.Drive, ac: AbortController) => Promise<T>
+): Promise<T> {
+  // Create a fresh OAuth2 client for this action
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
+  oauth2Client.setCredentials(tokens);
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+  const ac = new AbortController();
+  try {
+    return await action(drive, ac);
+  } finally {
+    // Abort any pending requests created during this action
+    ac.abort();
+  }
 }
 
 // Validate that current project still exists on Drive

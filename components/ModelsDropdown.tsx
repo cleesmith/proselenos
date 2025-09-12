@@ -170,7 +170,7 @@ export default function ModelsDropdown({
         borderRadius: '8px',
         padding: '20px',
         width: '550px',
-        maxHeight: '75vh',
+        maxHeight: '90vh',
         overflowY: 'auto'
       }}>
         {/* Header */}
@@ -338,7 +338,7 @@ export default function ModelsDropdown({
                 }}>
                   {showAllModels 
                     ? 'Browse all models available on OpenRouter'
-                    : 'Quick access to the most popular AI models'
+                    : 'Quick access to the popular AI models'
                   }
                 </div>
                 <select

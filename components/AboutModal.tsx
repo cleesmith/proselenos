@@ -229,8 +229,8 @@ export default function AboutModal({
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
               <li style={{ marginBottom: '8px' }}>Each project is a separate folder in your <strong>proselenos_projects</strong> directory</li>
               <li style={{ marginBottom: '8px' }}>Upload manuscript files (.docx or .txt) to your project folder</li>
-              <li style={{ marginBottom: '8px' }}>AI tools work on files within your selected project</li>
-              <li style={{ marginBottom: '8px' }}>Keep different books, articles, or writing projects organized separately</li>
+              <li style={{ marginBottom: '8px' }}>AI tools work on/with .txt files within your selected project</li>
+              <li style={{ marginBottom: '8px' }}>Keep different writing projects organized separately</li>
             </ul>
           </div>
 
@@ -250,7 +250,7 @@ export default function AboutModal({
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
               <li style={{ marginBottom: '8px' }}><strong>Grammar & Style:</strong> Fix grammar, improve sentence structure, enhance readability</li>
               <li style={{ marginBottom: '8px' }}><strong>Content Analysis:</strong> Character development, plot consistency, pacing feedback</li>
-              <li style={{ marginBottom: '8px' }}><strong>Genre-Specific:</strong> Tools tailored for fiction, non-fiction, academic writing</li>
+              <li style={{ marginBottom: '8px' }}><strong>Genre-Specific:</strong> Tools tailored for fiction, non-fiction (a few)</li>
               <li style={{ marginBottom: '8px' }}><strong>Custom Tools:</strong> Specialized editing prompts for specific needs</li>
             </ul>
           </div>
@@ -266,13 +266,13 @@ export default function AboutModal({
               🤖 Why OpenRouter?
             </h3>
             <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px', paddingLeft: '20px' }}>
-              OpenRouter provides the best AI experience for writers:
+              OpenRouter provides a good AI experience for writers:
             </p>
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
-              <li style={{ marginBottom: '8px' }}><strong>Model Variety:</strong> Access to GPT-4, Claude, Gemini, and more from one API</li>
-              <li style={{ marginBottom: '8px' }}><strong>Competitive Pricing:</strong> Often cheaper than direct provider APIs</li>
-              <li style={{ marginBottom: '8px' }}><strong>Reliability:</strong> Automatic fallbacks if one model is unavailable</li>
+              <li style={{ marginBottom: '8px' }}><strong>Model Variety:</strong> Access to GPT-5, Claude, Gemini, and more from one API key</li>
               <li style={{ marginBottom: '8px' }}><strong>Flexibility:</strong> Switch between models based on your specific editing needs</li>
+              <li style={{ marginBottom: '8px' }}><strong>Reliability:</strong> Automatic fallbacks if one model is unavailable</li>
+              <li style={{ marginBottom: '8px' }}><strong>Competitive Pricing:</strong> Sometimes cheaper than direct provider APIs</li>
             </ul>
           </div>
 
@@ -287,13 +287,14 @@ export default function AboutModal({
               ✍️ AI Writing Assistant
             </h3>
             <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px', paddingLeft: '20px' }}>
-              Proselenos isn't just for editing - it's also a powerful writing companion:
+              Proselenos isn't just for editing - it's also a writing companion:
             </p>
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
-              <li style={{ marginBottom: '8px' }}><strong>Draft Creation:</strong> Generate initial drafts, outlines, and story structures</li>
-              <li style={{ marginBottom: '8px' }}><strong>Brainstorming:</strong> Develop characters, plot ideas, and world-building elements</li>
-              <li style={{ marginBottom: '8px' }}><strong>Research Assistance:</strong> Get help with fact-checking and background research</li>
-              <li style={{ marginBottom: '8px' }}><strong>Writer's Block:</strong> Overcome creative blocks with AI-generated suggestions</li>
+              <li style={{ marginBottom: '8px' }}><strong>Writer's Block:</strong> Overcome creative blocks with AI-generated rough draft writing</li>
+              <li style={{ marginBottom: '8px' }}><strong>Brainstorming:</strong> Develop characters, plot ideas, and settings</li>
+              <li style={{ marginBottom: '8px' }}><strong>Outling:</strong> Generate initial drafts, outlines, and story structures</li>
+              <li style={{ marginBottom: '8px' }}><strong>World Building:</strong> Creates a world file based on outline and ideas</li>
+              <li style={{ marginBottom: '8px' }}><strong>Chapter Writing:</strong> Generate rough draft chapters one-at-time that's aware of<br /> previous chapters plus the outline and world files<br /><blockquote><i>Aside: AI models with a larger input size, <b>context window</b>, can be more thorough.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Alas, AI creative writing is still very rough draft.</i></blockquote></li>
             </ul>
           </div>
 
@@ -308,13 +309,11 @@ export default function AboutModal({
               📚 Publishing Assistant
             </h3>
             <p style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', marginBottom: '12px', paddingLeft: '20px' }}>
-              Get your manuscript ready for Kindle Direct Publishing (KDP):
+              Get your manuscript ready for Kindle Direct Publishing (KDP) and other booksellers:
             </p>
             <ul style={{ fontSize: '14px', color: isDarkMode ? '#d1d5db' : '#374151', lineHeight: '1.6', paddingLeft: '20px' }}>
               <li style={{ marginBottom: '8px' }}><strong>Format Optimization:</strong> Prepare your manuscript for both ebook and paperback formats</li>
               <li style={{ marginBottom: '8px' }}><strong>Metadata Generation:</strong> Create compelling book descriptions, keywords, and categories</li>
-              <li style={{ marginBottom: '8px' }}><strong>Quality Checks:</strong> Final proofreading and formatting validation</li>
-              <li style={{ marginBottom: '8px' }}><strong>Publishing Guidance:</strong> Step-by-step assistance for KDP submission</li>
             </ul>
           </div>
 

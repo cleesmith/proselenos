@@ -10,6 +10,9 @@ import {
   uploadManuscript,
   listFilesAndFolders
 } from '@/lib/googleDrive';
+// Import types and withDrive to provide adapter wrappers without changing existing logic
+import type { drive_v3 } from 'googleapis';
+import { withDrive } from '@/lib/googleDrive';
 import * as mammoth from 'mammoth';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { Readable } from 'stream';
@@ -44,37 +47,68 @@ function bufferToStream(buffer: Buffer): Readable {
 }
 
 // List DOCX files in a project folder
-export async function listDocxFilesAction(accessToken: string, projectFolderId: string): Promise<ActionResult> {
+// export async function listDocxFilesAction(accessToken: string, projectFolderId: string): Promise<ActionResult> {
+//   try {
+//     const clients = await getAuthenticatedClients(accessToken);
+//     if ('error' in clients) {
+//       return { success: false, error: clients.error };
+//     }
+
+//     const { drive } = clients;
+    
+//     if (!projectFolderId) {
+//       return { success: false, error: 'Project folder ID is required' };
+//     }
+
+//     // Get all files in the project folder
+//     const allFiles = await listFilesAndFolders(drive, projectFolderId);
+    
+//     // Filter for DOCX files
+//     const docxFiles = allFiles.filter((file: any) => 
+//       file.name.toLowerCase().endsWith('.docx') &&
+//       file.mimeType !== 'application/vnd.google-apps.folder'
+//     );
+    
+//     return { 
+//       success: true, 
+//       data: { files: docxFiles },
+//       message: `Found ${docxFiles.length} DOCX files` 
+//     };
+//   } catch (error: any) {
+//     return { success: false, error: error.message || 'Failed to list DOCX files' };
+//   }
+// }
+export async function listDocxFilesAction(
+  accessToken: string,
+  projectFolderId: string
+): Promise<ActionResult> {
   try {
-    const clients = await getAuthenticatedClients(accessToken);
-    if ('error' in clients) {
-      return { success: false, error: clients.error };
-    }
+    return await withDriveFromAccessToken(accessToken, async (drive /*, ac */) => {
+      // Validation check
+      if (!projectFolderId) {
+        throw new Error('Project folder ID is required');
+      }
 
-    const { drive } = clients;
-    
-    if (!projectFolderId) {
-      return { success: false, error: 'Project folder ID is required' };
-    }
+      // Grab all files and filter for DOCX
+      const allFiles = await listFilesAndFolders(drive, projectFolderId);
+      const docxFiles = allFiles.filter((file: any) =>
+        file.name.toLowerCase().endsWith('.docx') &&
+        file.mimeType !== 'application/vnd.google-apps.folder'
+      );
 
-    // Get all files in the project folder
-    const allFiles = await listFilesAndFolders(drive, projectFolderId);
-    
-    // Filter for DOCX files
-    const docxFiles = allFiles.filter((file: any) => 
-      file.name.toLowerCase().endsWith('.docx') &&
-      file.mimeType !== 'application/vnd.google-apps.folder'
-    );
-    
-    return { 
-      success: true, 
-      data: { files: docxFiles },
-      message: `Found ${docxFiles.length} DOCX files` 
-    };
+      // Return the same ActionResult shape as before
+      return {
+        success: true,
+        data: { files: docxFiles },
+        message: `Found ${docxFiles.length} DOCX files`
+      };
+    });
   } catch (error: any) {
+    // Any thrown error (including from validation) ends up here
     return { success: false, error: error.message || 'Failed to list DOCX files' };
   }
 }
+
 
 // List TXT files in a project folder
 export async function listTxtFilesAction(accessToken: string, projectFolderId: string): Promise<ActionResult> {
@@ -112,127 +146,6 @@ export async function listTxtFilesAction(accessToken: string, projectFolderId: s
 }
 
 // Convert DOCX file to TXT
-// export async function convertDocxToTxtAction(
-//   accessToken: string,
-//   docxFileId: string,
-//   outputFileName: string,
-//   projectFolderId: string
-// ): Promise<ActionResult> {
-//   try {
-//     const clients = await getAuthenticatedClients(accessToken);
-//     if ('error' in clients) {
-//       return { success: false, error: clients.error };
-//     }
-
-//     const { drive } = clients;
-    
-//     if (!docxFileId || !outputFileName || !projectFolderId) {
-//       return { success: false, error: 'Missing required parameters' };
-//     }
-
-//     // Ensure output filename has .txt extension
-//     let finalOutputName = outputFileName.trim();
-//     if (!finalOutputName.toLowerCase().endsWith('.txt')) {
-//       finalOutputName += '.txt';
-//     }
-
-//     try {
-//       // Download the DOCX file from Google Drive
-//       const response = await drive.files.get({
-//         fileId: docxFileId,
-//         alt: 'media'
-//       }, {
-//         responseType: 'arraybuffer'
-//       });
-
-//       if (!response.data) {
-//         throw new Error('Failed to download DOCX file');
-//       }
-
-//       // Convert ArrayBuffer to Buffer for mammoth
-//       const buffer = Buffer.from(response.data as ArrayBuffer);
-      
-//       // Use mammoth to convert DOCX to plain text
-//       const result = await mammoth.extractRawText({ buffer });
-//       let textContent = result.value;
-
-// const processedText = result.value;
-
-//       // if (!textContent || textContent.trim().length === 0) {
-//       //   throw new Error('No text content found in DOCX file');
-//       // }
-
-//       // // Normalize line endings and clean up basic spacing
-//       // textContent = textContent
-//       //   .replace(/\r\n/g, '\n')  // CRLF -> LF
-//       //   .replace(/\r/g, '\n')    // CR   -> LF
-//       //   .replace(/\n{3,}/g, '\n\n'); // collapse 3+ consecutive newlines to exactly two
-
-//       // // Split on "Chapter" but keep the "Chapter" text with each part
-//       // const parts = textContent.split(/(\bChapter\s*\d+[^\n]*)/);
-      
-//       // let processedText = '';
-      
-//       // for (let i = 0; i < parts.length; i++) {
-//       //   const part = parts[i];
-//       //   // Check if this part is a chapter heading
-//       //   if (/^\bChapter\s*\d+/.test(part.trim())) {
-//       //     // This is a chapter heading - ALWAYS add 2 blank lines before it (3 newlines total)
-//       //     // Remove any trailing whitespace from previous content (if any)
-//       //     processedText = processedText.replace(/\s+$/, '');
-//       //     // Add 3 newlines to create 2 blank lines before this chapter
-//       //     processedText += '\n\n\n';
-//       //     processedText += part;
-//       //   } else {
-//       //     // Regular content - add as is
-//       //     processedText += part;
-//       //   }
-//       // }
-
-//       // // Ensure the file ends with exactly 2 blank lines (3 newlines total)
-//       // processedText = processedText.replace(/\s+$/, '') + '\n\n\n';
-
-//       // // Count chapters (only 'Chapter')
-//       // const chapterMatches = processedText.match(/\bChapter\s*\d+/g);
-//       // const chapterCount = chapterMatches ? chapterMatches.length : 0;
-
-// const chapterCount = 999;
-
-//       // Save the converted text to Google Drive (no metadata header)
-//       const file = await uploadManuscript(
-//         drive,
-//         processedText,
-//         projectFolderId,
-//         finalOutputName
-//       );
-      
-//       return { 
-//         success: true, 
-//         data: {
-//           fileId: file.id,
-//           fileName: file.name || finalOutputName,
-//           chapterCount,
-//           characterCount: processedText.length
-//         },
-//         message: `Successfully converted DOCX to TXT. Found ${chapterCount} chapters.` 
-//       };
-
-//     } catch (conversionError: any) {
-//       console.error('DOCX conversion error:', conversionError);
-//       return { 
-//         success: false, 
-//         error: `Conversion failed: ${conversionError.message || 'Unknown error'}` 
-//       };
-//     }
-
-//   } catch (error: any) {
-//     console.error('Error in convertDocxToTxtAction:', error);
-//     return { 
-//       success: false, 
-//       error: error.message || 'Failed to convert DOCX file' 
-//     };
-//   }
-// }
 export async function convertDocxToTxtAction(
   accessToken: string,
   docxFileId: string,
@@ -582,3 +495,52 @@ export async function convertTxtToDocxAction(
     };
   }
 }
+
+// -----------------------------------------------------------------------------
+// withDrive adapter (non-breaking): use your existing accessToken strings
+// -----------------------------------------------------------------------------
+export async function withDriveFromAccessToken<T>(
+  accessToken: string,
+  action: (drive: drive_v3.Drive, ac: AbortController) => Promise<T>
+): Promise<T> {
+console.log('withDriveFromAccessToken:');
+console.dir(accessToken);
+  // We only pass the access token; refresh_token is optional and not needed here
+  return withDrive({ access_token: accessToken }, action);
+}
+
+// notes:
+// `getAuthenticatedClients` and `withDrive` solve similar 
+// problems—obtaining an authenticated Drive client—but they 
+// behave quite differently.
+// 
+// * **`getAuthenticatedClients(accessToken)`**
+// 
+//   * Returns an object `{ authClient, drive }` or `{ error: … }`.
+//   * You have to check for an `error` property yourself.
+//   * You get both the `authClient` (Google OAuth2 client) and 
+//     the `drive` client, which you then use in your code.
+//   * It leaves connection cleanup and error handling entirely up 
+//     to the caller, and the Drive client can be reused across calls.
+// 
+// * **`withDrive(tokens, callback)`** (and your adapter `withDriveFromAccessToken`)
+// 
+//   * You pass in an access token (and optional refresh/expiry). 
+//     The helper builds a fresh OAuth2 client and Drive client, 
+//     runs your **callback** with that Drive client and an `AbortController`, 
+//     then cleans up.
+//   * It doesn’t return a `{ drive, authClient }` object. Instead, it 
+//     returns whatever your callback returns (or throws if your callback throws). 
+//     There is no `error` property; you handle errors via normal try/catch.
+//   * Because it instantiates a new client for one action and aborts 
+//     outstanding requests in a `finally` block, it helps avoid lingering 
+//     connections or leaks in long‑running apps. It’s designed for 
+//     single, self‑contained operations, not for holding onto a Drive client 
+//     across multiple calls.
+// 
+// So, while both functions give you access to Drive, `getAuthenticatedClients` 
+// is a simple getter that you call and destructure, 
+// whereas `withDrive` is a wrapper that executes a function with a drive 
+// client and then tears it down. 
+// The latter offers automatic cleanup and doesn’t expose 
+// an `authClient` or `drive` outside of its callback.
