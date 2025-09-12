@@ -294,7 +294,7 @@ export default function AboutModal({
               <li style={{ marginBottom: '8px' }}><strong>Brainstorming:</strong> Develop characters, plot ideas, and settings</li>
               <li style={{ marginBottom: '8px' }}><strong>Outling:</strong> Generate initial drafts, outlines, and story structures</li>
               <li style={{ marginBottom: '8px' }}><strong>World Building:</strong> Creates a world file based on outline and ideas</li>
-              <li style={{ marginBottom: '8px' }}><strong>Chapter Writing:</strong> Generate rough draft chapters one-at-time that's aware of<br /> previous chapters plus the outline and world files<br /><blockquote><i>Aside: AI models with a larger input size, <b>context window</b>, can be more thorough.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Alas, AI creative writing is still very rough draft.</i></blockquote></li>
+              <li style={{ marginBottom: '8px' }}><strong>Chapter Writing:</strong> Generate rough draft chapters one-at-time that's aware of<br /> previous chapters plus the outline and world files<br /><blockquote><i>Aside: AI models with a larger input size, <b>context window</b>, can be more thorough.<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Alas, AI creative writing is still very rough draft, but it does excel at editing.</i></blockquote></li>
             </ul>
           </div>
 
