@@ -1228,7 +1228,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                 },
                 {
                   title: 'Publishing preparation',
-                  description: 'Generate publication-ready EPUB and PDF files for digital and print publishing.'
+                  description: 'Generate publication-ready EPUB and PDF files for digital and print publishing. Also, the included Editor is capable of reading aloud your manuscript.'
                 }
               ].map((feature, index) => (
                 <div key={index} style={{
