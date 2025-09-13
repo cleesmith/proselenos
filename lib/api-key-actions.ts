@@ -302,3 +302,30 @@ export async function getBatchSettingsDataAction(
     };
   }
 }
+
+// New helper that avoids the expensive getModelsInternal() call
+export async function getKeyAndStatusAction(
+  provider: string = 'openrouter'
+): Promise<{ success: boolean; hasKey?: boolean; apiKey?: string; error?: string }> {
+  try {
+    const session = await getServerSession(authOptions) as ExtendedSession;
+    if (!session?.user?.id) {
+      return { success: false, error: 'Not authenticated' };
+    }
+    if (!session.accessToken) {
+      return { success: false, error: 'No access token available' };
+    }
+
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({ access_token: session.accessToken });
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    const storage = new InternalSecureStorage(drive, session.user.id);
+
+    // getBatchData already loads and decrypts the config once
+    const { hasKey, apiKey } = await storage.getBatchData(provider);
+    return { success: true, hasKey, apiKey: apiKey || undefined };
+  } catch (error: any) {
+    console.error('Error in getKeyAndStatusAction:', error);
+    return { success: false, error: error.message ?? 'Unknown error' };
+  }
+}

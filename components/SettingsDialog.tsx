@@ -3,8 +3,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { storeApiKeyAction, removeApiKeyAction, getBatchSettingsDataAction } from '@/lib/api-key-actions';
 import { showAlert, showConfirm } from '@/app/shared/alerts';
+// import { storeApiKeyAction, removeApiKeyAction, getBatchSettingsDataAction } from '@/lib/api-key-actions';
+import { getKeyAndStatusAction, storeApiKeyAction, removeApiKeyAction } from '@/lib/api-key-actions';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -40,7 +41,10 @@ export default function SettingsDialog({
     
     setLoading(true);
     try {
-      const result = await getBatchSettingsDataAction(selectedProvider);
+      // too slow, as it gets all ai models from openrouter:
+      // const result = await getBatchSettingsDataAction(selectedProvider);
+      // Only fetch key and status; do not fetch models here
+      const result = await getKeyAndStatusAction(selectedProvider);
       if (result.success) {
         setHasKey(result.hasKey || false);
         setApiKey(result.apiKey || '');
