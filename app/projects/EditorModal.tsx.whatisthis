@@ -1,3 +1,5 @@
+// app/projects/EditorModal.tsx
+
 // Editor modal component with simple, reliable sentence‑by‑sentence TTS and sentence highlighting
 
 /*
@@ -87,6 +89,18 @@ export default function EditorModal({
 
   // Ref for immediate access to nextAudio (avoids React state timing issues)
   const nextAudioRef = useRef<{ audio: HTMLAudioElement; url: string } | null>(null);
+
+useEffect(() => {
+  console.log(
+    'TTS state changed:',
+    'isSpeaking =', isSpeaking,
+    'isPaused =', isPaused,
+    'sentences.length =', sentences.length,
+    'currentSentenceIndex =', currentSentenceIndex
+  );
+}, [isSpeaking, isPaused, sentences, currentSentenceIndex]);
+
+
 
   // Hydrate client on mount
   useEffect(() => {
@@ -366,8 +380,9 @@ export default function EditorModal({
       handleResume();
       return;
     }
-    const ranges = getSentenceRangesFromOriginal(editorContent);
-    const parsedSentences = ranges.map((r) => editorContent.slice(r.start, r.end));
+    const parsedSentences = parseSentences(
+      editorContent.replace(/^(?:[ \t]*\r?\n){1,2}/, '')
+    );
     if (parsedSentences.length === 0) {
       showAlert('No sentences found!', 'error', undefined, isDarkMode);
       return;
@@ -470,78 +485,32 @@ export default function EditorModal({
   }, [isOpen]);
 
   /*
-   * Build a highlighted HTML string.  Instead of re‑splitting the
-   * editor content (which can lead to off‑by‑one errors between the
-   * audio sentences and the preview), we rely directly on the
-   * `sentences` array that drives the TTS.  This guarantees that
-   * the highlighted sentence always corresponds to the sentence
-   * currently being spoken. We preserve original spacing and
-   * blank lines by slicing exact ranges from the original content.
+   * Build a highlighted HTML string.  To avoid issues with whitespace
+   * differences between the normalized sentences returned by
+   * `parseSentences()` and the original `editorContent`, we split the
+   * original content using the same sentence boundary regex.  We then
+   * wrap only the current sentence in a span.  This approach preserves
+   * duplicate sentences and avoids missing matches when line breaks or
+   * multiple spaces are present.
    */
   const getHighlightedHtml = () => {
-    /*
-     * Use the original editorContent and the same sentence splitting regex
-     * to compute character ranges for each sentence.  This preserves
-     * whitespace and ensures that highlighting stays in sync with the
-     * currentSentenceIndex.  We wrap the current sentence range in a
-     * span; all other ranges are returned as‑is.  Note that when
-     * `sentences.length` is zero (i.e. no sentences have been parsed),
-     * this returns an empty string.
-     */
-    if (sentences.length === 0) return '';
-    const ranges: { start: number; end: number }[] = getSentenceRangesFromOriginal(editorContent);
-    return ranges
-      .map((r, idx) => {
-        const textSlice = editorContent.slice(r.start, r.end);
+    // Normalize line breaks to spaces similar to parseSentences()
+    const normalized = editorContent
+      .replace(/\n\s*\n+/g, ' . ') // Normalize multiple blank lines
+      .replace(/([.!?])\s*\n+/g, '$1 ') // Remove newline after punctuation
+      .replace(/\n+/g, ' '); // Replace remaining newlines with space
+    // Split into sentence‑like parts, keeping order
+    const parts = normalized.split(/(?<=[.!?])\s+(?=[A-Z])/);
+    // Recombine parts, highlighting the current sentence when speaking
+    return parts
+      .map((part, idx) => {
         if (idx === currentSentenceIndex && isSpeaking) {
-          const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
-          return `<span style="background-color: ${bg}; border-radius: 3px;">${textSlice}</span>`;
+          return `<span style="background-color: yellow;">${part}</span>`;
         }
-        return textSlice;
+        return part;
       })
-      .join('');
+      .join(' ');
   };
-
-  /*
-   * Compute exact character ranges of sentences in the original editorContent
-   * using the same regex used for splitting into sentences.  This avoids
-   * mismatches caused by whitespace normalization.
-   */
-  interface SentenceRange { start: number; end: number; }
-  const getSentenceRangesFromOriginal = (text: string): SentenceRange[] => {
-    const ranges: SentenceRange[] = [];
-    const regex = /(?<=[.!?])\s+(?=[A-Z])/g;
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(text)) !== null) {
-      // Include the matched inter-sentence whitespace with the preceding sentence
-      const end = match.index + match[0].length;
-      ranges.push({ start: lastIndex, end });
-      lastIndex = end;
-    }
-    ranges.push({ start: lastIndex, end: text.length });
-    // Filter out empty or whitespace‑only ranges (whitespace stays attached to previous sentence)
-    return ranges.filter((r) => text.slice(r.start, r.end).trim().length > 0);
-  };
-
-  // Effect: highlight the current sentence inside the editor by selecting it
-  useEffect(() => {
-    if (!isSpeaking) return;
-    if (typeof window === 'undefined') return;
-    // Compute ranges in original content
-    const ranges = getSentenceRangesFromOriginal(editorContent);
-    const range = ranges[currentSentenceIndex];
-    const textarea = document.querySelector('.w-md-editor-text-input') as HTMLTextAreaElement | null;
-    if (textarea && range) {
-      // Focus the textarea and select the current sentence
-      textarea.focus();
-      try {
-        textarea.setSelectionRange(range.start, range.end);
-      } catch {
-        /* ignore errors in selection */
-      }
-    }
-  }, [isSpeaking, currentSentenceIndex, editorContent]);
 
   // Do not render anything if modal is closed
   if (!isOpen) return null;
@@ -570,35 +539,24 @@ export default function EditorModal({
           padding: '0.5rem',
           borderBottom: `1px solid ${theme.border}`,
           flexWrap: 'wrap',
-          gap: '0.5rem',
         }}
       >
-        {/* Left group: title, word count, and sentence progress */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-          }}
-        >
-          <span>
-            <span role="img" aria-label="note">
-              📝
-            </span>{' '}
-            Editor: {currentProject || 'New Project'}
-            {currentFileName && ` - ${currentFileName}`}
-          </span>
-          <span>{wordCount.toLocaleString()} words</span>
-          {isSpeaking && sentences.length > 0 && (
-            <span>
-              (Sentence {currentSentenceIndex + 1} of {sentences.length})
-              {isGeneratingNext && ' • Generating...'}
-            </span>
-          )}
+        <div style={{ marginRight: '0.5rem' }}>
+          <span role="img" aria-label="note">
+            📝
+          </span>{' '}
+          Editor: {currentProject || 'New Project'}
+          {currentFileName && ` - ${currentFileName}`}
         </div>
-        {/* Right group: action buttons and voice selection */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ marginRight: '0.5rem' }}>{wordCount.toLocaleString()} words</div>
+        {isSpeaking && sentences.length > 0 && (
+          <div style={{ marginRight: '0.5rem' }}>
+            (Sentence {currentSentenceIndex + 1} of {sentences.length})
+            {isGeneratingNext && ' • Generating...'}
+          </div>
+        )}
+        {/* Right side: action buttons */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={handleSave}
             disabled={isSaving}
@@ -716,15 +674,8 @@ export default function EditorModal({
             ⏹️ Quiet
           </button>
           <button
-            /*
-             * Close button must fully stop any ongoing text-to-speech.  Simply
-             * calling cleanupAudio() is insufficient because it resets state
-             * without actually pausing and rewinding the Audio elements.  Use
-             * handleStop() instead to ensure both current and buffered audio
-             * are halted before closing the modal.
-             */
             onClick={() => {
-              handleStop();
+              cleanupAudio();
               onClose();
             }}
             style={{
@@ -741,14 +692,25 @@ export default function EditorModal({
           </button>
         </div>
       </div>
-      {/* Editor and overlay container */}
-      <div
-        style={{
-          position: 'relative',
-          marginTop: '0.5rem',
-        }}
-      >
-        {/* Editor body */}
+      {/* Highlighted preview panel - show only when speaking */}
+      {isSpeaking && sentences.length > 0 && (
+        <div
+          style={{
+            whiteSpace: 'pre-wrap',
+            padding: '0.5rem',
+            marginTop: '0.5rem',
+            border: `1px solid ${theme.border}`,
+            borderRadius: '4px',
+            backgroundColor: isDarkMode ? '#343a40' : '#f8f9fa',
+            color: theme.text,
+            minHeight: '6rem',
+            pointerEvents: 'none',
+          }}
+          dangerouslySetInnerHTML={{ __html: getHighlightedHtml() }}
+        />
+      )}
+      {/* Editor body */}
+      <div style={{ marginTop: '0.5rem' }}>
         <MDEditor
           value={editorContent}
           onChange={(val) => onContentChange(val || '')}
@@ -765,27 +727,6 @@ export default function EditorModal({
             },
           }}
         />
-        {/* Overlay: highlight preview on top of the editor when speaking */}
-        {isSpeaking && sentences.length > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              overflow: 'auto',
-              whiteSpace: 'pre-wrap',
-              padding: '0.5rem',
-              border: `1px solid ${theme.border}`,
-              borderRadius: '4px',
-              backgroundColor: isDarkMode ? '#343a40' : '#f8f9fa',
-              color: theme.text,
-              pointerEvents: 'none',
-            }}
-            dangerouslySetInnerHTML={{ __html: getHighlightedHtml() }}
-          />
-        )}
       </div>
     </div>
   );

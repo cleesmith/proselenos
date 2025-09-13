@@ -204,7 +204,7 @@ export async function createNewFile(drive: drive_v3.Drive, content: string, proj
       fields: 'id, name, modifiedTime', // Specify which fields to return
     });
 
-    console.log('File created:', response.data);
+    // console.log('File created:', response.data);
     return response.data;
 
   } catch (err) {

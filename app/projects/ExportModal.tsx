@@ -1,3 +1,5 @@
+// app/projects/ExportModal.tsx
+
 // TXT Export Modal Component (TXT to DOCX conversion)
 // Extracted from app/page.tsx lines 2178-2404 (TXT file selector + filename dialog)
 
