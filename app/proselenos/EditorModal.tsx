@@ -1,3 +1,5 @@
+// app/proselenos/EditorModal.tsx
+
 // Editor modal component with simple, reliable sentence‑by‑sentence TTS and sentence highlighting
 
 /*
@@ -461,6 +463,19 @@ export default function EditorModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+// Stop the audio and clean up
+const handleStopAndScroll = () => {
+  handleStop(); // existing stop logic
+  // After stopping, scroll the editor container to the top
+  const editorElement = document.querySelector(
+    '.w-md-editor'
+  ) as HTMLElement | null;
+  if (editorElement) {
+    editorElement.scrollTop = 0;
+    editorElement.scrollLeft = 0; // optional, in case horizontal scroll changed
+  }
+};
+
   // Cleanup when modal closes
   useEffect(() => {
     if (!isOpen && typeof window !== 'undefined') {
@@ -532,15 +547,15 @@ export default function EditorModal({
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const range = ranges[currentSentenceIndex];
     const textarea = document.querySelector('.w-md-editor-text-input') as HTMLTextAreaElement | null;
-    if (textarea && range) {
-      // Focus the textarea and select the current sentence
-      textarea.focus();
-      try {
-        textarea.setSelectionRange(range.start, range.end);
-      } catch {
-        /* ignore errors in selection */
-      }
-    }
+    // if (textarea && range) {
+    //   // Focus the textarea and select the current sentence
+    //   textarea.focus();
+    //   try {
+    //     textarea.setSelectionRange(range.start, range.end);
+    //   } catch {
+    //     /* ignore errors in selection */
+    //   }
+    // }
   }, [isSpeaking, currentSentenceIndex, editorContent]);
 
   // Do not render anything if modal is closed
@@ -700,7 +715,7 @@ export default function EditorModal({
               : '🔊 Speak'}
           </button>
           <button
-            onClick={handleStop}
+            onClick={handleStopAndScroll}
             disabled={!isSpeaking && !isPaused}
             title="Stop speaking"
             style={{
