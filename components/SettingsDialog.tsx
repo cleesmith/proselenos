@@ -4,7 +4,6 @@
 
 import { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from '@/app/shared/alerts';
-// import { storeApiKeyAction, removeApiKeyAction, getBatchSettingsDataAction } from '@/lib/api-key-actions';
 import { getKeyAndStatusAction, storeApiKeyAction, removeApiKeyAction } from '@/lib/api-key-actions';
 
 interface SettingsDialogProps {
@@ -295,39 +294,6 @@ export default function SettingsDialog({
             </button>
           </div>
         </div>
-
-
-        {/* Language
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{
-            fontSize: '14px',
-            fontWeight: 'bold',
-            color: theme.text,
-            marginBottom: '8px'
-          }}>
-            Language
-          </div>
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              backgroundColor: theme.inputBg,
-              color: theme.text,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '4px',
-              fontSize: '14px',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="English (United States)">English (United States)</option>
-            <option value="English (United Kingdom)">English (United Kingdom)</option>
-            <option value="English (Canada)">English (Canada)</option>
-            <option value="English (Australia)">English (Australia)</option>
-          </select>
-        </div>
-         */}
 
       </div>
     </div>

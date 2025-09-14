@@ -1,4 +1,5 @@
 // lib/google-drive-actions.ts
+
 'use server';
 
 // Session is now passed as accessToken parameter
@@ -9,7 +10,6 @@ import {
   ensureProselenosProjectsFolder,
   uploadManuscript,
   readTextFile,
-  readGoogleDoc,
   listFilesAndFolders,
   getFolderInfo,
   createProjectFolder,
@@ -84,43 +84,49 @@ export async function listGoogleDriveFilesAction(accessToken: string, rootFolder
   }
 }
 
-export async function readGoogleDriveFileAction(accessToken: string, rootFolderId: string, fileId: string): Promise<ActionResult> {
-  try {
-    const clients = await getAuthenticatedClients(accessToken, rootFolderId);
-    if ('error' in clients) {
-      return { success: false, error: clients.error };
-    }
+export async function readGoogleDriveFileAction(
+    accessToken: string,
+    rootFolderId: string,
+    fileId: string
+  ): Promise<ActionResult> {
+    try {
+      const clients = await getAuthenticatedClients(accessToken, rootFolderId);
+      if ('error' in clients) {
+        return { success: false, error: clients.error };
+      }
 
-    const { drive } = clients;
-    
-    if (!fileId) {
-      return { success: false, error: 'File ID is required' };
-    }
+      const { drive } = clients;
 
-    // First check the file type
-    const fileInfo = await drive.files.get({
-      fileId: fileId,
-      fields: 'mimeType'
-    });
+      if (!fileId) {
+        return { success: false, error: 'File ID is required' };
+      }
 
-    let fileContent;
-    if (fileInfo.data.mimeType === 'application/vnd.google-apps.document') {
-      // It's a Google Doc - use export
-      fileContent = await readGoogleDoc(drive, fileId);
-    } else {
-      // It's a regular file - use download
-      fileContent = await readTextFile(drive, fileId);
+      // Reject non-downloadable Google Workspace files
+      const fileInfo = await drive.files.get({
+        fileId,
+        fields: 'mimeType'
+      });
+      const mimeType = fileInfo.data.mimeType || '';
+      if (mimeType.startsWith('application/vnd.google-apps.')) {
+        return {
+          success: false,
+          error:
+            'Google Workspace files are not supported. Please export to a downloadable format (.txt file) and try again.'
+        };
+      }
+
+      // Only support directly downloadable files
+      const fileContent = await readTextFile(drive, fileId);
+
+      return {
+        success: true,
+        data: { content: fileContent },
+        message: 'File read successfully'
+      };
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Failed to read file' };
     }
-    
-    return { 
-      success: true, 
-      data: { content: fileContent },
-      message: 'File read successfully' 
-    };
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to read file' };
   }
-}
 
 export async function createGoogleDriveFileAction(accessToken: string, rootFolderId: string, content: string, fileName: string, folderId?: string): Promise<ActionResult> {
   try {

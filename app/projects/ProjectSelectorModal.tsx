@@ -1,5 +1,4 @@
-// Project Selector Modal Component
-// Extracted from app/page.tsx lines 1382-1640
+// app/projects/ProjectSelectorModal.tsx
 
 'use client';
 

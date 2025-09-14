@@ -144,7 +144,7 @@ export function useToolsManager(): [ToolsManagerState, ToolsManagerActions] {
       // Get text files from current project
       const result = await listGoogleDriveFilesAction(session.accessToken, rootFolderId, currentProjectId);
       if (result.success && result.data?.files) {
-        // Filter for .txt files and Google Docs
+        // Filter for .txt files
         const textFiles = result.data.files.filter((file: any) => 
           file.name.endsWith('.txt') || 
           file.mimeType === 'text/plain' ||

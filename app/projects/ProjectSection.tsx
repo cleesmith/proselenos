@@ -1,5 +1,4 @@
-// Project Section Component
-// Extracted from app/page.tsx lines 985-1118
+// app/projects/ProjectSection.tsx
 
 'use client';
 
@@ -216,4 +215,3 @@ export default function ProjectSection({
     </div>
   );
 }
-

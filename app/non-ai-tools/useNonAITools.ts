@@ -82,7 +82,7 @@ export function useNonAITools(): [NonAIToolsManagerState, NonAIToolsManagerActio
         
         // Apply additional filtering if needed
         if (selectedNonAITool !== 'DOCX: Extract Comments as Text' && selectedNonAITool !== 'EPUB to TXT Converter') {
-          // Filter for .txt files and Google Docs (exactly like AI Tools)
+          // Filter for .txt files (exactly like AI Tools)
           filteredFiles = result.data.files.filter((file: any) => 
             file.name.endsWith('.txt') || 
             file.mimeType === 'text/plain' ||

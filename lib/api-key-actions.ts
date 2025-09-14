@@ -1,7 +1,7 @@
+// lib/api-key-actions.ts
+
 'use server';
 
-// lib/api-key-actions.ts
-// Server Actions for API key management
 import { getServerSession } from 'next-auth/next';
 import { google } from 'googleapis';
 import { authOptions } from './auth';

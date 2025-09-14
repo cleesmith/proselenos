@@ -1,5 +1,29 @@
 // lib/googleDrive.ts
 
+// TL;DR: for Google Drive there are really no such thing as a "folder" as everything is a "file"
+// This explanation is about how Google Drive's API works and why a software component uses certain naming conventions.
+// Here's what it means:
+// Google Drive API Structure
+// Google Drive's API has a quirky design choice. 
+// When you ask the API to list files, it actually returns both 
+// regular files AND folders in the same response. 
+// Folders aren't treated as a separate category - they're just "files" that happen to have a special MIME type that identifies them as folders. So from the API's perspective, everything is a "file" - some files just contain other files.
+// 
+// Component Design
+// The software component being described can work in two different modes:
+// 
+// 1. Project-selection mode: When in this mode, it filters the results to only show folders (since projects are probably stored as folders)
+// 
+// 2. Files-browser mode: When in this mode, it shows both folders and regular files, like a typical file explorer
+// 
+// Naming Convention Explanation
+// Because of how Google Drive's API works, the developers decided to use "file" terminology throughout their code, even when they're actually dealing with folders. This is why:
+// 
+// - The collection is called "modalFiles" (not "modalFilesAndFolders")
+// - Individual items are referred to as "file" in the code (even when some of those "files" are actually folders)
+// 
+// The developers kept this naming consistent with Google Drive's API design rather than trying to distinguish between files and folders in their variable names. This makes the code simpler and matches how the underlying API actually works.
+
 'use server';
 
 import { google, drive_v3 } from 'googleapis';
@@ -326,61 +350,6 @@ export async function deleteFile(drive: any, fileId: string) {
 
 // Google Docs Functions
 
-// Create a Google Doc in proselenos_projects folder
-export async function createGoogleDoc(drive: any, docs: any, title: string, parentFolderId: string, initialContent = 'Welcome to your new document!\n\nStart writing your story here...') {
-  // First create empty Google Doc
-  const fileMetadata = {
-    name: title,
-    mimeType: 'application/vnd.google-apps.document',
-    parents: [parentFolderId]
-  };
-
-  const doc = await drive.files.create({
-    resource: fileMetadata,
-    fields: 'id, name, createdTime'
-  });
-
-  // Add initial content using Docs API
-  if (initialContent && doc.data.id) {
-    try {
-      await docs.documents.batchUpdate({
-        documentId: doc.data.id,
-        resource: {
-          requests: [
-            {
-              insertText: {
-                location: { index: 1 },
-                text: initialContent
-              }
-            }
-          ]
-        }
-      });
-    } catch (error) {
-      console.error('Error adding initial content:', error);
-      // Don't fail the whole operation if content addition fails
-    }
-  }
-  
-  return doc.data;
-}
-
-// Read Google Doc content as plain text (using Drive export)
-export async function readGoogleDoc(drive: any, documentId: string) {
-  try {
-    // Use Drive API to export the document as plain text
-    const response = await drive.files.export({
-      fileId: documentId,
-      mimeType: 'text/plain'
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error('Error reading Google Doc:', error);
-    throw error;
-  }
-}
-
 // Extract just the text content from Google Doc
 function extractPlainText(document: any) {
   let plainText = '';
@@ -398,17 +367,6 @@ function extractPlainText(document: any) {
   }
   
   return plainText.trim();
-}
-
-// List Google Docs in a folder (filter by mimeType)
-export async function listGoogleDocsInFolder(drive: any, folderId: string) {
-  const response = await drive.files.list({
-    q: `'${folderId}' in parents and mimeType='application/vnd.google-apps.document' and trashed=false`,
-    fields: 'files(id, name, mimeType, modifiedTime)',
-    orderBy: 'modifiedTime desc'
-  });
-
-  return response.data.files;
 }
 
 // Configuration Management

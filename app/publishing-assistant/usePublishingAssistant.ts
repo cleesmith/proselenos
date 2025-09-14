@@ -56,7 +56,7 @@ export function usePublishingAssistant(
       const result = await listGoogleDriveFilesAction(session.accessToken as string, rootFolderId, currentProjectId);
       
       if (result.success && result.data?.files) {
-        // Filter for .txt files and Google Docs only
+        // Filter for .txt files
         const textFiles = result.data.files.filter((file: any) => 
           (file.name.endsWith('.txt') && file.mimeType === 'text/plain') || 
           file.mimeType === 'application/vnd.google-apps.document'

@@ -127,7 +127,7 @@ export async function listTxtFilesAction(accessToken: string, projectFolderId: s
     // Get all files in the project folder
     const allFiles = await listFilesAndFolders(drive, projectFolderId);
     
-    // Filter for TXT files and Google Docs
+    // Filter for TXT files
     const txtFiles = allFiles.filter((file: any) => 
       (file.name.toLowerCase().endsWith('.txt') || 
        file.mimeType === 'text/plain' ||
@@ -503,8 +503,6 @@ export async function withDriveFromAccessToken<T>(
   accessToken: string,
   action: (drive: drive_v3.Drive, ac: AbortController) => Promise<T>
 ): Promise<T> {
-console.log('withDriveFromAccessToken:');
-console.dir(accessToken);
   // We only pass the access token; refresh_token is optional and not needed here
   return withDrive({ access_token: accessToken }, action);
 }

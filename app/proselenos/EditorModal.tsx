@@ -463,18 +463,18 @@ export default function EditorModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-// Stop the audio and clean up
-const handleStopAndScroll = () => {
-  handleStop(); // existing stop logic
-  // After stopping, scroll the editor container to the top
-  const editorElement = document.querySelector(
-    '.w-md-editor'
-  ) as HTMLElement | null;
-  if (editorElement) {
-    editorElement.scrollTop = 0;
-    editorElement.scrollLeft = 0; // optional, in case horizontal scroll changed
-  }
-};
+  // Stop the audio and clean up
+  const handleStopAndScroll = () => {
+    handleStop(); // existing stop logic
+    // After stopping, scroll the editor container to the top
+    const editorElement = document.querySelector(
+      '.w-md-editor'
+    ) as HTMLElement | null;
+    if (editorElement) {
+      editorElement.scrollTop = 0;
+      editorElement.scrollLeft = 0; // optional, in case horizontal scroll changed
+    }
+  };
 
   // Cleanup when modal closes
   useEffect(() => {
@@ -547,6 +547,7 @@ const handleStopAndScroll = () => {
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const range = ranges[currentSentenceIndex];
     const textarea = document.querySelector('.w-md-editor-text-input') as HTMLTextAreaElement | null;
+    // this caused the MDEditor textarea to scroll to the bottom:
     // if (textarea && range) {
     //   // Focus the textarea and select the current sentence
     //   textarea.focus();
