@@ -1,6 +1,7 @@
 // app/proselenos/EditorModal.tsx
 
-// Editor modal component with simple, reliable sentence‑by‑sentence TTS and sentence highlighting
+// Editor modal component with simple, reliable sentence‑by‑sentence TTS 
+// and sentence highlighting
 
 /*
  * This component is a rewrite of the original EditorModal for Proselenos.
@@ -9,7 +10,7 @@
  * spoken.  Highlighting is achieved without modifying the underlying
  * markdown editor (MDEditor) by rendering a separate preview panel
  * that mirrors the content and wraps the currently spoken sentence in
- * a span with a yellow background.  Duplicate sentences are handled
+ * a span with a yellow-ish background.  Duplicate sentences are handled
  * by computing character ranges sequentially, so the second occurrence
  * of an identical sentence will be highlighted when appropriate.
  */
@@ -83,6 +84,8 @@ export default function EditorModal({
 
   const [isGeneratingInitial, setIsGeneratingInitial] = useState(false);
   const [isGeneratingNext, setIsGeneratingNext] = useState(false);
+
+  const [startSentenceIndex, setStartSentenceIndex] = useState<number | null>(null);
 
   // Single abort controller for background generation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -352,14 +355,19 @@ export default function EditorModal({
 
   // Main TTS handler (Speak/Pause/Resume)
   const handleSpeak = async (): Promise<void> => {
+    // Prevent TTS during hydration or on the server
     if (!isClientHydrated || typeof window === 'undefined') {
       showAlert('TTS not available during page load', 'error', undefined, isDarkMode);
       return;
     }
+
+    // Do nothing if the content is empty
     if (!editorContent.trim()) {
       showAlert('No content to read!', 'error', undefined, isDarkMode);
       return;
     }
+
+    // If already speaking, toggle pause/resume
     if (isSpeaking && !isPaused) {
       handlePause();
       return;
@@ -368,17 +376,23 @@ export default function EditorModal({
       handleResume();
       return;
     }
+
+    // Split the document into sentences using exact ranges
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const parsedSentences = ranges.map((r) => editorContent.slice(r.start, r.end));
     if (parsedSentences.length === 0) {
       showAlert('No sentences found!', 'error', undefined, isDarkMode);
       return;
     }
+
+    // Save the sentences and decide where to start
     setSentences(parsedSentences);
-    setCurrentSentenceIndex(0);
-    // Initial generation (user expects this wait)
+    const startIndex = startSentenceIndex ?? 0;
+    setCurrentSentenceIndex(startIndex);
+
+    // Generate and play the first sentence’s audio
     setIsGeneratingInitial(true);
-    const result0 = await generateSentenceAudio(parsedSentences[0]);
+    const result0 = await generateSentenceAudio(parsedSentences[startIndex]);
     setIsGeneratingInitial(false);
     if (!result0) {
       showAlert('Failed to generate speech', 'error', undefined, isDarkMode);
@@ -386,24 +400,27 @@ export default function EditorModal({
     }
     setCurrentAudio(result0.audio);
     setCurrentAudioUrl(result0.url);
+
     /*
-     * Explicitly mark the TTS as speaking before playing to ensure
-     * the highlight preview becomes visible immediately.  Relying
-     * solely on the `onplay` event can lead to a race condition
-     * where `isSpeaking` remains false and the highlight never renders.
+     * Mark as speaking before playback to ensure the highlight preview
+     * appears immediately.  Without setting isSpeaking here, the
+     * highlight may never render if we rely solely on the onplay event.
      */
     setIsSpeaking(true);
     setIsPaused(false);
-    // Start playing sentence 0
-    result0.audio.onended = () => advanceToNextSentence(0, parsedSentences);
+
+    // When this sentence finishes, move on to the next
+    result0.audio.onended = () => advanceToNextSentence(startIndex, parsedSentences);
     result0.audio.onerror = () => {
       showAlert('Audio playback error', 'error', undefined, isDarkMode);
       cleanupAudio();
     };
+
     await result0.audio.play();
-    // Start generating sentence 1 while sentence 0 plays
-    if (parsedSentences.length > 1) {
-      generateNextSentence(1, parsedSentences);
+
+    // If there’s another sentence after the current one, pre‑generate it
+    if (parsedSentences.length > startIndex + 1) {
+      generateNextSentence(startIndex + 1, parsedSentences);
     }
   };
 
@@ -451,6 +468,7 @@ export default function EditorModal({
     setNextAudioUrl(null);
     setIsGeneratingInitial(false);
     setIsGeneratingNext(false);
+    setStartSentenceIndex(null);
   };
 
   // Cleanup when component unmounts
@@ -493,29 +511,49 @@ export default function EditorModal({
    * currently being spoken. We preserve original spacing and
    * blank lines by slicing exact ranges from the original content.
    */
+  // const getHighlightedHtml = () => {
+  //   /*
+  //    * Use the original editorContent and the same sentence splitting regex
+  //    * to compute character ranges for each sentence.  This preserves
+  //    * whitespace and ensures that highlighting stays in sync with the
+  //    * currentSentenceIndex.  We wrap the current sentence range in a
+  //    * span; all other ranges are returned as‑is.  Note that when
+  //    * `sentences.length` is zero (i.e. no sentences have been parsed),
+  //    * this returns an empty string.
+  //    */
+  //   if (sentences.length === 0) return '';
+  //   const ranges: { start: number; end: number }[] = getSentenceRangesFromOriginal(editorContent);
+  //   return ranges
+  //     .map((r, idx) => {
+  //       const textSlice = editorContent.slice(r.start, r.end);
+  //       if (idx === currentSentenceIndex && isSpeaking) {
+  //         const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
+  //         return `<span style="background-color: ${bg}; border-radius: 3px;">${textSlice}</span>`;
+  //       }
+  //       return textSlice;
+  //     })
+  //     .join('');
+  // };
   const getHighlightedHtml = () => {
-    /*
-     * Use the original editorContent and the same sentence splitting regex
-     * to compute character ranges for each sentence.  This preserves
-     * whitespace and ensures that highlighting stays in sync with the
-     * currentSentenceIndex.  We wrap the current sentence range in a
-     * span; all other ranges are returned as‑is.  Note that when
-     * `sentences.length` is zero (i.e. no sentences have been parsed),
-     * this returns an empty string.
-     */
     if (sentences.length === 0) return '';
-    const ranges: { start: number; end: number }[] = getSentenceRangesFromOriginal(editorContent);
-    return ranges
-      .map((r, idx) => {
-        const textSlice = editorContent.slice(r.start, r.end);
-        if (idx === currentSentenceIndex && isSpeaking) {
-          const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
-          return `<span style="background-color: ${bg}; border-radius: 3px;">${textSlice}</span>`;
-        }
-        return textSlice;
-      })
-      .join('');
+    const ranges = getSentenceRangesFromOriginal(editorContent);
+    const startIdx = startSentenceIndex ?? 0;
+
+    // Only render sentences from startIdx onward
+    return ranges.slice(startIdx).map((r, localIdx) => {
+      const absoluteIdx = startIdx + localIdx; // index within all sentences
+      const textSlice = editorContent.slice(r.start, r.end);
+
+      // Highlight the one currently being spoken
+      if (absoluteIdx === currentSentenceIndex && isSpeaking) {
+        const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
+        return `<span style="background:${bg};">${textSlice}</span>`;
+      }
+
+      return textSlice;
+    }).join('');
   };
+
 
   /*
    * Compute exact character ranges of sentences in the original editorContent
@@ -558,6 +596,34 @@ export default function EditorModal({
     //   }
     // }
   }, [isSpeaking, currentSentenceIndex, editorContent]);
+
+  // Effect: detect clicks inside the editor and remember the sentence index
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const textarea = document.querySelector('.w-md-editor-text-input') as HTMLTextAreaElement | null;
+    if (!textarea) return;
+
+    const clickHandler = () => {
+      const pos = textarea.selectionStart;
+      const ranges = getSentenceRangesFromOriginal(editorContent);
+      let idx = 0;
+      for (let i = 0; i < ranges.length; i++) {
+        const { start, end } = ranges[i];
+        if (pos >= start && pos <= end) {
+          idx = i;
+          break;
+        }
+      }
+      setStartSentenceIndex(idx);
+      setCurrentSentenceIndex(idx); // highlight this sentence in the overlay, if desired
+    };
+
+    textarea.addEventListener('click', clickHandler);
+    return () => {
+      textarea.removeEventListener('click', clickHandler);
+    };
+  }, [editorContent]);
+
 
   // Do not render anything if modal is closed
   if (!isOpen) return null;
