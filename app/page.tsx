@@ -1,6 +1,6 @@
 // app/page.tsx
+
 // Proselenos Main Interface - Next.js version with Fast Init
-// https://proselenos.onrender.com
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';

@@ -5,11 +5,9 @@
 import { getAuthClient, getDriveClient, ensureProselenosProjectsFolder } from '@/lib/googleDrive';
 import { drive_v3 } from 'googleapis'; // Import the Drive type for clarity
 
-// =====================================================================================
 // REFACTOR STEP 1: Move the helper functions OUTSIDE of fastInitForUser.
 // This is the core of the memory leak fix. These are now pure, stateless functions
 // that do not create closures over the `drive` client.
-// =====================================================================================
 
 // Helper to build Google Drive API queries (already stateless, no change needed)
 const qAnd = (conditions: string[]) => conditions.join(' and ');
@@ -51,10 +49,7 @@ async function getJson(drive: drive_v3.Drive, fileId: string) {
   return typeof response.data === 'object' ? response.data : JSON.parse(response.data as string);
 };
 
-
-// =====================================================================================
 // Type definitions (no changes needed)
-// =====================================================================================
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
 
@@ -85,9 +80,7 @@ export type InitPayloadForClient = {
   durationMs: number;
 };
 
-// =====================================================================================
 // REFACTOR STEP 2: Update the main function to call the new helper functions.
-// =====================================================================================
 
 export async function fastInitForUser(accessToken: string): Promise<InitPayloadForClient> {
   const memStart = process.memoryUsage().heapUsed / 1024 / 1024;

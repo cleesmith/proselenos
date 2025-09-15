@@ -1,5 +1,10 @@
 // app/proselenos/EditorModal.tsx
 
+// issues:
+//  1. Speak-ing text without "proper" punctuation, for example:
+//     an AI-based report, like Drunken, the Edge TTS has trouble 
+//     generating, and gets hung = can't Quiet or Close to stop reading
+
 // Editor modal component with simple, reliable sentence‑by‑sentence TTS 
 // and sentence highlighting
 

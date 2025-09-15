@@ -139,7 +139,7 @@ export async function saveChatToBrainstormInternal(
     const now: Date = new Date();
     const timestamp: string = now.toLocaleString();
     
-    const chatHeader: string = `========================================\nChat Session: ${timestamp}\nProvider: ${providerModel}\n========================================\n\n`;
+    const chatHeader: string = `\nChat Session: ${timestamp}\nProvider: ${providerModel}\n\n`;
     
     const chatBody: string = messages
       .map((msg: ChatMessage) => `${msg.role === 'user' ? 'ME' : 'AI'}:\n${msg.content}\n`)

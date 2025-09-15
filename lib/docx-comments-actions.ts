@@ -367,11 +367,13 @@ function generateFormattedOutput(extractionResult: ExtractionResult, originalDoc
   const timestamp = new Date().toISOString();
   const { comments, documentContent } = extractionResult;
   
-  let formattedOutput = `=== DOCX COMMENTS EXTRACTION ===
+  let formattedOutput = `DOCX COMMENTS EXTRACTION
+  
 Original File: ${originalDocxFileName}
+
 Extracted: ${timestamp}
+
 Comments Found: ${comments.length}
-=====================================
 
 `;
 

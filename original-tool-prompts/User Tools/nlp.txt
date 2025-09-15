@@ -44,13 +44,13 @@ Text: Wherefore art thou Romeo?
 Attributes: feeling = longing question, character = Juliet
 
 
-=== FINAL OUTPUT EXAMPLE ===
+FINAL OUTPUT EXAMPLE
 Downloading and processing Romeo and Juliet from Project Gutenberg...
 Downloaded 147,843 characters (25,976 words) from 1513-0.txt
 Extracted 4,088 entities from 147,843 characters
 
 CHARACTER SUMMARY (153 unique characters) [put newline after each character!]
-============================================================
+
 ROMEO: 287 mentions (emotional_state: excitement, emotional_state: eager to please)
 
 JULIET: 204 mentions (emotional_state: fond, emotional_state: resilient)
@@ -63,7 +63,7 @@ BENVOLIO: 82 mentions (emotional_state: cautious, emotional_state: teasing)
 
 
 ENTITY TYPE BREAKDOWN
-============================================================
+
 character: 1,685 (41.2%)
 emotion: 1,524 (37.3%)
 relationship: 879 (21.5%)
