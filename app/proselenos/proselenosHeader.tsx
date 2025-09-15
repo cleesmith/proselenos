@@ -1,3 +1,4 @@
+// app/proselenos/proselenosHeader.tsx
 // Header Component
 
 'use client';
@@ -5,6 +6,7 @@
 import { useState } from 'react';
 import { ThemeConfig } from '../shared/theme';
 import ChatButton from '@/components/ChatButton';
+import ChatPopoutButton from '@/components/ChatPopoutButton';
 
 interface ProselenosHeaderProps {
   session: any;
@@ -141,13 +143,23 @@ export default function ProselenosHeader({
         {/* Right - Control Buttons */}
         {session && (
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <ChatButton 
+
+            <ChatButton
+              className="ml-2"
               isDarkMode={isDarkMode}
               currentProject={currentProject}
               currentProjectId={currentProjectId}
               rootFolderId={rootFolderId}
               isSystemInitializing={isSystemInitializing}
             />
+            <ChatPopoutButton
+              className="ml-1"
+              isDarkMode={isDarkMode}
+              currentProject={currentProject}
+              currentProjectId={currentProjectId}
+              rootFolderId={rootFolderId}
+            />
+
             <button 
               onClick={onModelsClick}
               disabled={isSystemInitializing}
