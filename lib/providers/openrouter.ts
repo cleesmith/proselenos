@@ -55,7 +55,7 @@ export class AiApiService {
     const apiKey = config.apiKey;
     const baseURL = "https://openrouter.ai/api/v1";
     const headers = config.headers ?? {
-        'HTTP-Referer': 'https://www.slipthetrap.com/proselenos.html',
+        'HTTP-Referer': 'https://proselenos.com',
         'X-Title': 'Proselenos'
     };
 
