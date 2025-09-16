@@ -210,7 +210,9 @@ export default function EditorModal({
           setIsSaving(false);
           return;
         }
-        await onSaveFile(editorContent, fileName);
+        const baseName = fileName.trim();
+        const finalName = /\.txt$/i.test(baseName) ? baseName : `${baseName}.txt`;
+        await onSaveFile(editorContent, finalName);
         showAlert('✅ File saved successfully!', 'success', undefined, isDarkMode);
       }
     } catch (error) {
