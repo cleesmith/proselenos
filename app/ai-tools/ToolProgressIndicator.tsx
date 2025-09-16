@@ -9,7 +9,6 @@ interface ToolProgressIndicatorProps {
   elapsedTime: number;
   theme: ThemeConfig;
   toolResult?: string;
-  onViewClick?: () => void;
   onEditClick?: () => void;
 }
 
@@ -18,7 +17,6 @@ export default function ToolProgressIndicator({
   elapsedTime,
   theme,
   toolResult,
-  onViewClick,
   onEditClick
 }: ToolProgressIndicatorProps) {
   
@@ -35,29 +33,9 @@ export default function ToolProgressIndicator({
         {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:{(elapsedTime % 60).toString().padStart(2, '0')}
       </span>
       
-      {/* View and Edit buttons appear only when tool is finished and has results */}
+      {/* Edit button appears only when tool is finished and has results */}
       {!toolExecuting && elapsedTime > 0 && toolResult && (
         <div style={{ display: 'flex', gap: '4px' }}>
-
-          {/* View button commented out
-          {onViewClick && (
-            <button
-              onClick={onViewClick}
-              style={{
-                padding: '2px 8px',
-                backgroundColor: '#007bff',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
-            >
-              View
-            </button>
-          )}
-          */}
 
           {onEditClick && (
             <button

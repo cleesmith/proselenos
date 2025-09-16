@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ThemeConfig } from '../shared/theme';
-import { showAlert } from '../shared/alerts';
+import { showAlert, showConfirm } from '../shared/alerts';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 import { commands } from '@uiw/react-md-editor';
@@ -45,12 +45,41 @@ export default function DualPanelEditor({
   
   const [editedManuscript, setEditedManuscript] = useState('');
   const [editedAiReport, setEditedAiReport] = useState('');
-  
-  // Update state when props change
+  const [initialManuscript, setInitialManuscript] = useState('');
+  const [initialAiReport, setInitialAiReport] = useState('');
+  const wasVisibleRef = useRef(false);
+
+  // Initialize editors and baselines when modal opens
   React.useEffect(() => {
-    setEditedManuscript(manuscriptContent);
-    setEditedAiReport(aiReport);
-  }, [manuscriptContent, aiReport]);
+    if (isVisible && !wasVisibleRef.current) {
+      setEditedManuscript(manuscriptContent);
+      setEditedAiReport(aiReport);
+      setInitialManuscript(manuscriptContent);
+      setInitialAiReport(aiReport);
+      wasVisibleRef.current = true;
+    }
+    if (!isVisible && wasVisibleRef.current) {
+      wasVisibleRef.current = false;
+    }
+  }, [isVisible, manuscriptContent, aiReport]);
+
+  const hasUnsavedChanges =
+    editedManuscript !== initialManuscript || editedAiReport !== initialAiReport;
+
+  const handleClose = async () => {
+    if (!hasUnsavedChanges) {
+      onClose();
+      return;
+    }
+    const confirmed = await showConfirm(
+      'You have unsaved changes in one or both panels. Close without saving?',
+      isDarkMode,
+      'Unsaved Changes',
+      'Close without saving',
+      'Keep editing'
+    );
+    if (confirmed) onClose();
+  };
 
   const handleSaveManuscript = async () => {
     if (!currentProject || !currentProjectId || !editedManuscript.trim()) {
@@ -70,6 +99,8 @@ export default function DualPanelEditor({
       
       if (result.success) {
         showAlert(`✅ Manuscript saved: ${fullFileName}`, 'success', undefined, isDarkMode);
+        // Update baseline to clear unsaved changes indicator
+        setInitialManuscript(editedManuscript);
       } else {
         showAlert(`❌ Failed to save manuscript: ${result.error}`, 'error', undefined, isDarkMode);
       }
@@ -102,6 +133,8 @@ export default function DualPanelEditor({
       
       if (result.success) {
         showAlert(`✅ AI report saved: ${fullFileName}`, 'success', undefined, isDarkMode);
+        // Update baseline to clear unsaved changes indicator
+        setInitialAiReport(editedAiReport);
       } else {
         showAlert(`❌ Failed to save AI report: ${result.error}`, 'error', undefined, isDarkMode);
       }
@@ -143,7 +176,7 @@ export default function DualPanelEditor({
       }}>
         <h1 className="text-xl font-bold">manuscript</h1>
         <button 
-          onClick={onClose}
+          onClick={handleClose}
           className="px-3 py-1 rounded"
           style={{ 
             backgroundColor: '#6c757d',
