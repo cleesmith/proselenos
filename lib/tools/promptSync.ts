@@ -1,11 +1,12 @@
 // lib/tools/promptSync.ts
+
 // System to copy original tool prompts from local app folder to user's Google Drive
 
 import { drive_v3 } from 'googleapis';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ToolPromptSyncResult, ToolCategory } from '../../types/tools';
-import { checkToolPromptsExists } from '../googleDrive';
+import { checkToolPromptsExists, findRootFolderByProperty } from '../googleDrive';
 
 export class PromptSyncManager {
   private drive: drive_v3.Drive;
@@ -20,31 +21,31 @@ export class PromptSyncManager {
 
   // Find or create the proselenos_projects folder
   private async findOrCreateProjectsFolder(): Promise<string> {
-    try {
-      // Check if proselenos_projects folder exists
-      const folderQuery = await this.drive.files.list({
-        q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-        fields: 'files(id, name)',
+    // Use appProperties only to avoid insufficient scope and duplicates
+    const folderByProp = await findRootFolderByProperty(this.drive);
+    if (folderByProp?.id) {
+      console.log('PromptSync: root folder by appProperties', {
+        id: folderByProp.id,
+        name: folderByProp.name,
+        appProperties: (folderByProp as any).appProperties,
       });
-
-      if (folderQuery.data.files && folderQuery.data.files.length > 0) {
-        return folderQuery.data.files[0].id!;
-      }
-
-      // Create the folder if it doesn't exist
-      const folderResponse = await this.drive.files.create({
-        requestBody: {
-          name: 'proselenos_projects',
-          mimeType: 'application/vnd.google-apps.folder',
-        },
-        fields: 'id',
-      });
-
-      return folderResponse.data.id!;
-    } catch (error) {
-      console.error('Error finding/creating proselenos_projects folder:', error);
-      throw error;
+      return folderByProp.id!;
     }
+
+    const folderResponse = await this.drive.files.create({
+      requestBody: {
+        name: 'proselenos_projects',
+        mimeType: 'application/vnd.google-apps.folder',
+        appProperties: { proselenosRoot: 'true' },
+      },
+      fields: 'id, name, appProperties',
+    });
+    console.log('PromptSync: created root with appProperties', {
+      id: folderResponse.data.id,
+      name: folderResponse.data.name,
+      appProperties: (folderResponse.data as any).appProperties,
+    });
+    return folderResponse.data.id!;
   }
 
   // Create a folder in Google Drive

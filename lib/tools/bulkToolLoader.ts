@@ -1,7 +1,9 @@
 // lib/tools/bulkToolLoader.ts
+
 // Clean bulk loader with DYNAMIC categories from Google Drive folder names
 
 import { drive_v3 } from 'googleapis';
+import { findRootFolderByProperty } from '@/lib/googleDrive';
 import { ToolPrompt, ToolMetadata, ToolCategory } from '../../types/tools';
 
 // Per-user singleton instances to prevent multiple bulk loading operations
@@ -315,17 +317,16 @@ export class BulkToolLoader {
 
   // Find tool-prompts folder in Google Drive
   private async findToolPromptsFolder(): Promise<string | null> {
-    // Find proselenos_projects folder
-    const projectsResponse = await this.drive.files.list({
-      q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-      fields: 'files(id)',
-    });
-
-    if (!projectsResponse.data.files || projectsResponse.data.files.length === 0) {
+    const rootByProp = await findRootFolderByProperty(this.drive);
+    if (!rootByProp?.id) {
       throw new Error('proselenos_projects folder not found');
     }
-
-    const projectsFolderId = projectsResponse.data.files[0].id!;
+    const projectsFolderId = rootByProp.id!;
+    console.log('BulkToolLoader: using root by appProperties', {
+      id: projectsFolderId,
+      name: rootByProp.name,
+      appProperties: (rootByProp as any).appProperties,
+    });
 
     // Find tool-prompts folder
     const toolPromptsResponse = await this.drive.files.list({

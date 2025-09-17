@@ -1,3 +1,5 @@
+// app/shared/theme.ts
+
 // Shared theme configuration
 
 export interface ThemeConfig {

@@ -31,6 +31,29 @@ import { OAuth2Client } from 'google-auth-library';
 import { Readable } from 'stream';
 
 /**
+ * Finds the `proselenos_projects` root folder by searching for a unique appProperty.
+ * Returns the Drive file metadata if found, otherwise null.
+ */
+export async function findRootFolderByProperty(drive: drive_v3.Drive): Promise<drive_v3.Schema$File | null> {
+  const query = "appProperties has { key='proselenosRoot' and value='true' } and trashed=false";
+  const res = await drive.files.list({
+    q: query,
+    fields: 'files(id, name, appProperties)',
+  });
+  const found = res.data.files && res.data.files.length > 0 ? res.data.files[0] : null;
+  if (found) {
+    // console.log('findRootFolderByProperty: found root by appProperties', {
+    //   id: found.id,
+    //   name: found.name,
+    //   appProperties: found.appProperties,
+    // });
+  } else {
+    console.log('findRootFolderByProperty: no folder tagged with proselenosRoot');
+  }
+  return found;
+}
+
+/**
  * Creates a fully configured OAuth2 client.
  */
 export async function getAuthClient(accessToken: string): Promise<OAuth2Client> { // <-- ADDED async/Promise
@@ -72,36 +95,29 @@ export async function ensureProselenosProjectsFolder(drive: drive_v3.Drive): Pro
   // test google scopes and 403 error:
   // throw Object.assign(new Error('Request had insufficient authentication scopes. [FORCED 403]'), { code: 403, status: 403 });
 
-  try {
-    // Search for the folder
-    const res = await drive.files.list({
-      q: `mimeType='${FOLDER_MIME}' and name='${FOLDER_NAME}' and trashed=false`,
-      fields: 'files(id, name)',
-      spaces: 'drive',
-    });
-
-    const files = res.data.files ?? [];
-    if (files.length > 0) {
-      // Folder exists, return it
-      return files[0]!;
-    } else {
-      // Folder does not exist, create it
-      const fileMetadata = {
-        name: FOLDER_NAME,
-        mimeType: FOLDER_MIME,
-      };
-      const createdFolder = await drive.files.create({
-        requestBody: fileMetadata,
-        fields: 'id, name',
-      });
-      return createdFolder.data;
-    }
-  } catch (error) {
-    console.error('Error ensuring proselenos_projects folder exists:', error);
-    throw new Error('Could not find or create the proselenos_projects folder in Google Drive.');
+  // First, search by app property. This works under drive.file scope.
+  const existingByProp = await findRootFolderByProperty(drive);
+  if (existingByProp) {
+    return existingByProp;
   }
-}
 
+  // Create the folder and tag it (no name-based fallback)
+  const fileMetadata: drive_v3.Schema$File = {
+    name: FOLDER_NAME,
+    mimeType: FOLDER_MIME,
+    appProperties: { proselenosRoot: 'true' },
+  };
+  const created = await drive.files.create({
+    requestBody: fileMetadata,
+    fields: 'id, name, appProperties',
+  });
+  console.log('ensureProselenosProjectsFolder: created root with appProperties', {
+    id: created.data.id,
+    name: created.data.name,
+    appProperties: created.data.appProperties,
+  });
+  return created.data;
+}
 
 // 2. Create project folder
 export async function createProjectFolder(drive: any, projectName: string, parentFolderId: string) {
@@ -384,15 +400,19 @@ export interface proselenosConfig {
 // Get or create the proselenos-config.json file
 export async function getproselenosConfig(drive: any, rootFolderId: string): Promise<proselenosConfig> {
   const configFileName = 'proselenos-config.json';
-  
-  // Look for existing config file
-  const query = `name='${configFileName}' and '${rootFolderId}' in parents and trashed=false`;
+  // Look for existing config file by appProperty
+  const query = `appProperties has { key='type' and value='proselenos-config' } and trashed=false and '${rootFolderId}' in parents`;
   const response = await drive.files.list({
     q: query,
-    fields: 'files(id, name)'
+    fields: 'files(id, name, appProperties)'
   });
 
   if (response.data.files.length > 0) {
+    // console.log('getproselenosConfig: found config file by appProperties', {
+    //   id: response.data.files[0].id,
+    //   name: response.data.files[0].name,
+    //   appProperties: response.data.files[0].appProperties,
+    // });
     // Read existing config - use direct API call for JSON files
     try {
       const configResponse = await drive.files.get({
@@ -438,11 +458,11 @@ export async function saveproselenosConfig(drive: any, rootFolderId: string, con
   const configFileName = 'proselenos-config.json';
   const configContent = JSON.stringify(config, null, 2);
   
-  // Look for existing config file
-  const query = `name='${configFileName}' and '${rootFolderId}' in parents and trashed=false`;
+  // Look for existing config file by appProperty
+  const query = `appProperties has { key='type' and value='proselenos-config' } and trashed=false and '${rootFolderId}' in parents`;
   const response = await drive.files.list({
     q: query,
-    fields: 'files(id)'
+    fields: 'files(id, name, appProperties)'
   });
 
   const media = {
@@ -460,13 +480,20 @@ export async function saveproselenosConfig(drive: any, rootFolderId: string, con
     // Create new
     const fileMetadata = {
       name: configFileName,
-      parents: [rootFolderId]
+      parents: [rootFolderId],
+      appProperties: { type: 'proselenos-config' },
     };
 
-    await drive.files.create({
+    const created = await drive.files.create({
       resource: fileMetadata,
-      media: media
+      media: media,
+      fields: 'id, name, appProperties'
     });
+    // console.log('saveproselenosConfig: created config with appProperties', {
+    //   id: created.data.id,
+    //   name: created.data.name,
+    //   appProperties: created.data.appProperties,
+    // });
   }
 }
 

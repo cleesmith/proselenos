@@ -7,6 +7,7 @@ import type { ToolExecutionResult } from '../types/api-keys';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 import { google } from 'googleapis';
+import { findRootFolderByProperty } from '@/lib/googleDrive';
 
 
 // Server action to initialize and copy tool-prompts to Google Drive
@@ -106,12 +107,16 @@ export async function getToolPromptAction(toolId: string): Promise<{
       return { success: false, error: 'Invalid tool ID format' };
     }
 
-    // Step 1: find proselenos_projects folder
-    const projects = await drive.files.list({
-      q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-      fields: 'files(id)',
-    });
-    const projectsFolderId = projects.data.files?.[0]?.id;
+    // Step 1: find proselenos_projects folder by appProperties
+    const rootByProp = await findRootFolderByProperty(drive);
+    const projectsFolderId = rootByProp?.id || null;
+    if (projectsFolderId) {
+      console.log('tools-actions.getToolPromptAction: using root by appProperties', {
+        id: projectsFolderId,
+        name: rootByProp?.name,
+        appProperties: (rootByProp as any).appProperties,
+      });
+    }
     if (!projectsFolderId) return { success: false, error: 'Projects folder not found' };
 
     // Step 2: find tool-prompts folder
@@ -181,12 +186,16 @@ export async function updateToolPromptAction(toolId: string, content: string): P
       return { success: false, error: 'Invalid tool ID format' };
     }
 
-    // Step 1: find proselenos_projects folder
-    const projects = await drive.files.list({
-      q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-      fields: 'files(id)',
-    });
-    const projectsFolderId = projects.data.files?.[0]?.id;
+    // Step 1: find proselenos_projects folder by appProperties
+    const rootByProp = await findRootFolderByProperty(drive);
+    const projectsFolderId = rootByProp?.id || null;
+    if (projectsFolderId) {
+      console.log('tools-actions.updateToolPromptAction: using root by appProperties', {
+        id: projectsFolderId,
+        name: rootByProp?.name,
+        appProperties: (rootByProp as any).appProperties,
+      });
+    }
     if (!projectsFolderId) return { success: false, error: 'Projects folder not found' };
 
     // Step 2: find tool-prompts folder

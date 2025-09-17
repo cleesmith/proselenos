@@ -1,7 +1,10 @@
 // lib/secure-storage.ts
+
 // SERVER-SIDE ONLY - Never expose this to client routes
+
 import * as crypto from 'crypto';
 import { drive_v3 } from 'googleapis';
+import { findRootFolderByProperty } from '@/lib/googleDrive';
 
 interface EncryptedData {
   iv: string;
@@ -65,31 +68,32 @@ export class InternalSecureStorage {
 
   // Find config file in user's proselenos_projects folder on Google Drive
   private async findOrCreateProjectsFolder(): Promise<string> {
-    try {
-      // First check if proselenos_projects folder exists
-      const folderQuery = await this.drive.files.list({
-        q: "name='proselenos_projects' and mimeType='application/vnd.google-apps.folder' and trashed=false",
-        fields: 'files(id, name)',
-      });
-
-      if (folderQuery.data.files && folderQuery.data.files.length > 0) {
-        return folderQuery.data.files[0].id!;
-      }
-
-      // Create the folder if it doesn't exist
-      const folderResponse = await this.drive.files.create({
-        requestBody: {
-          name: 'proselenos_projects',
-          mimeType: 'application/vnd.google-apps.folder',
-        },
-        fields: 'id',
-      });
-
-      return folderResponse.data.id!;
-    } catch (error) {
-      console.error('Error finding/creating proselenos_projects folder:', error);
-      throw error;
+    // Use appProperties only
+    const folderByProp = await findRootFolderByProperty(this.drive);
+    if (folderByProp?.id) {
+      // console.log('InternalSecureStorage: root folder by appProperties', {
+      //   id: folderByProp.id,
+      //   name: folderByProp.name,
+      //   appProperties: folderByProp.appProperties,
+      // });
+      return folderByProp.id!;
     }
+
+    // Create the folder and tag it
+    const folderResponse = await this.drive.files.create({
+      requestBody: {
+        name: 'proselenos_projects',
+        mimeType: 'application/vnd.google-apps.folder',
+        appProperties: { proselenosRoot: 'true' },
+      },
+      fields: 'id, name, appProperties',
+    });
+    // console.log('InternalSecureStorage: created root with appProperties', {
+    //   id: folderResponse.data.id,
+    //   name: folderResponse.data.name,
+    //   appProperties: (folderResponse.data as any).appProperties,
+    // });
+    return folderResponse.data.id!;
   }
 
   // Find config file in user's Google Drive
@@ -98,13 +102,20 @@ export class InternalSecureStorage {
       const folderId = await this.findOrCreateProjectsFolder();
       
       const response = await this.drive.files.list({
-        q: `name='${this.configFileName}' and '${folderId}' in parents and trashed=false`,
-        fields: 'files(id, name)',
+        q: `appProperties has { key='type' and value='proselenos-settings' } and trashed=false and '${folderId}' in parents`,
+        fields: 'files(id, name, appProperties)',
       });
-      
-      return response.data.files && response.data.files.length > 0 
+      const file = response.data.files && response.data.files.length > 0 
         ? response.data.files[0] 
         : null;
+      // if (file) {
+      //   console.log('InternalSecureStorage: found settings by appProperties', {
+      //     id: file.id,
+      //     name: file.name,
+      //     appProperties: (file as any).appProperties,
+      //   });
+      // }
+      return file;
     } catch (error) {
       console.error('Error finding config file:', error);
       return null;
@@ -149,16 +160,23 @@ export class InternalSecureStorage {
         });
       } else {
         const folderId = await this.findOrCreateProjectsFolder();
-        await this.drive.files.create({
+        const created = await this.drive.files.create({
           requestBody: {
             name: this.configFileName,
             parents: [folderId],
+            appProperties: { type: 'proselenos-settings' },
           },
           media: {
             mimeType: 'application/json',
             body: configData,
           },
+          fields: 'id, name, appProperties',
         });
+        // console.log('InternalSecureStorage: created settings with appProperties', {
+        //   id: created.data.id,
+        //   name: created.data.name,
+        //   appProperties: (created.data as any).appProperties,
+        // });
       }
     } catch (error) {
       console.error('Error saving config:', error);

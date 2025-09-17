@@ -1,3 +1,5 @@
+// app/shared/alerts.ts
+
 // Shared alert utilities
 
 import Swal from 'sweetalert2';
@@ -93,7 +95,7 @@ export const showConfirm = async (
   return result.isConfirmed === true;
 };
 
-// Sticky error alert that can only be dismissed via Sign out
+// Sticky error alert that can only be dismissed via Signout
 export const showStickyErrorWithLogout = (
   title: string,
   message: string,

@@ -22,6 +22,22 @@ async function findOne(drive: drive_v3.Drive, parentId: string, name: string, op
   return response.data.files?.[0] || null;
 };
 
+// Helper to find a single file by appProperty
+async function findOneByAppProperty(drive: drive_v3.Drive, parentId: string, key: string, value: string, options: any) {
+  const response = await drive.files.list({
+    q: qAnd([`appProperties has { key='${key}' and value='${value}' }`, `'${parentId}' in parents`, `trashed=false`]),
+    fields: 'files(id, name, mimeType, appProperties)',
+    ...options
+  });
+  const file = response.data.files?.[0] || null;
+  if (file) {
+    // console.log(`findOneByAppProperty: found ${key}=${value}`, { id: file.id, name: file.name, appProperties: (file as any).appProperties });
+  } else {
+    console.log(`findOneByAppProperty: not found ${key}=${value}`);
+  }
+  return file;
+};
+
 // Helper to list all files/folders. We now pass `drive` as an argument.
 async function listAll(drive: drive_v3.Drive, query: string, options: any): Promise<DriveFile[]> {
   const response = await drive.files.list({
@@ -105,8 +121,8 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
     //    root folders in parallel
     // We now pass `drive` explicitly to each helper function.
     const [configFile, settingsFile, rootFolders] = await Promise.all([
-      findOne(drive, rootId, 'proselenos-config.json', opts),
-      findOne(drive, rootId, 'proselenos-settings.json', opts), // metadata only
+      findOneByAppProperty(drive, rootId, 'type', 'proselenos-config', opts),
+      findOneByAppProperty(drive, rootId, 'type', 'proselenos-settings', opts), // metadata only
       listAll(drive, qAnd([`'${rootId}' in parents`, `mimeType='${FOLDER_MIME}'`, `trashed=false`]), opts),
     ]);
 
@@ -128,13 +144,9 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
     const toolPromptsFolder = rootFolders.find(f => f.name === 'tool-prompts');
     const toolPromptsId = toolPromptsFolder?.id || null;
 
-    const projectsFolder = rootFolders.find(f => f.name === 'proselenos_projects');
-    
     // Load projects and tool categories in parallel
     const [projects, toolCategories] = await Promise.all([
-      projectsFolder 
-        ? listAll(drive, qAnd([`'${projectsFolder.id}' in parents`, `mimeType='${FOLDER_MIME}'`, `trashed=false`]), opts)
-        : Promise.resolve([]),
+      listAll(drive, qAnd([`'${rootId}' in parents`, `mimeType='${FOLDER_MIME}'`, `trashed=false`]), opts),
       toolPromptsId
         ? listAll(drive, qAnd([`'${toolPromptsId}' in parents`, `mimeType='${FOLDER_MIME}'`, `trashed=false`]), opts)
         : Promise.resolve([])
