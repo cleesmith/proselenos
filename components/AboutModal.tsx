@@ -108,33 +108,34 @@ export default function AboutModal({
               Follow these 4 essential steps to set up Proselenos:
             </p>
             
-            {/* Step 1: Add OpenRouter API Key */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div style={{
-                background: '#10b981',
-                color: 'white',
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: '600',
-                marginRight: '12px',
-                flexShrink: 0
-              }}>1</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                  Add OpenRouter API Key
-                </div>
-                <div style={{ fontSize: '13px', color: isDarkMode ? '#9ca3af' : '#6b7280', lineHeight: '1.4' }}>
-                  Click the "AI API key" button in the header to add your <a href="https://openrouter.ai" target="_blank" style={{ color: '#4285F4', textDecoration: 'none' }}>OpenRouter</a> API key
+              {/* Step 1: Create First Project */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '20px' }}>
+                <div style={{
+                  background: '#10b981',
+                  color: 'white',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  marginRight: '12px',
+                  flexShrink: 0
+                }}>1</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                    Create First Project
+                  </div>
+                  <div style={{ fontSize: '13px', color: isDarkMode ? '#9ca3af' : '#6b7280', lineHeight: '1.4' }}>
+                    Click "Select Project" button to create your first writing project folder
+                  </div>
                 </div>
               </div>
             </div>
             
-            {/* Step 2: Choose AI Model */}
+            {/* Step 2: Add OpenRouter API Key */}
             <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{
                 background: '#10b981',
@@ -152,15 +153,15 @@ export default function AboutModal({
               }}>2</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                  Choose AI Model
+                  Add OpenRouter API Key
                 </div>
                 <div style={{ fontSize: '13px', color: isDarkMode ? '#9ca3af' : '#6b7280', lineHeight: '1.4' }}>
-                  Click "Models" button and select <strong>google/gemini-2.5-flash</strong> for fast, affordable editing
+                  Click the "AI API key" button in the header to add your <a href="https://openrouter.ai" target="_blank" style={{ color: '#4285F4', textDecoration: 'none' }}>OpenRouter</a> API key
                 </div>
               </div>
             </div>
             
-            {/* Step 3: Test with Chat */}
+            {/* Step 3: Choose AI Model */}
             <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{
                 background: '#10b981',
@@ -178,16 +179,16 @@ export default function AboutModal({
               }}>3</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                  Test with Chat
+                  Choose AI Model
                 </div>
                 <div style={{ fontSize: '13px', color: isDarkMode ? '#9ca3af' : '#6b7280', lineHeight: '1.4' }}>
-                  Click the "Chat" button to verify your setup is working correctly
+                  Click "Models" button and select <strong>google/gemini-2.5-flash</strong> for fast, affordable editing
                 </div>
               </div>
             </div>
             
-            {/* Step 4: Create First Project */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '20px' }}>
+            {/* Step 4: Test with Chat */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{
                 background: '#10b981',
                 color: 'white',
@@ -204,14 +205,13 @@ export default function AboutModal({
               }}>4</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                  Create First Project
+                  Test with Chat
                 </div>
                 <div style={{ fontSize: '13px', color: isDarkMode ? '#9ca3af' : '#6b7280', lineHeight: '1.4' }}>
-                  Click "Select Project" button to create your first writing project folder
+                  Click the "Chat" button to verify your setup is working correctly
                 </div>
               </div>
             </div>
-          </div>
 
           {/* How Projects Work */}
           <div style={{ marginBottom: '32px' }}>

@@ -3,6 +3,7 @@
 'use client';
 
 import React from 'react';
+import { showAlert } from '@/app/shared/alerts';
 import { createRoot } from 'react-dom/client';
 import SimpleChatModal from './SimpleChatModal';
 
@@ -28,6 +29,10 @@ export default function ChatPopoutButton({
 }: ChatPopoutButtonProps): React.JSX.Element {
 
   const openChatWindow = () => {
+    if (!currentProject || !currentProjectId) {
+      showAlert('Please select a project first', 'warning', undefined, isDarkMode);
+      return;
+    }
     const chatWindow = window.open('', '_blank');
 
     if (!chatWindow) return;
@@ -87,14 +92,15 @@ export default function ChatPopoutButton({
     <button 
       onClick={openChatWindow}
       className={className} 
+      disabled={!currentProject}
       style={{
         padding: '3px 8px',
-        backgroundColor: '#9C27B0',
-        color: '#fff',
+        backgroundColor: !currentProject ? '#666' : '#9C27B0',
+        color: !currentProject ? '#999' : '#fff',
         border: 'none',
         borderRadius: '3px',
         fontSize: '11px',
-        cursor: 'pointer'
+        cursor: !currentProject ? 'not-allowed' : 'pointer'
       }}
       type="button"
     >

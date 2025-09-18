@@ -162,31 +162,31 @@ export default function ProselenosHeader({
 
             <button 
               onClick={onModelsClick}
-              disabled={isSystemInitializing}
+              disabled={isSystemInitializing || !currentProject}
               style={{
                 padding: '3px 8px',
-                backgroundColor: isSystemInitializing ? '#666' : '#28a745',
-                color: isSystemInitializing ? '#999' : '#fff',
+                backgroundColor: (isSystemInitializing || !currentProject) ? '#666' : '#28a745',
+                color: (isSystemInitializing || !currentProject) ? '#999' : '#fff',
                 border: 'none',
                 borderRadius: '3px',
                 fontSize: '11px',
-                cursor: isSystemInitializing ? 'not-allowed' : 'pointer'
+                cursor: (isSystemInitializing || !currentProject) ? 'not-allowed' : 'pointer'
               }}
             >
               Models
             </button>
             <button 
               onClick={onSettingsClick}
-              disabled={isSystemInitializing || isGoogleDriveOperationPending}
+              disabled={isSystemInitializing || isGoogleDriveOperationPending || !currentProject}
               style={{
                 padding: '3px 8px',
-                backgroundColor: (isSystemInitializing || isGoogleDriveOperationPending) ? 
+                backgroundColor: (isSystemInitializing || isGoogleDriveOperationPending || !currentProject) ? 
                   '#333' : '#555',
-                color: (isSystemInitializing || isGoogleDriveOperationPending) ? '#999' : '#fff',
+                color: (isSystemInitializing || isGoogleDriveOperationPending || !currentProject) ? '#999' : '#fff',
                 border: 'none',
                 borderRadius: '3px',
                 fontSize: '11px',
-                cursor: (isSystemInitializing || isGoogleDriveOperationPending) ? 'not-allowed' : 'pointer'
+                cursor: (isSystemInitializing || isGoogleDriveOperationPending || !currentProject) ? 'not-allowed' : 'pointer'
               }}>
               AI API key
             </button>
@@ -195,30 +195,29 @@ export default function ProselenosHeader({
                 console.log('Editor button clicked:', { isGoogleDriveOperationPending, toolExecuting });
                 onEditorClick();
               }}
-              disabled={isSystemInitializing || isGoogleDriveOperationPending || toolExecuting}
+              disabled={isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject}
               style={{
                 padding: '3px 8px',
-                backgroundColor: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting) ? '#666' : '#4285F4',
-                color: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting) ? '#999' : '#fff',
+                backgroundColor: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject) ? '#666' : '#4285F4',
+                color: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject) ? '#999' : '#fff',
                 border: 'none',
                 borderRadius: '3px',
                 fontSize: '11px',
-                cursor: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting) ? 'not-allowed' : 'pointer'
+                cursor: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject) ? 'not-allowed' : 'pointer'
               }}
             >
               Editor
             </button>
             <button 
               onClick={onAboutClick}
-              disabled={isSystemInitializing}
               style={{
                 padding: '3px 8px',
-                backgroundColor: isSystemInitializing ? '#666' : '#6366f1',
-                color: isSystemInitializing ? '#999' : '#fff',
+                backgroundColor: '#6366f1',
+                color: '#fff',
                 border: 'none',
                 borderRadius: '3px',
                 fontSize: '11px',
-                cursor: isSystemInitializing ? 'not-allowed' : 'pointer'
+                cursor: 'pointer'
               }}
             >
               About

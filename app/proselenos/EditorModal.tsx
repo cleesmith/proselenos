@@ -97,6 +97,8 @@ export default function EditorModal({
 
   // Ref for immediate access to nextAudio (avoids React state timing issues)
   const nextAudioRef = useRef<{ audio: HTMLAudioElement; url: string } | null>(null);
+  // Ref for the overlay container so we can scroll it
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
   // Hydrate client on mount
   useEffect(() => {
@@ -554,12 +556,23 @@ export default function EditorModal({
       // Highlight the one currently being spoken
       if (absoluteIdx === currentSentenceIndex && isSpeaking) {
         const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
-        return `<span style="background:${bg};">${textSlice}</span>`;
+        return `<span data-current="true" style="background:${bg};">${textSlice}</span>`;
       }
 
       return textSlice;
     }).join('');
   };
+
+  // Auto-scroll the overlay to keep the current sentence in view
+  useEffect(() => {
+    if (!isSpeaking) return;
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    const currentEl = overlay.querySelector('[data-current="true"]') as HTMLElement | null;
+    if (currentEl) {
+      currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [currentSentenceIndex, isSpeaking]);
 
 
   /*
@@ -857,6 +870,7 @@ export default function EditorModal({
         {/* Overlay: highlight preview on top of the editor when speaking */}
         {isSpeaking && sentences.length > 0 && (
           <div
+            ref={overlayRef}
             style={{
               position: 'absolute',
               top: 0,

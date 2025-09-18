@@ -111,11 +111,11 @@ export async function ensureProselenosProjectsFolder(drive: drive_v3.Drive): Pro
     requestBody: fileMetadata,
     fields: 'id, name, appProperties',
   });
-  console.log('ensureProselenosProjectsFolder: created root with appProperties', {
-    id: created.data.id,
-    name: created.data.name,
-    appProperties: created.data.appProperties,
-  });
+  // console.log('ensureProselenosProjectsFolder: created root with appProperties', {
+  //   id: created.data.id,
+  //   name: created.data.name,
+  //   appProperties: created.data.appProperties,
+  // });
   return created.data;
 }
 

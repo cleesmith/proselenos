@@ -365,6 +365,14 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     initFailed,
   ]);
 
+  // When a project is selected (either by creation or selection),
+  // automatically disable system-initializing state so buttons reappear.
+  useEffect(() => {
+    if (projectState.currentProject && isSystemInitializing) {
+      setIsSystemInitializing(false);
+    }
+  }, [projectState.currentProject, isSystemInitializing]);
+
 
   // Check if API key exists for Models button visibility
   const checkApiKey = useCallback(async () => {
@@ -741,8 +749,17 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     projectActions.navigateToFolder(session, init?.config?.settings.proselenos_root_folder_id || '', folderId, setIsGoogleDriveOperationPending);
   };
 
-  const handleCreateNewProject = () => {
-    projectActions.createNewProject(session, init?.config?.settings.proselenos_root_folder_id || '', setIsGoogleDriveOperationPending, isDarkMode, toolsActions);
+  // Create the very first project and wait for the async call to finish
+  const handleCreateNewProject = async () => {
+    await projectActions.createNewProject(
+      session,
+      init?.config?.settings.proselenos_root_folder_id || '',
+      setIsGoogleDriveOperationPending,
+      isDarkMode,
+      toolsActions
+    );
+    // Once the project exists and tools are loaded, turn off initialization
+    setIsSystemInitializing(false);
   };
 
   const handleLoadFileIntoEditor = (content: string, fileName: string, fileId?: string) => {
@@ -905,10 +922,10 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               ">1</div>
               <div style="flex: 1;">
                 <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
-                  Add OpenRouter API Key
+                  Create First Project
                 </div>
                 <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
-                  Click the "AI API key" button in the header to add your <a href="https://openrouter.ai" target="_blank" style="color: #4285F4; text-decoration: none;">OpenRouter</a> API key
+                  Click "Select Project" button to create your first writing project folder
                 </div>
               </div>
             </div>
@@ -931,41 +948,15 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               ">2</div>
               <div style="flex: 1;">
                 <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
-                  Choose AI Model
+                  Add OpenRouter API Key
                 </div>
                 <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
-                  Click "Models" button and select <strong>google/gemini-2.5-flash</strong> for fast, affordable editing
+                  Click the "AI API key" button in the header to add your <a href="https://openrouter.ai" target="_blank" style="color: #4285F4; text-decoration: none;">OpenRouter</a> API key
                 </div>
               </div>
             </div>
             
             <!-- Step 3 -->
-            <div style="display: flex; align-items: flex-start; margin-bottom: 20px;">
-              <div style="
-                background: #10b981; 
-                color: white; 
-                width: 24px; 
-                height: 24px; 
-                border-radius: 50%; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center; 
-                font-size: 12px; 
-                font-weight: 600; 
-                margin-right: 12px; 
-                flex-shrink: 0;
-              ">3</div>
-              <div style="flex: 1;">
-                <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
-                  Test with Chat
-                </div>
-                <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
-                  Click the "Chat" button to verify your setup is working correctly
-                </div>
-              </div>
-            </div>
-            
-            <!-- Step 4 -->
             <div style="display: flex; align-items: flex-start; margin-bottom: 16px;">
               <div style="
                 background: #4285F4; 
@@ -980,13 +971,39 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                 font-weight: 600; 
                 margin-right: 12px; 
                 flex-shrink: 0;
+              ">3</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
+                  Choose AI Model
+                </div>
+                <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
+                  Click "Models" button and select <strong>google/gemini-2.5-flash</strong> for fast, affordable editing
+                </div>
+              </div>
+            </div>
+            
+            <!-- Step 4 -->
+            <div style="display: flex; align-items: flex-start; margin-bottom: 20px;">
+              <div style="
+                background: #10b981; 
+                color: white; 
+                width: 24px; 
+                height: 24px; 
+                border-radius: 50%; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 12px; 
+                font-weight: 600; 
+                margin-right: 12px; 
+                flex-shrink: 0;
               ">4</div>
               <div style="flex: 1;">
                 <div style="font-weight: 600; margin-bottom: 4px; color: ${isDarkMode ? '#fff' : '#111'};">
-                  Create First Project
+                  Test with Chat
                 </div>
                 <div style="font-size: 13px; color: ${isDarkMode ? '#9ca3af' : '#6b7280'}; line-height: 1.4;">
-                  Click "Select Project" button to create your first writing project folder
+                  Click the "Chat" button to verify your setup is working correctly
                 </div>
               </div>
             </div>

@@ -59,6 +59,18 @@ export default function ProjectSection({
     isTxtConverting ||
     isTxtDialogOpen;
 
+  const uploadDisabled =
+    isSystemInitializing ||
+    isGoogleDriveOperationPending ||
+    toolExecuting ||
+    !currentProject;
+
+  const settingsDisabled =
+    isSystemInitializing ||
+    isGoogleDriveOperationPending ||
+    toolExecuting ||
+    !currentProject;
+
   return (
     <div style={{ 
       marginBottom: '12px',
@@ -91,16 +103,16 @@ export default function ProjectSection({
         }}>
           <button 
             onClick={onSelectProject}
-            disabled={isSystemInitializing || isGoogleDriveOperationPending || toolExecuting}
+            disabled={false}
             style={{
               padding: '3px 8px',
-              backgroundColor: isGoogleDriveOperationPending ? '#666' : '#dc3545',
-              color: isGoogleDriveOperationPending ? '#999' : '#fff',
+              backgroundColor: '#dc3545',
+              color: '#fff',
               border: 'none',
               borderRadius: '3px',
               fontSize: '11px',
               fontWeight: 'bold',
-              cursor: isGoogleDriveOperationPending ? 'not-allowed' : 'pointer'
+              cursor: 'pointer'
             }}
           >
             Select Project
@@ -108,30 +120,30 @@ export default function ProjectSection({
           
           <button 
             onClick={onProjectSettings}
-            disabled={isSystemInitializing || isGoogleDriveOperationPending || toolExecuting}
+            disabled={settingsDisabled}
             style={{
               padding: '3px 8px',
-              backgroundColor: isGoogleDriveOperationPending ? '#666' : '#4285F4',
-              color: isGoogleDriveOperationPending ? '#999' : '#fff',
+              backgroundColor: settingsDisabled ? '#666' : '#4285F4',
+              color: settingsDisabled ? '#999' : '#fff',
               border: 'none',
               borderRadius: '3px',
               fontSize: '11px',
-              cursor: isGoogleDriveOperationPending ? 'not-allowed' : 'pointer'
+              cursor: settingsDisabled ? 'not-allowed' : 'pointer'
             }}>
             Project Settings
           </button>
           
           <button 
             onClick={onFileUpload}
-            disabled={isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject}
+            disabled={uploadDisabled}
             style={{
               padding: '3px 8px',
-              backgroundColor: (isGoogleDriveOperationPending || !currentProject) ? '#666' : '#FF6B35',
-              color: (isGoogleDriveOperationPending || !currentProject) ? '#999' : '#fff',
+              backgroundColor: uploadDisabled ? '#666' : '#FF6B35',
+              color: uploadDisabled ? '#999' : '#fff',
               border: 'none',
               borderRadius: '3px',
               fontSize: '11px',
-              cursor: (isGoogleDriveOperationPending || !currentProject) ? 'not-allowed' : 'pointer'
+              cursor: uploadDisabled ? 'not-allowed' : 'pointer'
             }}
           >
             UPLOAD

@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { showAlert } from '@/app/shared/alerts';
 import SimpleChatModal from './SimpleChatModal';
 
 // Complete interface definition
@@ -29,6 +30,10 @@ export default function ChatButton({
 
   // Event handler with explicit typing
   const handleClick = (): void => {
+    if (!currentProject || !currentProjectId) {
+      showAlert('Please select a project first', 'warning', undefined, isDarkMode);
+      return;
+    }
     setIsModalOpen(true);
   };
 
@@ -40,15 +45,15 @@ export default function ChatButton({
     <>
       <button
         onClick={handleClick}
-        disabled={isSystemInitializing}
+        disabled={isSystemInitializing || !currentProject}
         style={{
           padding: '3px 8px',
-          backgroundColor: isSystemInitializing ? '#666' : '#9C27B0',
-          color: isSystemInitializing ? '#999' : '#fff',
+          backgroundColor: (isSystemInitializing || !currentProject) ? '#666' : '#9C27B0',
+          color: (isSystemInitializing || !currentProject) ? '#999' : '#fff',
           border: 'none',
           borderRadius: '3px',
           fontSize: '11px',
-          cursor: isSystemInitializing ? 'not-allowed' : 'pointer'
+          cursor: (isSystemInitializing || !currentProject) ? 'not-allowed' : 'pointer'
         }}
         type="button"
       >

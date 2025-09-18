@@ -82,6 +82,7 @@ export default function NonAIToolsSection({
   const isSetupDisabled = isGoogleDriveOperationPending || toolExecuting || isPublishing || !currentProject || !selectedNonAITool;
   const isClearDisabled = (!selectedManuscriptForTool && !publishResult) || isPublishing;
   const isRunDisabled = !selectedManuscriptForTool || isPublishing || isGoogleDriveOperationPending || toolExecuting || toolJustFinished;
+  const selectDisabled = !currentProject || isGoogleDriveOperationPending || toolExecuting || isPublishing;
 
   return (
     <div style={{ 
@@ -131,16 +132,17 @@ export default function NonAIToolsSection({
         <select
           value={selectedNonAITool}
           onChange={(e) => onToolChange(e.target.value)}
+          disabled={selectDisabled}
           style={{
             flex: '1',
             maxWidth: '300px',
             padding: '4px 8px',
-            backgroundColor: theme.inputBg,
-            color: theme.text,
+            backgroundColor: selectDisabled ? '#666' : theme.inputBg,
+            color: selectDisabled ? '#999' : theme.text,
             border: `1px solid ${theme.border}`,
             borderRadius: '3px',
             fontSize: '11px',
-            cursor: 'pointer'
+            cursor: selectDisabled ? 'not-allowed' : 'pointer'
           }}
         >
           <option value="">Select a tool first</option>

@@ -173,8 +173,20 @@ https://proselenos.com
   };
   
   const handleCategoryChange = (category: string) => {
+    if (!currentProject) {
+      showAlert('Please select a project first', 'warning', undefined, isDarkMode);
+      return;
+    }
     onCategoryChange(category);
     onToolChange(''); // Reset tool selection when category changes
+  };
+
+  const handleToolChange = (tool: string) => {
+    if (!currentProject) {
+      showAlert('Please select a project first', 'warning', undefined, isDarkMode);
+      return;
+    }
+    onToolChange(tool);
   };
 
   const handlePromptEdit = async () => {
@@ -253,18 +265,18 @@ https://proselenos.com
       <select
         value={selectedCategory}
         onChange={(e) => handleCategoryChange(e.target.value)}
-        disabled={!toolsReady || toolExecuting}
+        disabled={!toolsReady || toolExecuting || !currentProject}
         style={{
           width: '100%',
           maxWidth: '300px',
           padding: '4px 8px',
-          backgroundColor: toolsReady ? theme.inputBg : '#666',
-          color: toolsReady ? theme.text : '#999',
+          backgroundColor: (toolsReady && currentProject) ? theme.inputBg : '#666',
+          color: (toolsReady && currentProject) ? theme.text : '#999',
           border: `1px solid ${theme.border}`,
           borderRadius: '3px',
           fontSize: '11px',
           marginBottom: '8px',
-          cursor: toolsReady ? 'pointer' : 'not-allowed'
+          cursor: (toolsReady && currentProject) ? 'pointer' : 'not-allowed'
         }}
       >
         <option value="">{toolsReady ? 'Select a category...' : (isInstallingToolPrompts ? 'Installing tools...' : 'Loading tools...')}</option>
@@ -285,18 +297,18 @@ https://proselenos.com
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
         <select
           value={selectedTool}
-          onChange={(e) => onToolChange(e.target.value)}
-          disabled={!selectedCategory || !toolsReady || toolExecuting}
+          onChange={(e) => handleToolChange(e.target.value)}
+          disabled={!selectedCategory || !toolsReady || toolExecuting || !currentProject}
           style={{
             flex: '1',
             maxWidth: '300px',
             padding: '4px 8px',
-            backgroundColor: (selectedCategory && toolsReady) ? theme.inputBg : '#666',
-            color: (selectedCategory && toolsReady) ? theme.text : '#999',
+            backgroundColor: (selectedCategory && toolsReady && currentProject) ? theme.inputBg : '#666',
+            color: (selectedCategory && toolsReady && currentProject) ? theme.text : '#999',
             border: `1px solid ${theme.border}`,
             borderRadius: '3px',
             fontSize: '11px',
-            cursor: (selectedCategory && toolsReady) ? 'pointer' : 'not-allowed'
+            cursor: (selectedCategory && toolsReady && currentProject) ? 'pointer' : 'not-allowed'
           }}
         >
           <option value="">

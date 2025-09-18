@@ -322,11 +322,11 @@ export class BulkToolLoader {
       throw new Error('proselenos_projects folder not found');
     }
     const projectsFolderId = rootByProp.id!;
-    console.log('BulkToolLoader: using root by appProperties', {
-      id: projectsFolderId,
-      name: rootByProp.name,
-      appProperties: (rootByProp as any).appProperties,
-    });
+    // console.log('BulkToolLoader: using root by appProperties', {
+    //   id: projectsFolderId,
+    //   name: rootByProp.name,
+    //   appProperties: (rootByProp as any).appProperties,
+    // });
 
     // Find tool-prompts folder
     const toolPromptsResponse = await this.drive.files.list({
