@@ -531,3 +531,36 @@ export async function checkManuscriptFilesExistAction(
     return { success: false, error: error.message || 'Failed to check file existence' };
   }
 }
+
+// Delete a generated manuscript output file by type (html | epub | pdf)
+export async function deleteManuscriptOutputAction(
+  accessToken: string,
+  rootFolderId: string,
+  projectFolderId: string,
+  fileType: 'html' | 'epub' | 'pdf'
+): Promise<ActionResult> {
+  try {
+    const clients = await getAuthenticatedClients(accessToken, rootFolderId);
+    if ('error' in clients) {
+      return { success: false, error: clients.error };
+    }
+
+    const { drive } = clients;
+    const fileName = fileType === 'html' ? 'manuscript.html' : fileType === 'epub' ? 'manuscript.epub' : 'manuscript.pdf';
+    const query = `name='${fileName}' and '${projectFolderId}' in parents and trashed=false`;
+    const existing = await drive.files.list({ q: query, fields: 'files(id,name)' });
+
+    if (existing.data.files && existing.data.files.length > 0) {
+      for (const file of existing.data.files) {
+        if (file.id) {
+          await drive.files.delete({ fileId: file.id });
+        }
+      }
+      return { success: true, message: `${fileName} deleted` };
+    }
+    // Nothing to delete is still a success
+    return { success: true, message: `${fileName} not found` };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to delete output file' };
+  }
+}

@@ -115,7 +115,7 @@ export default function ProgressStep({
               disabled={fileState.isProcessing}
               theme={theme}
             >
-              {fileState.exists ? 'Redo' : 'Create'}
+              Create
             </StyledSmallButton>
           )}
         </div>

@@ -4,7 +4,7 @@
 import { useState, useCallback } from 'react';
 import { PublishingAssistantState, PublishingProgress, FileType, FileState } from '@/lib/publishing-assistant/types';
 import { INITIAL_PUBLISHING_STEPS, executePublishingWithProgress, generateIndividualFile } from '@/lib/publishing-assistant/execution-engine';
-import { listGoogleDriveFilesAction, checkManuscriptFilesExistAction } from '@/lib/google-drive-actions';
+import { listGoogleDriveFilesAction, checkManuscriptFilesExistAction, deleteManuscriptOutputAction } from '@/lib/google-drive-actions';
 
 export function usePublishingAssistant(
   currentProjectId: string | null,
@@ -193,6 +193,18 @@ export function usePublishingAssistant(
     }));
 
     try {
+      // Best-effort delete existing output before (re-)creating
+      try {
+        await deleteManuscriptOutputAction(
+          session.accessToken as string,
+          rootFolderId,
+          currentProjectId,
+          fileType
+        );
+      } catch (e) {
+        // Proceed even if delete fails; generation will overwrite if supported
+      }
+
       const result = await generateIndividualFile(
         fileType,
         state.selectedManuscript.id,
