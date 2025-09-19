@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getAvailableModelsAction } from '@/lib/api-key-actions';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface ModelsDropdownProps {
   isOpen: boolean;
@@ -191,35 +192,16 @@ export default function ModelsDropdown({
             Select AI Model
           </h2>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={onClose}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#6c757d',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
+            <StyledSmallButton onClick={onClose} theme={theme}>
               Cancel
-            </button>
-            <button
+            </StyledSmallButton>
+            <StyledSmallButton
               onClick={handleSelectModel}
               disabled={loading || !selectedModel || selectedModel === currentModel}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: (loading || !selectedModel || selectedModel === currentModel) ? '#666' : '#007bff',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '12px',
-                cursor: (loading || !selectedModel || selectedModel === currentModel) ? 'not-allowed' : 'pointer'
-              }}
+              theme={theme}
             >
               Apply
-            </button>
+            </StyledSmallButton>
           </div>
         </div>
 
@@ -256,40 +238,12 @@ export default function ModelsDropdown({
                 gap: '12px',
                 marginBottom: '16px'
               }}>
-                <button
-                  onClick={() => setShowAllModels(false)}
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    backgroundColor: !showAllModels ? '#28a745' : '#6c757d',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
+                <StyledSmallButton onClick={() => setShowAllModels(false)} theme={theme} styleOverrides={{ flex: 1 }}>
                   Popular Models ({bigThreeModels.length})
-                </button>
-                <button
-                  onClick={() => setShowAllModels(true)}
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    backgroundColor: showAllModels ? '#28a745' : '#6c757d',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
+                </StyledSmallButton>
+                <StyledSmallButton onClick={() => setShowAllModels(true)} theme={theme} styleOverrides={{ flex: 1 }}>
                   All OpenRouter Models ({allModels.length})
-                </button>
+                </StyledSmallButton>
               </div>
 
               {/* Search Input */}

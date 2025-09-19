@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { ThemeConfig } from '../shared/theme';
 import { NON_AI_TOOLS } from './useNonAITools';
 import PublishingAssistantModal from '../publishing-assistant/PublishingAssistantModal';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface NonAIToolsSectionProps {
   // Tool selection
@@ -105,27 +106,14 @@ export default function NonAIToolsSection({
         }}>
           Run a non-AI tool:
         </h2>
-        <button 
+        <StyledSmallButton
           onClick={() => setShowPublishingAssistant(true)}
           disabled={!currentProject || isGoogleDriveOperationPending || toolExecuting || isPublishing}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '10px',
-            padding: '2px 8px',
-            height: '22px',
-            lineHeight: 1,
-            backgroundColor: (currentProject && !isGoogleDriveOperationPending && !toolExecuting && !isPublishing) ? '#6f42c1' : '#666',
-            color: (currentProject && !isGoogleDriveOperationPending && !toolExecuting && !isPublishing) ? 'white' : '#999',
-            border: 'none',
-            borderRadius: '3px',
-            cursor: (currentProject && !isGoogleDriveOperationPending && !toolExecuting && !isPublishing) ? 'pointer' : 'not-allowed'
-          }}
+          theme={theme}
+          styleOverrides={{ fontSize: '10px', padding: '2px 8px', height: '22px', lineHeight: 1 }}
         >
-          <span style={{ fontSize: '10px' }}>📚</span>
-          Publishing Assistant
-        </button>
+          📚 Publishing Assistant
+        </StyledSmallButton>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -150,56 +138,29 @@ export default function NonAIToolsSection({
             <option key={tool} value={tool}>{tool}</option>
           ))}
         </select>
-        <button 
+        <StyledSmallButton
           disabled={isSetupDisabled}
           onClick={onSetupTool}
-          style={{
-            padding: '3px 10px',
-            backgroundColor: isSetupDisabled ? '#666' : '#FFC107',
-            color: isSetupDisabled ? '#999' : '#000',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: isSetupDisabled ? 'not-allowed' : 'pointer'
-          }}
+          theme={theme}
         >
           Select
-        </button>
+        </StyledSmallButton>
 
-        <button 
+        <StyledSmallButton
           disabled={isClearDisabled}
           onClick={onClearTool}
-          style={{
-            padding: '3px 10px',
-            backgroundColor: isClearDisabled ? '#666' : '#FFA500',
-            color: isClearDisabled ? '#999' : '#000',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: isClearDisabled ? 'not-allowed' : 'pointer'
-          }}
+          theme={theme}
         >
           Clear
-        </button>
+        </StyledSmallButton>
 
-        <button 
+        <StyledSmallButton
           disabled={isRunDisabled}
           onClick={onExecuteTool}
-          style={{
-            padding: '3px 10px',
-            backgroundColor: isRunDisabled ? '#666' : '#28a745',
-            color: isRunDisabled ? '#999' : '#fff',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: isRunDisabled ? 'not-allowed' : 'pointer'
-          }}
+          theme={theme}
         >
           {isPublishing ? 'Running...' : 'Run'}
-        </button>
+        </StyledSmallButton>
 
         {/* Elapsed time display - matching AI Tools pattern */}
         {isPublishing && (

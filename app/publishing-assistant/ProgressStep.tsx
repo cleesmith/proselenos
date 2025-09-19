@@ -4,6 +4,7 @@
 'use client';
 
 import { ProgressStepProps } from '@/lib/publishing-assistant/types';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 export default function ProgressStep({ 
   step, 
@@ -109,23 +110,13 @@ export default function ProgressStep({
               }}
             />
           ) : (
-            <button
+            <StyledSmallButton
               onClick={onAction}
               disabled={fileState.isProcessing}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: fileState.exists ? '#ffc107' : '#28a745',
-                color: fileState.exists ? '#000' : 'white',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '11px',
-                cursor: fileState.isProcessing ? 'not-allowed' : 'pointer',
-                fontWeight: 'bold',
-                minWidth: '60px'
-              }}
+              theme={theme}
             >
               {fileState.exists ? 'Redo' : 'Create'}
-            </button>
+            </StyledSmallButton>
           )}
         </div>
       )}

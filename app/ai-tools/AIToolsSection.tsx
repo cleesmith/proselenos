@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { ThemeConfig } from '../shared/theme';
+import StyledSmallButton from '@/components/StyledSmallButton';
 import { showAlert } from '../shared/alerts';
 import ToolProgressIndicator from './ToolProgressIndicator';
 import ToolResponseDisplay from './ToolResponseDisplay';
@@ -229,29 +230,16 @@ https://proselenos.com
           color: theme.text,
           marginBottom: 0
         }}>
-          Run an AI based tool:
+          Run an AI tool:
         </h2>
-        <button 
+        <StyledSmallButton
           onClick={() => setShowWritingAssistant(true)}
           disabled={isSystemInitializing || !currentProject || isGoogleDriveOperationPending || toolExecuting}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '10px',
-            padding: '2px 8px',
-            height: '22px',
-            lineHeight: 1,
-            backgroundColor: (currentProject && !isGoogleDriveOperationPending && !toolExecuting) ? '#ff6b35' : '#666',
-            color: (currentProject && !isGoogleDriveOperationPending && !toolExecuting) ? 'white' : '#999',
-            border: 'none',
-            borderRadius: '3px',
-            cursor: (currentProject && !isGoogleDriveOperationPending && !toolExecuting) ? 'pointer' : 'not-allowed'
-          }}
+          theme={theme}
+          styleOverrides={{ fontSize: '10px', padding: '2px 8px', height: '22px', lineHeight: 1 }}
         >
-          <span style={{ fontSize: '10px' }}>✨</span>
-          AI Writing Assistant
-        </button>
+          ✨ AI Writing Assistant
+        </StyledSmallButton>
       </div>
       
       <div style={{ 
@@ -322,73 +310,37 @@ https://proselenos.com
           ))}
         </select>
 
-        <button 
+        <StyledSmallButton
           onClick={handlePromptEdit}
           disabled={isSystemInitializing || !selectedTool || !toolsReady || toolExecuting || isLoadingPrompt}
-          style={{
-            padding: '3px 10px',
-            backgroundColor: (selectedTool && toolsReady && !toolExecuting && !isLoadingPrompt) ? '#4285F4' : '#666',
-            color: (selectedTool && toolsReady && !toolExecuting && !isLoadingPrompt) ? '#fff' : '#999',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: (selectedTool && toolsReady && !toolExecuting && !isLoadingPrompt) ? 'pointer' : 'not-allowed'
-          }}
+          theme={theme}
         >
           {isLoadingPrompt ? 'Loading...' : 'edit prompt'}
-        </button>
+        </StyledSmallButton>
 
-        <button 
+        <StyledSmallButton
           onClick={onSetupTool}
           disabled={isSystemInitializing || !selectedTool || !toolsReady || !currentProject || isGoogleDriveOperationPending || toolExecuting}
-          style={{
-            padding: '3px 10px',
-            backgroundColor: (selectedTool && toolsReady && currentProject && !isGoogleDriveOperationPending) ? '#FFC107' : '#666',
-            color: (selectedTool && toolsReady && currentProject && !isGoogleDriveOperationPending) ? '#000' : '#999',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: (selectedTool && toolsReady && currentProject && !isGoogleDriveOperationPending) ? 'pointer' : 'not-allowed'
-          }}
+          theme={theme}
         >
           Select
-        </button>
+        </StyledSmallButton>
 
-        <button 
+        <StyledSmallButton
           onClick={onClearTool}
           disabled={isSystemInitializing || !selectedManuscriptForTool && !toolResult && elapsedTime === 0 || toolExecuting}
-          style={{
-            padding: '3px 10px',
-            backgroundColor: (selectedManuscriptForTool || toolResult || elapsedTime > 0) ? '#FFA500' : '#666',
-            color: (selectedManuscriptForTool || toolResult || elapsedTime > 0) ? '#000' : '#999',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: (selectedManuscriptForTool || toolResult || elapsedTime > 0) ? 'pointer' : 'not-allowed'
-          }}
+          theme={theme}
         >
           Clear
-        </button>
+        </StyledSmallButton>
 
-        <button 
+        <StyledSmallButton
           onClick={onExecuteTool}
           disabled={isSystemInitializing || !selectedManuscriptForTool || toolExecuting || !toolsReady || isGoogleDriveOperationPending || toolJustFinished}
-          style={{
-            padding: '3px 10px',
-            backgroundColor: (selectedManuscriptForTool && !toolExecuting && toolsReady && !isGoogleDriveOperationPending && !toolJustFinished) ? '#28a745' : '#666',
-            color: (selectedManuscriptForTool && !toolExecuting && toolsReady && !isGoogleDriveOperationPending && !toolJustFinished) ? '#fff' : '#999',
-            border: 'none',
-            borderRadius: '3px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: (selectedManuscriptForTool && !toolExecuting && toolsReady && !isGoogleDriveOperationPending && !toolJustFinished) ? 'pointer' : 'not-allowed'
-          }}
+          theme={theme}
         >
           {toolExecuting ? 'Running...' : 'Run'}
-        </button>
+        </StyledSmallButton>
         
         <ToolProgressIndicator 
           toolExecuting={toolExecuting}

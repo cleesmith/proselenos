@@ -4,6 +4,7 @@
 
 import { ThemeConfig } from '../shared/theme';
 import { readGoogleDriveFileAction } from '@/lib/google-drive-actions';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface ProjectSelectorModalProps {
   session: any;
@@ -135,20 +136,9 @@ export default function ProjectSelectorModal({
                 </div>
               ))}
             </div>
-            <button
-              onClick={onClose}
-              style={{
-                padding: '3px 8px',
-                backgroundColor: '#6c757d',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '11px',
-                cursor: 'pointer'
-              }}
-            >
+            <StyledSmallButton onClick={onClose} theme={theme}>
               Close
-            </button>
+            </StyledSmallButton>
           </div>
         </div>
 
@@ -187,7 +177,7 @@ export default function ProjectSelectorModal({
                   >
                     <div style={{ 
                       flex: '1',
-                      color: isFolder ? '#FBBC04' : (isDoc ? '#4285F4' : '#34A853'),
+                      color: theme.text,
                       fontWeight: isFolder ? 'bold' : 'normal',
                       display: 'flex',
                       alignItems: 'center',
@@ -236,7 +226,7 @@ export default function ProjectSelectorModal({
                   >
                     <div style={{ 
                       flex: '1',
-                      color: '#FBBC04',
+                      color: theme.text,
                       fontWeight: 'bold',
                       display: 'flex',
                       alignItems: 'center',
@@ -245,15 +235,15 @@ export default function ProjectSelectorModal({
                       <span>📁</span>
                       {folder.name}
                     </div>
-                    <div style={{
-                      padding: '4px 8px',
-                      backgroundColor: '#FBBC04',
-                      color: 'black',
-                      borderRadius: '4px',
-                      fontSize: '12px'
-                    }}>
+                    <StyledSmallButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectProject(folder);
+                      }}
+                      theme={theme}
+                    >
                       Select
-                    </div>
+                    </StyledSmallButton>
                   </div>
                 ))}
             </div>
@@ -298,22 +288,13 @@ export default function ProjectSelectorModal({
                   }
                 }}
               />
-              <button
+              <StyledSmallButton
                 onClick={onCreateNewProject}
                 disabled={!newProjectName.trim() || isGoogleDriveOperationPending || toolExecuting}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: (newProjectName.trim() && !isGoogleDriveOperationPending) ? '#28a745' : '#666',
-                  color: (newProjectName.trim() && !isGoogleDriveOperationPending) ? '#fff' : '#ccc',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  cursor: (newProjectName.trim() && !isGoogleDriveOperationPending) ? 'pointer' : 'not-allowed'
-                }}
+                theme={theme}
               >
                 Create
-              </button>
+              </StyledSmallButton>
             </div>
           </div>
         )}

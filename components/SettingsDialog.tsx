@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { showAlert, showConfirm } from '@/app/shared/alerts';
 import { getKeyAndStatusAction, storeApiKeyAction, removeApiKeyAction } from '@/lib/api-key-actions';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -170,35 +171,12 @@ export default function SettingsDialog({
             AI API key
           </h2>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={onClose}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#6c757d',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
+            <StyledSmallButton onClick={onClose} theme={theme}>
               Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: saving ? '#666' : '#007bff',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '12px',
-                cursor: saving ? 'not-allowed' : 'pointer'
-              }}
-            >
+            </StyledSmallButton>
+            <StyledSmallButton onClick={handleSave} disabled={saving} theme={theme}>
               {saving ? 'Saving...' : 'Save'}
-            </button>
+            </StyledSmallButton>
           </div>
         </div>
 

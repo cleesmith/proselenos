@@ -5,6 +5,8 @@
 import React, { useState } from 'react';
 import { showAlert } from '@/app/shared/alerts';
 import SimpleChatModal from './SimpleChatModal';
+import StyledSmallButton from '@/components/StyledSmallButton';
+import { getTheme } from '@/app/shared/theme';
 
 // Complete interface definition
 interface ChatButtonProps {
@@ -27,6 +29,7 @@ export default function ChatButton({
   
   // Explicit state typing
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const theme = getTheme(isDarkMode);
 
   // Event handler with explicit typing
   const handleClick = (): void => {
@@ -43,22 +46,14 @@ export default function ChatButton({
 
   return (
     <>
-      <button
+      <StyledSmallButton
+        className={className}
         onClick={handleClick}
-        disabled={isSystemInitializing || !currentProject}
-        style={{
-          padding: '3px 8px',
-          backgroundColor: (isSystemInitializing || !currentProject) ? '#666' : '#9C27B0',
-          color: (isSystemInitializing || !currentProject) ? '#999' : '#fff',
-          border: 'none',
-          borderRadius: '3px',
-          fontSize: '11px',
-          cursor: (isSystemInitializing || !currentProject) ? 'not-allowed' : 'pointer'
-        }}
-        type="button"
+        disabled={!currentProject || !currentProjectId || isSystemInitializing}
+        theme={theme}
       >
         Chat
-      </button>
+      </StyledSmallButton>
 
       <SimpleChatModal 
         isOpen={isModalOpen}

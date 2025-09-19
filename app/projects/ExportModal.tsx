@@ -6,6 +6,7 @@
 'use client';
 
 import { ThemeConfig } from '../shared/theme';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface ExportModalProps {
   // Visibility states
@@ -87,20 +88,9 @@ export default function ExportModal({
               }}>
                 Select TXT File to Convert
               </div>
-              <button
-                onClick={onCancelFileSelector}
-                style={{
-                  padding: '3px 8px',
-                  backgroundColor: '#6c757d',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '3px',
-                  fontSize: '11px',
-                  cursor: 'pointer'
-                }}
-              >
+              <StyledSmallButton onClick={onCancelFileSelector} theme={theme}>
                 Cancel
-              </button>
+              </StyledSmallButton>
             </div>
 
             <div style={{ 
@@ -149,15 +139,15 @@ export default function ExportModal({
                         {isDoc ? <span>📝</span> : <span>📄</span>}
                         {file.name}
                       </div>
-                      <div style={{
-                        padding: '4px 8px',
-                        backgroundColor: '#9C27B0',
-                        color: 'white',
-                        borderRadius: '4px',
-                        fontSize: '12px'
-                      }}>
+                      <StyledSmallButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectFile(file);
+                        }}
+                        theme={theme}
+                      >
                         Convert
-                      </div>
+                      </StyledSmallButton>
                     </div>
                   );
                 })}
@@ -235,37 +225,17 @@ export default function ExportModal({
               justifyContent: 'flex-end',
               gap: '10px'
             }}>
-              <button
-                onClick={onCancelFilename}
-                disabled={isConvertingTxt}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: 'transparent',
-                  color: '#4285F4',
-                  border: '1px solid #4285F4',
-                  borderRadius: '4px',
-                  cursor: isConvertingTxt ? 'not-allowed' : 'pointer',
-                  fontSize: '12px'
-                }}
-              >
+              <StyledSmallButton onClick={onCancelFilename} disabled={isConvertingTxt} theme={theme}>
                 Cancel
-              </button>
+              </StyledSmallButton>
               
-              <button
+              <StyledSmallButton
                 onClick={onConfirmConversion}
                 disabled={!txtOutputFileName.trim() || isConvertingTxt}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: (!txtOutputFileName.trim() || isConvertingTxt) ? '#666' : '#9C27B0',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: (!txtOutputFileName.trim() || isConvertingTxt) ? 'not-allowed' : 'pointer',
-                  fontSize: '12px'
-                }}
+                theme={theme}
               >
                 {isConvertingTxt ? 'Converting...' : 'Convert'}
-              </button>
+              </StyledSmallButton>
             </div>
           </div>
         </div>

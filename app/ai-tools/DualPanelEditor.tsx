@@ -7,6 +7,7 @@ import { showAlert, showConfirm } from '../shared/alerts';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 import { commands } from '@uiw/react-md-editor';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 const MDEditor = dynamic(
   () => import('@uiw/react-md-editor'),
@@ -175,20 +176,7 @@ export default function DualPanelEditor({
         color: theme.text 
       }}>
         <h1 className="text-xl font-bold">manuscript</h1>
-        <button 
-          onClick={handleClose}
-          className="px-3 py-1 rounded"
-          style={{ 
-            backgroundColor: '#6c757d',
-            color: '#fff',
-            border: 'none',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          Close
-        </button>
+        <StyledSmallButton onClick={handleClose} theme={theme}>Close</StyledSmallButton>
         <h1 className="text-xl font-bold">AI report</h1>
       </div>
 
@@ -200,21 +188,7 @@ export default function DualPanelEditor({
             <span className="text-sm font-medium" style={{ color: theme.text }}>
               {manuscriptName}
             </span>
-            <button
-              onClick={handleSaveManuscript}
-              style={{
-                backgroundColor: '#28a745',
-                color: '#fff',
-                border: 'none',
-                padding: '4px 12px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
-            >
-              Save
-            </button>
+            <StyledSmallButton onClick={handleSaveManuscript} theme={theme}>Save</StyledSmallButton>
           </div>
           <div className="flex-1 p-2">
             <MDEditor
@@ -245,21 +219,7 @@ export default function DualPanelEditor({
             <span className="text-sm font-medium" style={{ color: theme.text }}>
               {getAiReportFilename()}
             </span>
-            <button
-              onClick={handleSaveAiReport}
-              style={{
-                backgroundColor: '#28a745',
-                color: '#fff',
-                border: 'none',
-                padding: '4px 12px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
-            >
-              Save
-            </button>
+            <StyledSmallButton onClick={handleSaveAiReport} theme={theme}>Save</StyledSmallButton>
           </div>
           <div className="flex-1 p-2">
             <MDEditor

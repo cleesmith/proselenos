@@ -3,6 +3,7 @@
 'use client';
 
 import { ThemeConfig } from '../shared/theme';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface ToolProgressIndicatorProps {
   toolExecuting: boolean;
@@ -38,21 +39,13 @@ export default function ToolProgressIndicator({
         <div style={{ display: 'flex', gap: '4px' }}>
 
           {onEditClick && (
-            <button
+            <StyledSmallButton
               onClick={onEditClick}
-              style={{
-                padding: '2px 8px',
-                backgroundColor: '#28a745',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
+              theme={theme}
+              styleOverrides={{ fontSize: '10px', padding: '2px 8px', fontWeight: 'bold' }}
             >
               View-Edit
-            </button>
+            </StyledSmallButton>
           )}
         </div>
       )}

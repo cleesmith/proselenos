@@ -3,6 +3,7 @@
 'use client';
 
 import { StepActionsProps } from './types';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 export default function StepActions({
   step,
@@ -19,43 +20,23 @@ export default function StepActions({
   return (
     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
       {/* Run Button - Always visible */}
-      <button
+      <StyledSmallButton
         onClick={onExecute}
         disabled={isExecuting || isAnyStepExecuting}
-        style={{
-          padding: '6px 16px',
-          borderRadius: '4px',
-          border: 'none',
-          fontSize: '12px',
-          fontWeight: '500',
-          cursor: (isExecuting || isAnyStepExecuting) ? 'not-allowed' : 'pointer',
-          backgroundColor: (isExecuting || isAnyStepExecuting) ? '#666' : '#28a745',
-          color: (isExecuting || isAnyStepExecuting) ? '#999' : 'white',
-          transition: 'background-color 0.2s'
-        }}
+        theme={theme}
       >
         {isExecuting ? 'Running...' : 'Run'}
-      </button>
+      </StyledSmallButton>
 
       {/* Chat Button - Only for brainstorm step */}
       {step.id === 'brainstorm' && onOpenChatForBrainstorm && (
-        <button
-          onClick={() => onOpenChatForBrainstorm(onClose)} // Pass onClose here
+        <StyledSmallButton
+          onClick={() => onOpenChatForBrainstorm(onClose)}
           disabled={isExecuting || isAnyStepExecuting}
-          style={{
-            padding: '6px 16px',
-            borderRadius: '4px',
-            border: 'none',
-            fontSize: '12px',
-            fontWeight: '500',
-            cursor: (isExecuting || isAnyStepExecuting) ? 'not-allowed' : 'pointer',
-            backgroundColor: (isExecuting || isAnyStepExecuting) ? '#666' : '#9C27B0',
-            color: (isExecuting || isAnyStepExecuting) ? '#999' : 'white',
-            transition: 'background-color 0.2s'
-          }}
+          theme={theme}
         >
           Chat
-        </button>
+        </StyledSmallButton>
       )}
     </div>
   );

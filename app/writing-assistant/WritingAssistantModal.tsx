@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { WritingAssistantModalProps } from './types';
 import { useWritingAssistant } from './useWritingAssistant';
 import WorkflowStep from './WorkflowStep';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 export default function WritingAssistantModal({
   isOpen,
@@ -90,26 +91,15 @@ export default function WritingAssistantModal({
           >
             AI Writing Assistant
           </h3>
-          <button
+          <StyledSmallButton
             onClick={() => {
               onClose();
               actions.closeModal();
             }}
-            style={{
-              backgroundColor: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '14px',
-              cursor: 'pointer',
-              padding: '8px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            theme={theme}
           >
             Close
-          </button>
+          </StyledSmallButton>
         </div>
 
         {/* Description */}

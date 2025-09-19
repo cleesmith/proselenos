@@ -6,6 +6,7 @@
 import { useRef } from 'react';
 import { ThemeConfig } from '../shared/theme';
 import { showAlert } from '../shared/alerts';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -91,20 +92,9 @@ export default function UploadModal({
           }}>
             Upload File to Project
           </h3>
-          <button
-            onClick={onClose}
-            disabled={isUploading}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: isUploading ? 'not-allowed' : 'pointer',
-              color: theme.text,
-              opacity: isUploading ? 0.5 : 1
-            }}
-          >
-            ×
-          </button>
+          <StyledSmallButton onClick={onClose} disabled={isUploading} theme={theme}>
+            Close
+          </StyledSmallButton>
         </div>
 
         <div style={{
@@ -137,22 +127,9 @@ export default function UploadModal({
             disabled={isUploading}
           />
           
-          <button
-            onClick={handleUploadClick}
-            disabled={isUploading}
-            style={{
-              padding: '12px 20px',
-              backgroundColor: isUploading ? '#666' : '#4285F4',
-              color: isUploading ? '#999' : '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isUploading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              marginRight: '12px'
-            }}
-          >
+          <StyledSmallButton onClick={handleUploadClick} disabled={isUploading} theme={theme}>
             {isUploading ? 'Uploading...' : 'Choose File'}
-          </button>
+          </StyledSmallButton>
           
           {selectedUploadFile && (
             <span style={{
@@ -169,38 +146,13 @@ export default function UploadModal({
           justifyContent: 'flex-end',
           gap: '12px'
         }}>
-          <button
-            onClick={onClose}
-            disabled={isUploading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: 'transparent',
-              color: theme.text,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '4px',
-              cursor: isUploading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              opacity: isUploading ? 0.5 : 1
-            }}
-          >
+          <StyledSmallButton onClick={onClose} disabled={isUploading} theme={theme}>
             Cancel
-          </button>
+          </StyledSmallButton>
           
-          <button
-            onClick={onUpload}
-            disabled={!selectedUploadFile || isUploading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: (!selectedUploadFile || isUploading) ? '#666' : '#10b981',
-              color: (!selectedUploadFile || isUploading) ? '#999' : '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: (!selectedUploadFile || isUploading) ? 'not-allowed' : 'pointer',
-              fontSize: '14px'
-            }}
-          >
+          <StyledSmallButton onClick={onUpload} disabled={!selectedUploadFile || isUploading} theme={theme}>
             {isUploading ? 'Uploading...' : 'Upload'}
-          </button>
+          </StyledSmallButton>
         </div>
       </div>
     </div>

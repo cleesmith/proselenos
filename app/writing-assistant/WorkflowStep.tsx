@@ -4,6 +4,7 @@
 
 import { WorkflowStepProps } from './types';
 import StepActions from './StepActions';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 export default function WorkflowStep({
   step,
@@ -104,22 +105,14 @@ export default function WorkflowStep({
           >
             {step.name}
           </span>
-          <button
+          <StyledSmallButton
             onClick={() => onEditPrompt(step.id)}
             disabled={isAnyStepExecuting || isLoadingPrompt}
-            style={{
-              padding: '2px 6px',
-              backgroundColor: (!isAnyStepExecuting && !isLoadingPrompt) ? 'rgba(66, 133, 244, 0.1)' : 'rgba(102, 102, 102, 0.1)',
-              color: (!isAnyStepExecuting && !isLoadingPrompt) ? '#4285F4' : '#666',
-              border: `1px solid ${(!isAnyStepExecuting && !isLoadingPrompt) ? 'rgba(66, 133, 244, 0.3)' : 'rgba(102, 102, 102, 0.3)'}`,
-              borderRadius: '2px',
-              fontSize: '9px',
-              cursor: (!isAnyStepExecuting && !isLoadingPrompt) ? 'pointer' : 'not-allowed',
-              textTransform: 'none'
-            }}
+            theme={theme}
+            styleOverrides={{ padding: '2px 6px', fontSize: '9px' }}
           >
             {isLoadingPrompt ? 'loading...' : 'edit prompt'}
-          </button>
+          </StyledSmallButton>
         </div>
         <div
           style={{
@@ -164,22 +157,14 @@ export default function WorkflowStep({
       
       {/* Show file name button for completed steps */}
       {step.status === 'completed' && step.fileName && (
-        <button
+        <StyledSmallButton
           onClick={() => onView(step.id)}
           disabled={isAnyStepExecuting}
-          style={{
-            fontSize: '11px',
-            padding: '4px 8px',
-            borderRadius: '3px',
-            backgroundColor: isAnyStepExecuting ? '#666' : '#4285F4',
-            color: isAnyStepExecuting ? '#999' : 'white',
-            border: 'none',
-            marginLeft: '12px',
-            cursor: isAnyStepExecuting ? 'not-allowed' : 'pointer'
-          }}
+          theme={theme}
+          styleOverrides={{ padding: '4px 8px', marginLeft: '12px' }}
         >
           {step.fileName}
-        </button>
+        </StyledSmallButton>
       )}
       
       {/* Show failed badge for error status */}

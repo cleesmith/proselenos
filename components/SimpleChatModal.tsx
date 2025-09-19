@@ -11,6 +11,8 @@ import {
 } from '@/lib/chat-actions';
 import type { ChatMessage } from '@/lib/chatInternal';
 import { showAlert } from '@/app/shared/alerts';
+import StyledSmallButton from '@/components/StyledSmallButton';
+import { getTheme } from '@/app/shared/theme';
 
 interface SimpleChatModalProps {
   isOpen: boolean;
@@ -34,6 +36,7 @@ export default function SimpleChatModal({
   currentProjectId,
   rootFolderId
 }: SimpleChatModalProps): React.JSX.Element | null {
+  const theme = getTheme(isDarkMode);
   const [input, setInput] = useState<string>('');
   const [messages, setMessages] = useState<ChatMessageWithTimer[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -336,35 +339,12 @@ export default function SimpleChatModal({
             </div>
             
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={handleFilenameCancel}
-                style={{
-                  padding: '6px 16px',
-                  backgroundColor: isDarkMode ? '#4a5568' : '#e2e8f0',
-                  color: isDarkMode ? '#ffffff' : '#1a202c',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
+              <StyledSmallButton onClick={handleFilenameCancel} theme={theme}>
                 Cancel
-              </button>
-              <button
-                onClick={handleFilenameSubmit}
-                disabled={!filename.trim()}
-                style={{
-                  padding: '6px 16px',
-                  backgroundColor: !filename.trim() ? '#666' : '#28a745',
-                  color: !filename.trim() ? '#999' : '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  cursor: !filename.trim() ? 'not-allowed' : 'pointer'
-                }}
-              >
+              </StyledSmallButton>
+              <StyledSmallButton onClick={handleFilenameSubmit} disabled={!filename.trim()} theme={theme}>
                 Save
-              </button>
+              </StyledSmallButton>
             </div>
           </div>
         </div>
@@ -398,37 +378,16 @@ export default function SimpleChatModal({
         </div>
         
         <div style={{ display: 'flex', gap: '6px' }}>
-          <button
+          <StyledSmallButton
             onClick={handleSaveChat}
             disabled={messages.length === 0 || isSaving}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: (messages.length === 0 || isSaving) ? '#666' : '#28a745',
-              color: (messages.length === 0 || isSaving) ? '#999' : '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: (messages.length === 0 || isSaving) ? 'not-allowed' : 'pointer'
-            }}
-            type="button"
+            theme={theme}
           >
             {isSaving ? 'Saving...' : 'Save'}
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: 'pointer'
-            }}
-            type="button"
-          >
+          </StyledSmallButton>
+          <StyledSmallButton onClick={onClose} theme={theme}>
             Close
-          </button>
+          </StyledSmallButton>
         </div>
       </div>
 
@@ -562,7 +521,7 @@ export default function SimpleChatModal({
               style={{
                 width: '36px',
                 height: '36px',
-                padding: '0',
+                padding: 0,
                 backgroundColor: (!input.trim() || isLoading) ? '#666' : '#3182ce',
                 color: (!input.trim() || isLoading) ? '#999' : '#fff',
                 border: 'none',

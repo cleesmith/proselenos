@@ -30,6 +30,7 @@ import { showAlert, showInputAlert } from '../shared/alerts';
 import { commands } from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 // Dynamically import the markdown editor on the client
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
@@ -701,38 +702,22 @@ export default function EditorModal({
         </div>
         {/* Right group: action buttons and voice selection */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button
+          <StyledSmallButton
             onClick={handleSave}
             disabled={isSaving}
             title={editorMode === 'existing' ? 'Update file' : 'Save as .txt'}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: theme.modalBg,
-              color: theme.text,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: isSaving ? 'not-allowed' : 'pointer',
-            }}
+            theme={theme}
           >
             {isSaving ? 'Saving…' : editorMode === 'existing' ? 'Update' : 'Save as .txt'}
-          </button>
-          <button
+          </StyledSmallButton>
+          <StyledSmallButton
             onClick={handleOpen}
             disabled={isOpening}
             title="Open file"
-            style={{
-              padding: '3px 8px',
-              backgroundColor: theme.modalBg,
-              color: theme.text,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: isOpening ? 'not-allowed' : 'pointer',
-            }}
+            theme={theme}
           >
             {isOpening ? 'Opening…' : 'Open'}
-          </button>
+          </StyledSmallButton>
           <select
             value={selectedVoice}
             onChange={(e) => handleVoiceChange(e.target.value)}
@@ -772,22 +757,11 @@ export default function EditorModal({
               })
             )}
           </select>
-          <button
+          <StyledSmallButton
             onClick={handleSpeak}
             disabled={!isClientHydrated || isLoadingVoices || isGeneratingInitial}
             title="Speak / Pause / Resume"
-            style={{
-              padding: '3px 8px',
-              backgroundColor: theme.modalBg,
-              color: theme.text,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor:
-                !isClientHydrated || isLoadingVoices || isGeneratingInitial
-                  ? 'not-allowed'
-                  : 'pointer',
-            }}
+            theme={theme}
           >
             {!isClientHydrated
               ? 'Loading…'
@@ -800,24 +774,16 @@ export default function EditorModal({
                 ? '▶️ Resume'
                 : '⏸️ Pause'
               : '🔊 Speak'}
-          </button>
-          <button
+          </StyledSmallButton>
+          <StyledSmallButton
             onClick={handleStopAndScroll}
             disabled={!isSpeaking && !isPaused}
             title="Stop speaking"
-            style={{
-              padding: '3px 8px',
-              backgroundColor: theme.modalBg,
-              color: theme.text,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: !isSpeaking && !isPaused ? 'not-allowed' : 'pointer',
-            }}
+            theme={theme}
           >
             ⏹️ Quiet
-          </button>
-          <button
+          </StyledSmallButton>
+          <StyledSmallButton
             /*
              * Close button must fully stop any ongoing text-to-speech.  Simply
              * calling cleanupAudio() is insufficient because it resets state
@@ -829,18 +795,10 @@ export default function EditorModal({
               handleStop();
               onClose();
             }}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: 'pointer',
-            }}
+            theme={theme}
           >
             Close
-          </button>
+          </StyledSmallButton>
         </div>
       </div>
       {/* Editor and overlay container */}

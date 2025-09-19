@@ -110,13 +110,13 @@ export async function getToolPromptAction(toolId: string): Promise<{
     // Step 1: find proselenos_projects folder by appProperties
     const rootByProp = await findRootFolderByProperty(drive);
     const projectsFolderId = rootByProp?.id || null;
-    if (projectsFolderId) {
-      console.log('tools-actions.getToolPromptAction: using root by appProperties', {
-        id: projectsFolderId,
-        name: rootByProp?.name,
-        appProperties: (rootByProp as any).appProperties,
-      });
-    }
+    // if (projectsFolderId) {
+    //   console.log('tools-actions.getToolPromptAction: using root by appProperties', {
+    //     id: projectsFolderId,
+    //     name: rootByProp?.name,
+    //     appProperties: (rootByProp as any).appProperties,
+    //   });
+    // }
     if (!projectsFolderId) return { success: false, error: 'Projects folder not found' };
 
     // Step 2: find tool-prompts folder
@@ -189,13 +189,13 @@ export async function updateToolPromptAction(toolId: string, content: string): P
     // Step 1: find proselenos_projects folder by appProperties
     const rootByProp = await findRootFolderByProperty(drive);
     const projectsFolderId = rootByProp?.id || null;
-    if (projectsFolderId) {
-      console.log('tools-actions.updateToolPromptAction: using root by appProperties', {
-        id: projectsFolderId,
-        name: rootByProp?.name,
-        appProperties: (rootByProp as any).appProperties,
-      });
-    }
+    // if (projectsFolderId) {
+    //   console.log('tools-actions.updateToolPromptAction: using root by appProperties', {
+    //     id: projectsFolderId,
+    //     name: rootByProp?.name,
+    //     appProperties: (rootByProp as any).appProperties,
+    //   });
+    // }
     if (!projectsFolderId) return { success: false, error: 'Projects folder not found' };
 
     // Step 2: find tool-prompts folder

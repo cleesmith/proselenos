@@ -3,6 +3,7 @@
 'use client';
 
 import { ThemeConfig } from '../shared/theme';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface ProjectSectionProps {
   currentProject: string | null;
@@ -101,89 +102,51 @@ export default function ProjectSection({
           flex: '1',
           justifyContent: 'space-evenly'
         }}>
-          <button 
+          <StyledSmallButton 
             onClick={onSelectProject}
             disabled={false}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: '#dc3545',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
+            theme={theme}
           >
             Select Project
-          </button>
+          </StyledSmallButton>
           
-          <button 
+          <StyledSmallButton 
             onClick={onProjectSettings}
             disabled={settingsDisabled}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: settingsDisabled ? '#666' : '#4285F4',
-              color: settingsDisabled ? '#999' : '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: settingsDisabled ? 'not-allowed' : 'pointer'
-            }}>
+            theme={theme}
+          >
             Project Settings
-          </button>
+          </StyledSmallButton>
           
-          <button 
+          <StyledSmallButton 
             onClick={onFileUpload}
             disabled={uploadDisabled}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: uploadDisabled ? '#666' : '#FF6B35',
-              color: uploadDisabled ? '#999' : '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: uploadDisabled ? 'not-allowed' : 'pointer'
-            }}
+            theme={theme}
           >
             UPLOAD
-          </button>
+          </StyledSmallButton>
           
-          <button 
+          <StyledSmallButton 
             onClick={onDocxImport}
             disabled={importDisabled}
-            aria-busy={isDocxConverting}
             title={importDisabled ? 'Please wait…' : 'Import a DOCX file'}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: importDisabled ? '#666' : '#9C27B0',
-              color: importDisabled ? '#999' : '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: importDisabled ? 'not-allowed' : 'pointer'
-            }}
+            theme={theme}
+            styleOverrides={{ padding: '3px 6px' }}
+            aria-busy={isDocxConverting}
           >
             {isDocxConverting ? 'Converting…' : 'IMPORT .docx'}
-          </button>
+          </StyledSmallButton>
           
-          <button 
+          <StyledSmallButton 
             onClick={onTxtExport}
             disabled={exportDisabled}
-            aria-busy={isTxtConverting}
             title={exportDisabled ? 'Please wait…' : 'Export a TXT to DOCX'}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: exportDisabled ? '#666' : '#9C27B0',
-              color: exportDisabled ? '#999' : '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: exportDisabled ? 'not-allowed' : 'pointer'
-            }}
+            theme={theme}
+            styleOverrides={{ padding: '3px 6px' }}
+            aria-busy={isTxtConverting}
           >
             {isTxtConverting ? 'Exporting…' : 'EXPORT .docx'}
-          </button>
+          </StyledSmallButton>
         </div>
       </div>
       

@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeConfig } from '../app/shared/theme';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -57,24 +58,9 @@ export default function AboutModal({
           }}>
             About Proselenos
           </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              color: isDarkMode ? '#9ca3af' : '#6b7280',
-              cursor: 'pointer',
-              padding: '0',
-              width: '30px',
-              height: '30px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            ×
-          </button>
+          <StyledSmallButton onClick={onClose} theme={theme}>
+            Close
+          </StyledSmallButton>
         </div>
 
         {/* Content */}

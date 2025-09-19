@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { ThemeConfig } from '../shared/theme';
 import ChatButton from '@/components/ChatButton';
 import ChatPopoutButton from '@/components/ChatPopoutButton';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface ProselenosHeaderProps {
   session: any;
@@ -160,82 +161,32 @@ export default function ProselenosHeader({
               rootFolderId={rootFolderId}
             />
 
-            <button 
+            <StyledSmallButton
               onClick={onModelsClick}
               disabled={isSystemInitializing || !currentProject}
-              style={{
-                padding: '3px 8px',
-                backgroundColor: (isSystemInitializing || !currentProject) ? '#666' : '#28a745',
-                color: (isSystemInitializing || !currentProject) ? '#999' : '#fff',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '11px',
-                cursor: (isSystemInitializing || !currentProject) ? 'not-allowed' : 'pointer'
-              }}
+              theme={theme}
             >
               Models
-            </button>
-            <button 
+            </StyledSmallButton>
+            <StyledSmallButton
               onClick={onSettingsClick}
               disabled={isSystemInitializing || isGoogleDriveOperationPending || !currentProject}
-              style={{
-                padding: '3px 8px',
-                backgroundColor: (isSystemInitializing || isGoogleDriveOperationPending || !currentProject) ? 
-                  '#333' : '#555',
-                color: (isSystemInitializing || isGoogleDriveOperationPending || !currentProject) ? '#999' : '#fff',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '11px',
-                cursor: (isSystemInitializing || isGoogleDriveOperationPending || !currentProject) ? 'not-allowed' : 'pointer'
-              }}>
+              theme={theme}
+            >
               AI API key
-            </button>
-            <button 
+            </StyledSmallButton>
+            <StyledSmallButton
               onClick={() => {
                 console.log('Editor button clicked:', { isGoogleDriveOperationPending, toolExecuting });
                 onEditorClick();
               }}
               disabled={isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject}
-              style={{
-                padding: '3px 8px',
-                backgroundColor: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject) ? '#666' : '#4285F4',
-                color: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject) ? '#999' : '#fff',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '11px',
-                cursor: (isSystemInitializing || isGoogleDriveOperationPending || toolExecuting || !currentProject) ? 'not-allowed' : 'pointer'
-              }}
+              theme={theme}
             >
               Editor
-            </button>
-            <button 
-              onClick={onAboutClick}
-              style={{
-                padding: '3px 8px',
-                backgroundColor: '#6366f1',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '11px',
-                cursor: 'pointer'
-              }}
-            >
-              About
-            </button>
-            <button 
-              onClick={handleLogoutClick}
-              style={{
-                padding: '3px 8px',
-                backgroundColor: '#dc3545',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '3px',
-                fontSize: '11px',
-                cursor: 'pointer'
-              }}
-            >
-              Sign out
-            </button>
+            </StyledSmallButton>
+            <StyledSmallButton onClick={onAboutClick} theme={theme}>About</StyledSmallButton>
+            <StyledSmallButton onClick={handleLogoutClick} theme={theme}>Sign out</StyledSmallButton>
           </div>
         )}
       </div>

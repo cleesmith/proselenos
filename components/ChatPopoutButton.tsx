@@ -6,6 +6,8 @@ import React from 'react';
 import { showAlert } from '@/app/shared/alerts';
 import { createRoot } from 'react-dom/client';
 import SimpleChatModal from './SimpleChatModal';
+import StyledSmallButton from '@/components/StyledSmallButton';
+import { getTheme } from '@/app/shared/theme';
 
 interface ChatPopoutButtonProps {
   className?: string;
@@ -27,6 +29,7 @@ export default function ChatPopoutButton({
   currentProjectId,
   rootFolderId,
 }: ChatPopoutButtonProps): React.JSX.Element {
+  const theme = getTheme(isDarkMode);
 
   const openChatWindow = () => {
     if (!currentProject || !currentProjectId) {
@@ -89,22 +92,13 @@ export default function ChatPopoutButton({
   };
 
   return (
-    <button 
+    <StyledSmallButton
+      className={className}
       onClick={openChatWindow}
-      className={className} 
-      disabled={!currentProject}
-      style={{
-        padding: '3px 8px',
-        backgroundColor: !currentProject ? '#666' : '#9C27B0',
-        color: !currentProject ? '#999' : '#fff',
-        border: 'none',
-        borderRadius: '3px',
-        fontSize: '11px',
-        cursor: !currentProject ? 'not-allowed' : 'pointer'
-      }}
-      type="button"
+      disabled={!currentProject || !currentProjectId}
+      theme={theme}
     >
       TabChat
-    </button>
+    </StyledSmallButton>
   );
 }

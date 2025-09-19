@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { PublishingAssistantModalProps } from '@/lib/publishing-assistant/types';
 import { usePublishingAssistant } from './usePublishingAssistant';
 import ProgressStep from './ProgressStep';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 export default function PublishingAssistantModal({
   isOpen,
@@ -86,23 +87,9 @@ export default function PublishingAssistantModal({
           >
             📚 Publishing Assistant
           </h3>
-          <button
-            onClick={handleClose}
-            style={{
-              backgroundColor: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '14px',
-              cursor: 'pointer',
-              padding: '8px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
+          <StyledSmallButton onClick={handleClose} theme={theme}>
             Close
-          </button>
+          </StyledSmallButton>
         </div>
 
         {/* Modal Content */}

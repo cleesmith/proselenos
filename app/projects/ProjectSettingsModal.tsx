@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { ThemeConfig } from '../shared/theme';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 export interface ProjectMetadata {
   title: string;
@@ -116,38 +117,12 @@ export default function ProjectSettingsModal({
           </h2>
           
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={handleCancel}
-              disabled={isLoading || isSaving}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: isDarkMode ? '#555' : '#ddd',
-                color: isDarkMode ? '#fff' : '#333',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: (isLoading || isSaving) ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-            >
+            <StyledSmallButton onClick={handleCancel} disabled={isLoading || isSaving} theme={theme}>
               Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isLoading || isSaving || !hasChanges}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: (isLoading || isSaving || !hasChanges) ? '#666' : '#10b981',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: (isLoading || isSaving || !hasChanges) ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-            >
+            </StyledSmallButton>
+            <StyledSmallButton onClick={handleSave} disabled={isLoading || isSaving || !hasChanges} theme={theme}>
               {isSaving ? 'Saving...' : 'Save'}
-            </button>
+            </StyledSmallButton>
           </div>
         </div>
 
