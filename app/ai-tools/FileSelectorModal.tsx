@@ -4,6 +4,7 @@
 'use client';
 
 import { ThemeConfig } from '../shared/theme';
+import StyledSmallButton from '@/components/StyledSmallButton';
 
 interface FileSelectorModalProps {
   isOpen: boolean;
@@ -85,20 +86,9 @@ export default function FileSelectorModal({
           }}>
             {modalTitle}
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '3px 8px',
-              backgroundColor: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              fontSize: '11px',
-              cursor: 'pointer'
-            }}
-          >
+          <StyledSmallButton onClick={onClose} theme={theme}>
             Cancel
-          </button>
+          </StyledSmallButton>
         </div>
 
         <div style={{ 
@@ -158,14 +148,14 @@ export default function FileSelectorModal({
                     {file.name}
                   </div>
 
-                  <div style={{
-                    padding: '4px 8px',
-                    backgroundColor: isSelected ? '#198754' : '#28a745',
-                    color: 'white',
-                    borderRadius: '4px',
-                    fontSize: '12px'
-                  }}>
-                    {isSelected ? 'Selected' : 'Select'}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <StyledSmallButton
+                      theme={theme}
+                      // keep row as the interactive surface; this is a visual indicator
+                      styleOverrides={{ fontSize: '12px', padding: '4px 8px' }}
+                    >
+                      {isSelected ? 'Selected' : 'Select'}
+                    </StyledSmallButton>
                   </div>
                 </div>
               );

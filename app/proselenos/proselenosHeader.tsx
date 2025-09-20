@@ -235,34 +235,12 @@ export default function ProselenosHeader({
               gap: '12px',
               justifyContent: 'center'
             }}>
-              <button
-                onClick={handleCancelLogout}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#6c757d',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
+              <StyledSmallButton onClick={handleCancelLogout} theme={theme}>
                 Cancel
-              </button>
-              <button
-                onClick={handleConfirmLogout}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#dc3545',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
+              </StyledSmallButton>
+              <StyledSmallButton onClick={handleConfirmLogout} theme={theme}>
                 Sign out
-              </button>
+              </StyledSmallButton>
             </div>
           </div>
         </div>
