@@ -1203,6 +1203,8 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               Proselenos provides comprehensive tools to refine and polish your complete manuscript. 
               Upload your entire manuscript and get detailed editing assistance, structural analysis, and 
               formatting help to bring your work to professional publishing standards.
+              <br />
+              <blockquote>&nbsp;&nbsp;&nbsp; 🌖 <i>Like the moon, Proselenos reflects just enough light to make your prose shine.</i> ✨</blockquote>
             </p>
           </div>
 
