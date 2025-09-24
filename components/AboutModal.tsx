@@ -318,8 +318,18 @@ export default function AboutModal({
             </div>
           </div>
 
-          {/* --- Ko-fi Donate (scoped to About modal) --- */}
-          <div className="mt-6 flex items-center justify-center">
+          {/* --- Book on Amazon & Ko-fi Donate --- */}
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <a
+              href="https://a.co/d/5feXsK0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium shadow hover:opacity-90 focus:outline-none focus:ring"
+              style={{ backgroundColor: '#794bc4', color: '#fff' }}
+              aria-label="Proselenos book"
+            >
+              Proselenos the book
+            </a>
             <a
               href="https://ko-fi.com/slipthetrap"
               target="_blank"

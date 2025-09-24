@@ -1410,6 +1410,20 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
 
           {/* Final CTA */}
           <div style={{ textAlign: 'center' }}>
+
+            <a
+              href="https://a.co/d/5feXsK0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium shadow hover:opacity-90 focus:outline-none focus:ring"
+              style={{ backgroundColor: '#794bc4', color: '#fff' }}
+              aria-label="Proselenos book"
+            >
+              Proselenos the book
+            </a>
+
+            &nbsp;&nbsp;&nbsp;&nbsp;
+
             <button
               onClick={() => signIn('google')}
               style={{
