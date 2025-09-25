@@ -3,6 +3,7 @@
 // Shared alert utilities
 
 import Swal from 'sweetalert2';
+import { signOut } from 'next-auth/react';
 
 export const showAlert = (
   message: string, 
@@ -104,6 +105,10 @@ export const showStickyErrorWithLogout = (
   document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
 
   const hasNewlines = message.includes('\n');
+  
+  // Detect if this is a long message (like the detailed permission explanation)
+  const isLongMessage = message.length > 400 || message.split('\n').length > 10;
+  
   const alertOptions: any = {
     title,
     icon: 'error',
@@ -113,17 +118,77 @@ export const showStickyErrorWithLogout = (
     confirmButtonText: 'Sign out',
     showCancelButton: false,
     allowOutsideClick: false,
-    allowEscapeKey: false
+    allowEscapeKey: false,
+    // Make the dialog wider for long messages
+    width: isLongMessage ? '700px' : '400px',
+    customClass: {
+      popup: 'swal2-long-message',
+      htmlContainer: 'swal2-left-align'
+    }
   };
 
   if (hasNewlines) {
-    alertOptions.html = message.replace(/\n/g, '<br>');
+    // For long messages, create better formatted HTML with left alignment
+    if (isLongMessage) {
+      alertOptions.html = `
+        <div style="
+          text-align: left; 
+          line-height: 1.6; 
+          font-size: 14px;
+          max-width: 100%;
+        ">
+          ${message.replace(/\n\n/g, '</p><p style="margin: 16px 0;">').replace(/\n/g, '<br>')}
+        </div>
+      `;
+    } else {
+      alertOptions.html = message.replace(/\n/g, '<br>');
+    }
   } else {
     alertOptions.text = message;
   }
 
+  // Add custom CSS for better formatting
+  const style = document.createElement('style');
+  style.textContent = `
+    .swal2-long-message {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .swal2-long-message .swal2-title {
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .swal2-left-align {
+      text-align: left !important;
+    }
+    .swal2-long-message .swal2-html-container {
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    .swal2-long-message .swal2-html-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .swal2-long-message .swal2-html-container::-webkit-scrollbar-track {
+      background: ${isDarkMode ? '#333' : '#f1f1f1'};
+      border-radius: 3px;
+    }
+    .swal2-long-message .swal2-html-container::-webkit-scrollbar-thumb {
+      background: ${isDarkMode ? '#666' : '#888'};
+      border-radius: 3px;
+    }
+    .swal2-long-message .swal2-html-container::-webkit-scrollbar-thumb:hover {
+      background: ${isDarkMode ? '#777' : '#555'};
+    }
+  `;
+  document.head.appendChild(style);
+
   Swal.fire(alertOptions).then(() => {
+    // Clean up the style element
+    document.head.removeChild(style);
     // Force logout route navigation
-    window.location.href = '/api/auth/signout?callbackUrl=/';
+    // window.location.href = '/api/auth/signout?callbackUrl=/';
+    signOut({ callbackUrl: '/', redirect: true });
   });
 };

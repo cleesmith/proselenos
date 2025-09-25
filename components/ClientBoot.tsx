@@ -129,7 +129,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
 
     console.log(`Fast init completed in ${init.durationMs}ms`);
   }, [init]); // Removed projectActions and toolsActions from dependencies
-
+  
   // Check tool-prompts installation status after fast init
   useEffect(() => {
     const checkToolPromptsStatus = async () => {
@@ -184,11 +184,51 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               setIsGoogleDriveOperationPending(false);
               setIsInstallingToolPrompts(false);
               setInitFailed(true);
-              showStickyErrorWithLogout(
-                'Initialization failed',
-                `Tool-prompts install failed: ${installResult.message || installResult.error || 'Unknown error'}`,
-                isDarkMode
-              );
+              
+              // Check if the failure is due to Google Drive permissions
+              const errorMsg = installResult.message || installResult.error || 'Unknown error';
+              const isPermissionError = 
+                errorMsg.includes('403') ||
+                errorMsg.includes('insufficient authentication scopes') ||
+                errorMsg.includes('Permission denied') ||
+                errorMsg.includes('Request had insufficient authentication scopes') ||
+                errorMsg.includes('The user has not granted the app') ||
+                errorMsg.includes('Root folder ID is required'); // ADD THIS KEY PATTERN
+              
+              if (isPermissionError) {
+                const detailedPermissionError = `It looks like Google Drive access wasn't granted when you signed in just now.
+
+WHY THIS IS NEEDED:
+Proselenos needs to create a dedicated "proselenos_projects" folder in your Google Drive to store your writing projects, settings, and AI tools. Without this permission, the app cannot function at all.
+
+WHAT HAPPENED:
+When you signed in, there was a checkbox on Google's permission screen that said "See, edit, create, and delete only the specific Google Drive files you use with this app." This checkbox was likely unchecked, so the app didn't receive the necessary permissions.
+
+WHAT TO DO NEXT:
+1. When you click "Sign out" below, you'll be taken back to the Proselenos landing page
+2. Now, Sign in with Google, again
+3. This time, the permission screen may look different - it might not show a checkbox at all
+4. Instead, it may simply say you're granting access to "Google Drive files" - this is normal
+5. But if there is a checkbox, be sure to check it
+6. Just click "Continue" to proceed
+
+IMPORTANT PRIVACY NOTE:
+The app can ONLY access files it creates in the "proselenos_projects" folder. It cannot see, read, or modify any of your other Google Drive files, folders, or documents. Your privacy is completely protected.
+
+This is a one-time setup step. Once granted, you won't see this permission screen again.`;
+
+                showStickyErrorWithLogout(
+                  'Google Drive Access Required',
+                  detailedPermissionError,
+                  isDarkMode
+                );
+              } else {
+                showStickyErrorWithLogout(
+                  'Initialization failed',
+                  `Tool-prompts install failed: ${errorMsg}`,
+                  isDarkMode
+                );
+              }
               return;
             }
           } catch (error) {
@@ -196,12 +236,56 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
             setIsGoogleDriveOperationPending(false);
             setIsInstallingToolPrompts(false);
             setInitFailed(true);
+            
             const msg = error instanceof Error ? error.message : String(error);
-            showStickyErrorWithLogout(
-              'Initialization error',
-              `Problem preparing Google Drive.\n${msg}`,
-              isDarkMode
-            );
+            
+            // Check if this is a Google Drive permission issue
+            const isPermissionError = 
+              (error as any)?.code === 403 || 
+              (error as any)?.status === 403 || 
+              msg.includes('insufficient authentication scopes') ||
+              msg.includes('Permission denied') ||
+              msg.includes('Request had insufficient authentication scopes') ||
+              msg.includes('The user has not granted the app') ||
+              msg.includes('403') ||
+              msg.includes('Root folder ID is required'); // ADD THIS KEY PATTERN HERE TOO
+            
+            if (isPermissionError) {
+              const detailedPermissionError = `It looks like Google Drive access wasn't granted when you signed in just now.
+
+WHY THIS IS NEEDED:
+Proselenos needs to create a dedicated "proselenos_projects" folder in your Google Drive to store your writing projects, settings, and AI tools. Without this permission, the app cannot function at all.
+
+WHAT HAPPENED:
+When you signed in, there was a checkbox on Google's permission screen that said "See, edit, create, and delete only the specific Google Drive files you use with this app." This checkbox was likely unchecked, so the app didn't receive the necessary permissions.
+
+WHAT TO DO NEXT:
+1. When you click "Sign out" below, you'll be taken back to the Proselenos landing page
+2. Now, Sign in with Google, again
+3. This time, the permission screen may look different - it might not show a checkbox at all
+4. Instead, it may simply say you're granting access to "Google Drive files" - this is normal
+5. But if there is a checkbox, be sure to check it
+6. Just click "Continue" to proceed
+
+IMPORTANT PRIVACY NOTE:
+The app can ONLY access files it creates in the "proselenos_projects" folder. It cannot see, read, or modify any of your other Google Drive files, folders, or documents. Your privacy is completely protected.
+
+This is a one-time setup step. Once granted, you won't see this permission screen again.`;
+
+              showStickyErrorWithLogout(
+                'Google Drive Access Required',
+                detailedPermissionError,
+                isDarkMode
+              );
+            } else {
+              showStickyErrorWithLogout(
+                'Initialization error',
+                `Something went wrong setting up your workspace: ${msg}
+
+Please try signing in again. If the problem persists, check your internet connection.`,
+                isDarkMode
+              );
+            }
             return;
           } finally {
             setIsInstallingToolPrompts(false);
@@ -244,65 +328,6 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     };
   };
 
-  // Show Ready modal when all systems are ready
-  // useEffect(() => {
-  //   if (!session) return; // Don't run initialization logic without session
-  //   if (isLoggingOut) return; // Skip initialization logic during logout
-  //   if (initFailed) return; // Don't show init modals after failure
-    
-  //   const status = getLoadingStatus();
-
-  //   if (status.allReady && !hasShownReadyModal) {
-  //     Swal.close(); // Close initializing alert
-  //     Swal.fire({
-  //       title: 'Ready!',
-  //       html: `All systems loaded successfully!<br><br>Loading... (${status.readyCount}/${status.totalCount}) - Complete!`,
-  //       icon: 'success',
-  //       background: isDarkMode ? '#222' : '#fff',
-  //       color: isDarkMode ? '#fff' : '#333',
-  //       confirmButtonColor: '#10b981',
-  //       confirmButtonText: "Click to read, write, edit ... repeat",
-  //       allowOutsideClick: false,
-  //       allowEscapeKey: false
-  //     }).then(() => {
-  //       setHasShownReadyModal(true);
-  //       setIsSystemInitializing(false); // Enable buttons
-        
-  //       // Show welcome guide only for new users (treat unknown as missing)
-  //       const isNewUser = !projectState.currentProject && (hasApiKey === false || hasApiKey === null);
-  //       if (isNewUser) {
-  //         showWelcomeGuide();
-  //       }
-  //     });
-  //   } else if (!status.allReady && isSystemInitializing && !initFailed) {
-  //     // Show persistent initializing modal
-  //     Swal.fire({
-  //       title: 'Initializing Proselenos...',
-  //       html: `Loading... (${status.readyCount}/${status.totalCount})<br>Waiting for: ${status.notReady.join(', ')}`,
-  //       icon: 'info',
-  //       background: isDarkMode ? '#222' : '#fff',
-  //       color: isDarkMode ? '#fff' : '#333',
-  //       showConfirmButton: false,
-  //       allowOutsideClick: false,
-  //       allowEscapeKey: false,
-  //       didOpen: () => {
-  //         Swal.showLoading();
-  //       }
-  //     });
-  //   }
-  // }, [
-  //   isGoogleDriveReady, 
-  //   toolsState.toolsReady, 
-  //   session?.accessToken,
-  //   hasApiKey,
-  //   projectState.currentProject,
-  //   init?.config?.settings.current_project,
-  //   hasShownReadyModal,
-  //   isSystemInitializing,
-  //   isLoggingOut,
-  //   isDarkMode,
-  //   initFailed
-  // ]);
   // Show Ready modal when all systems are ready
   useEffect(() => {
     if (!session) return;          // Don't run initialization logic without session
