@@ -1,3 +1,5 @@
+// app/ai-tools/DualPanelEditor.tsx
+
 'use client';
 
 import React, { useRef, useState } from 'react';
@@ -8,6 +10,7 @@ import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 import { commands } from '@uiw/react-md-editor';
 import StyledSmallButton from '@/components/StyledSmallButton';
+import { updateGoogleDriveFileAction } from '@/lib/google-drive-actions';
 
 const MDEditor = dynamic(
   () => import('@uiw/react-md-editor'),
@@ -19,8 +22,10 @@ interface DualPanelEditorProps {
   onClose: () => void;
   manuscriptContent: string;
   manuscriptName: string;
+  manuscriptFileId: string;
   aiReport: string;
   savedReportFileName: string | null;
+  reportFileId: string | null;
   theme: ThemeConfig;
   isDarkMode: boolean;
   currentProject: string | null;
@@ -34,8 +39,10 @@ export default function DualPanelEditor({
   onClose,
   manuscriptContent,
   manuscriptName,
+  manuscriptFileId,
   aiReport,
   savedReportFileName,
+  reportFileId,
   theme,
   isDarkMode,
   currentProject,
@@ -82,6 +89,33 @@ export default function DualPanelEditor({
     if (confirmed) onClose();
   };
 
+  // const handleSaveManuscript = async () => {
+  //   if (!currentProject || !currentProjectId || !editedManuscript.trim()) {
+  //     showAlert('Please ensure project is selected and manuscript has content!', 'error', undefined, isDarkMode);
+  //     return;
+  //   }
+    
+  //   const defaultName = manuscriptName.replace('.txt', '') || `manuscript_${new Date().toISOString().slice(0,10)}`;
+  //   const fileName = prompt('Enter filename for manuscript (without .txt extension):', defaultName);
+  //   if (!fileName) return;
+    
+  //   const fullFileName = fileName.endsWith('.txt') ? fileName : `${fileName}.txt`;
+    
+  //   try {
+  //     const { createGoogleDriveFileAction } = await import('@/lib/google-drive-actions');
+  //     const result = await createGoogleDriveFileAction(session.accessToken as string, rootFolderId, editedManuscript, fullFileName, currentProjectId);
+      
+  //     if (result.success) {
+  //       showAlert(`✅ Manuscript saved: ${fullFileName}`, 'success', undefined, isDarkMode);
+  //       // Update baseline to clear unsaved changes indicator
+  //       setInitialManuscript(editedManuscript);
+  //     } else {
+  //       showAlert(`❌ Failed to save manuscript: ${result.error}`, 'error', undefined, isDarkMode);
+  //     }
+  //   } catch (error) {
+  //     showAlert(`❌ Error saving manuscript: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error', undefined, isDarkMode);
+  //   }
+  // };
   const handleSaveManuscript = async () => {
     if (!currentProject || !currentProjectId || !editedManuscript.trim()) {
       showAlert('Please ensure project is selected and manuscript has content!', 'error', undefined, isDarkMode);
@@ -93,20 +127,24 @@ export default function DualPanelEditor({
     if (!fileName) return;
     
     const fullFileName = fileName.endsWith('.txt') ? fileName : `${fileName}.txt`;
-    
-    try {
-      const { createGoogleDriveFileAction } = await import('@/lib/google-drive-actions');
-      const result = await createGoogleDriveFileAction(session.accessToken as string, rootFolderId, editedManuscript, fullFileName, currentProjectId);
       
+
+    try {
+      // Always update because the manuscript already exists
+      const result = await updateGoogleDriveFileAction(
+        session.accessToken as string,
+        rootFolderId,
+        manuscriptFileId,
+        editedManuscript
+      );
       if (result.success) {
-        showAlert(`✅ Manuscript saved: ${fullFileName}`, 'success', undefined, isDarkMode);
-        // Update baseline to clear unsaved changes indicator
+        showAlert(`✅ Manuscript updated: ${manuscriptName}`, 'success', undefined, isDarkMode);
         setInitialManuscript(editedManuscript);
       } else {
-        showAlert(`❌ Failed to save manuscript: ${result.error}`, 'error', undefined, isDarkMode);
+        showAlert(`❌ Failed to update manuscript: ${result.error}`, 'error', undefined, isDarkMode);
       }
     } catch (error) {
-      showAlert(`❌ Error saving manuscript: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error', undefined, isDarkMode);
+      showAlert(`❌ Error updating manuscript: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error', undefined, isDarkMode);
     }
   };
 
@@ -116,31 +154,27 @@ export default function DualPanelEditor({
       return;
     }
     
-    if (!savedReportFileName) {
-      showAlert('No saved report filename available!', 'error', undefined, isDarkMode);
+    if (!reportFileId) {
+      showAlert('No report file ID available! Please run the tool to create the report first.', 'error', undefined, isDarkMode);
       return;
     }
-    
-    // Use the actual saved report filename (without .txt extension)
-    const actualReportName = savedReportFileName.replace('.txt', '');
-    const fileName = prompt('Enter filename for AI report (without .txt extension):', actualReportName);
-    if (!fileName) return;
-    
-    const fullFileName = fileName.endsWith('.txt') ? fileName : `${fileName}.txt`;
-    
+
     try {
-      const { createGoogleDriveFileAction } = await import('@/lib/google-drive-actions');
-      const result = await createGoogleDriveFileAction(session.accessToken as string, rootFolderId, editedAiReport, fullFileName, currentProjectId);
-      
+      const result = await updateGoogleDriveFileAction(
+        session.accessToken as string,
+        rootFolderId,
+        reportFileId,
+        editedAiReport
+      );
+
       if (result.success) {
-        showAlert(`✅ AI report saved: ${fullFileName}`, 'success', undefined, isDarkMode);
-        // Update baseline to clear unsaved changes indicator
+        showAlert('✅ AI report updated', 'success', undefined, isDarkMode);
         setInitialAiReport(editedAiReport);
       } else {
-        showAlert(`❌ Failed to save AI report: ${result.error}`, 'error', undefined, isDarkMode);
+        showAlert(`❌ Failed to update AI report: ${result.error}`, 'error', undefined, isDarkMode);
       }
     } catch (error) {
-      showAlert(`❌ Error saving AI report: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error', undefined, isDarkMode);
+      showAlert(`❌ Error updating AI report: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error', undefined, isDarkMode);
     }
   };
 

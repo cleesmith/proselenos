@@ -31,6 +31,7 @@ interface AIToolsSectionProps {
   toolResult: string;
   toolJustFinished: boolean;
   savedReportFileName: string | null;
+  savedReportFileId: string | null;
   
   // Timer
   elapsedTime: number;
@@ -74,6 +75,7 @@ export default function AIToolsSection({
   toolResult,
   toolJustFinished,
   savedReportFileName,
+  savedReportFileId,
   elapsedTime,
   manuscriptContent,
   currentProject,
@@ -165,11 +167,17 @@ https://proselenos.com
 `;
   };
 
+  // const handleEditClick = () => {
+  //   if (!selectedManuscriptForTool) return;
+    
+  //   // Use cached manuscript content directly - no API call needed!
+  //   setEditorManuscriptContent(manuscriptContent);
+  //   setShowDualEditor(true);
+  // };
   const handleEditClick = () => {
     if (!selectedManuscriptForTool) return;
-    
-    // Use cached manuscript content directly - no API call needed!
     setEditorManuscriptContent(manuscriptContent);
+    // Pass selectedManuscriptForTool.id into DualPanelEditor
     setShowDualEditor(true);
   };
   
@@ -371,25 +379,37 @@ https://proselenos.com
         theme={theme}
       />
 
-      {/* Dual Panel Editor Modal (new - separate from view) */}
-      <DualPanelEditor
-        isVisible={showDualEditor}
-        onClose={() => setShowDualEditor(false)}
-        manuscriptContent={editorManuscriptContent}
-        manuscriptName={selectedManuscriptForTool?.name || 'manuscript'}
-        aiReport={selectedTool && selectedManuscriptForTool?.name && currentProject ? 
-          formatFullReport(toolResult, selectedTool, currentProvider, currentModel, selectedManuscriptForTool.name, currentProject) : 
-          toolResult
-        }
-        savedReportFileName={savedReportFileName}
-        theme={theme}
-        isDarkMode={isDarkMode}
-        currentProject={currentProject}
-        currentProjectId={currentProjectId}
-        rootFolderId={rootFolderId}
-        session={session}
-      />
-      
+      {/* Dual Panel Editor Modal */}
+      {showDualEditor && selectedManuscriptForTool && (
+        <DualPanelEditor
+          isVisible={showDualEditor}
+          onClose={() => setShowDualEditor(false)}
+          manuscriptContent={editorManuscriptContent}
+          manuscriptName={selectedManuscriptForTool.name ?? 'manuscript'}
+          manuscriptFileId={selectedManuscriptForTool.id}      // <- new prop (non‑null)
+          aiReport={
+            selectedTool && selectedManuscriptForTool.name && currentProject
+              ? formatFullReport(
+                  toolResult,
+                  selectedTool,
+                  currentProvider,
+                  currentModel,
+                  selectedManuscriptForTool.name,
+                  currentProject
+                )
+              : toolResult
+          }
+          savedReportFileName={savedReportFileName}
+          reportFileId={savedReportFileId}
+          theme={theme}
+          isDarkMode={isDarkMode}
+          currentProject={currentProject}
+          currentProjectId={currentProjectId}
+          rootFolderId={rootFolderId}
+          session={session}
+        />
+      )}
+
       {/* AI Writing Assistant Modal */}
       {showWritingAssistant && (
         <WritingAssistantModal

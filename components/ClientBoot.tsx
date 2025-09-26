@@ -1503,23 +1503,24 @@ Please try signing in again. If the problem persists, check your internet connec
     />
 
     {/* AI Tools Section */}
-    <AIToolsSection
-      session={session}
-      selectedCategory={toolsState.selectedCategory}
-      selectedTool={toolsState.selectedTool}
-      toolsInCategory={toolsState.toolsInCategory}
-      toolsReady={toolsState.toolsReady}
-      isInstallingToolPrompts={isInstallingToolPrompts}
-      selectedManuscriptForTool={toolsState.selectedManuscriptForTool}
-      toolExecuting={toolsState.toolExecuting}
-      toolResult={toolsState.toolResult}
-      toolJustFinished={toolsState.toolJustFinished}
-      savedReportFileName={toolsState.savedReportFileName}
-      elapsedTime={toolsState.elapsedTime}
-      manuscriptContent={toolsState.manuscriptContent}
-      currentProject={projectState.currentProject}
-      currentProjectId={projectState.currentProjectId}
-      isGoogleDriveOperationPending={isGoogleDriveOperationPending}
+      <AIToolsSection
+        session={session}
+        selectedCategory={toolsState.selectedCategory}
+        selectedTool={toolsState.selectedTool}
+        toolsInCategory={toolsState.toolsInCategory}
+        toolsReady={toolsState.toolsReady}
+        isInstallingToolPrompts={isInstallingToolPrompts}
+        selectedManuscriptForTool={toolsState.selectedManuscriptForTool}
+        toolExecuting={toolsState.toolExecuting}
+        toolResult={toolsState.toolResult}
+        toolJustFinished={toolsState.toolJustFinished}
+        savedReportFileName={toolsState.savedReportFileName}
+        savedReportFileId={toolsState.savedReportFileId}
+        elapsedTime={toolsState.elapsedTime}
+        manuscriptContent={toolsState.manuscriptContent}
+        currentProject={projectState.currentProject}
+        currentProjectId={projectState.currentProjectId}
+        isGoogleDriveOperationPending={isGoogleDriveOperationPending}
       rootFolderId={init?.config?.settings.proselenos_root_folder_id || ''}
       isSystemInitializing={isSystemInitializing}
       theme={theme}

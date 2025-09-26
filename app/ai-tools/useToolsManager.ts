@@ -31,6 +31,7 @@ interface ToolsManagerState {
   toolResult: string;
   toolJustFinished: boolean;
   savedReportFileName: string | null;
+  savedReportFileId: string | null;
   manuscriptContent: string;
   
   // Timer state
@@ -91,6 +92,7 @@ export function useToolsManager(): [ToolsManagerState, ToolsManagerActions] {
   const [toolResult, setToolResult] = useState('');
   const [toolJustFinished, setToolJustFinished] = useState(false);
   const [savedReportFileName, setSavedReportFileName] = useState<string | null>(null);
+  const [savedReportFileId, setSavedReportFileId] = useState<string | null>(null);
   const [manuscriptContent, setManuscriptContent] = useState('');
   
   // Timer state
@@ -271,6 +273,7 @@ export function useToolsManager(): [ToolsManagerState, ToolsManagerActions] {
         .then((saveResult) => {
           if (saveResult.success) {
             setSavedReportFileName(saveResult.data?.fileName || null);
+            setSavedReportFileId(saveResult.data?.fileId || null);
             setUploadStatus(`✅ Report saved: ${saveResult.data?.fileName}`);
           } else {
             setUploadStatus(`⚠️ Report save failed: ${saveResult.error}`);
@@ -307,6 +310,7 @@ export function useToolsManager(): [ToolsManagerState, ToolsManagerActions] {
     setManuscriptContent('');
     setToolJustFinished(false);
     setSavedReportFileName(null);
+    setSavedReportFileId(null);
     // Reset timer
     if (timerInterval) {
       clearInterval(timerInterval);
@@ -330,6 +334,7 @@ export function useToolsManager(): [ToolsManagerState, ToolsManagerActions] {
     toolResult,
     toolJustFinished,
     savedReportFileName,
+    savedReportFileId,
     manuscriptContent,
     startTime,
     elapsedTime,
