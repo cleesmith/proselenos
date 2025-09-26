@@ -27,13 +27,14 @@ import { useState, useRef, useEffect } from 'react';
 import React from 'react';
 import { ThemeConfig } from '../shared/theme';
 import { showAlert, showInputAlert } from '../shared/alerts';
-import { commands } from '@uiw/react-md-editor';
-import '@uiw/react-md-editor/markdown-editor.css';
-import '@uiw/react-markdown-preview/markdown.css';
+// Removed MDEditor commands and CSS imports since we are switching to a plain textarea.
+// import { commands } from '@uiw/react-md-editor';
+// import '@uiw/react-md-editor/markdown-editor.css';
+// import '@uiw/react-markdown-preview/markdown.css';
 import StyledSmallButton from '@/components/StyledSmallButton';
 
-// Dynamically import the markdown editor on the client
-const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
+// MDEditor is no longer used. We will replace it with a plain textarea below.
+// const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
 
 interface EditorModalProps {
   isOpen: boolean;
@@ -143,19 +144,21 @@ export default function EditorModal({
     localStorage.setItem('proselenos-selected-voice', voice);
   };
 
-  // Simplified toolbar commands
-  const filteredCommands = [
-    commands.bold,
-    commands.italic,
-    commands.strikethrough,
-    commands.hr,
-    commands.divider,
-    commands.title,
-    commands.quote,
-    commands.unorderedListCommand,
-    commands.orderedListCommand,
-    commands.checkedListCommand,
-  ];
+  // see: <MDEditor 
+  // hideToolbar={false}
+  // commands={filteredCommands}
+  // const filteredCommands = [
+  //   commands.bold,
+  //   commands.italic,
+  //   commands.strikethrough,
+  //   commands.hr,
+  //   commands.divider,
+  //   commands.title,
+  //   commands.quote,
+  //   commands.unorderedListCommand,
+  //   commands.orderedListCommand,
+  //   commands.checkedListCommand,
+  // ];
 
   // Utility to parse text into sentences
   const parseSentences = (text: string): string[] => {
@@ -605,7 +608,7 @@ export default function EditorModal({
     // Compute ranges in original content
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const range = ranges[currentSentenceIndex];
-    const textarea = document.querySelector('.w-md-editor-text-input') as HTMLTextAreaElement | null;
+    const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
     // this caused the MDEditor textarea to scroll to the bottom:
     // if (textarea && range) {
     //   // Focus the textarea and select the current sentence
@@ -621,7 +624,7 @@ export default function EditorModal({
   // Effect: detect clicks inside the editor and remember the sentence index
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const textarea = document.querySelector('.w-md-editor-text-input') as HTMLTextAreaElement | null;
+    const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
     if (!textarea) return;
 
     const clickHandler = () => {
@@ -808,21 +811,26 @@ export default function EditorModal({
           marginTop: '0.5rem',
         }}
       >
-        {/* Editor body */}
-        <MDEditor
+        {/* Editor body: using a plain textarea to improve performance on large files */}
+        <textarea
+          className="editor-textarea"
           value={editorContent}
-          onChange={(val) => onContentChange(val || '')}
-          height={typeof window !== 'undefined' ? window.innerHeight - 200 : 400}
-          preview="edit"
-          hideToolbar={false}
-          commands={filteredCommands}
-          textareaProps={{
-            placeholder: `Write your content for ${currentProject || 'your project'}...`,
-            style: {
-              fontSize: '14px',
-              lineHeight: '1.6',
-              fontFamily: 'Georgia, serif',
-            },
+          onChange={(e) => onContentChange(e.target.value)}
+          placeholder={`Write your content for ${currentProject || 'your project'}...`}
+          style={{
+            width: '100%',
+            height: typeof window !== 'undefined' ? window.innerHeight - 200 : 400,
+            fontSize: '14px',
+            lineHeight: '1.6',
+            fontFamily: 'Georgia, serif',
+            padding: '0.5rem',
+            border: `1px solid ${theme.border}`,
+            borderRadius: '4px',
+            backgroundColor: isDarkMode ? '#343a40' : '#f8f9fa',
+            color: theme.text,
+            resize: 'vertical',
+            boxSizing: 'border-box',
+            whiteSpace: 'pre-wrap',
           }}
         />
         {/* Overlay: highlight preview on top of the editor when speaking */}
