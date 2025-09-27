@@ -780,8 +780,8 @@ Please try signing in again. If the problem persists, check your internet connec
       session,
       init?.config?.settings.proselenos_root_folder_id || '',
       setIsGoogleDriveOperationPending,
-      isDarkMode,
-      toolsActions
+      isDarkMode
+      // , toolsActions
     );
     // Once the project exists and tools are loaded, turn off initialization
     setIsSystemInitializing(false);
