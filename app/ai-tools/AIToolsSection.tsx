@@ -291,32 +291,61 @@ https://proselenos.com
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-        <select
-          value={selectedTool}
-          onChange={(e) => handleToolChange(e.target.value)}
-          disabled={!selectedCategory || !toolsReady || toolExecuting || !currentProject}
-          style={{
-            flex: '1',
-            maxWidth: '300px',
-            padding: '4px 8px',
-            backgroundColor: (selectedCategory && toolsReady && currentProject) ? theme.inputBg : '#666',
-            color: (selectedCategory && toolsReady && currentProject) ? theme.text : '#999',
-            border: `1px solid ${theme.border}`,
-            borderRadius: '3px',
-            fontSize: '11px',
-            cursor: (selectedCategory && toolsReady && currentProject) ? 'pointer' : 'not-allowed'
-          }}
-        >
-          <option value="">
-            {!toolsReady ? (isInstallingToolPrompts ? 'Installing tools...' : 'Loading tools...') : 
-             selectedCategory ? 'Select a tool...' : 'Please select a category first'}
-          </option>
-          {toolsInCategory.map(tool => (
-            <option key={tool.id} value={tool.id}>
-              {tool.name.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-            </option>
-          ))}
-        </select>
+
+<select
+  value={selectedTool}
+  onChange={(e) => handleToolChange(e.target.value)}
+  disabled={
+    !selectedCategory || !toolsReady || toolExecuting || !currentProject
+  }
+  style={{
+    flex: '1',
+    maxWidth: '300px',
+    padding: '4px 8px',
+    backgroundColor:
+      selectedCategory && toolsReady && currentProject
+        ? theme.inputBg
+        : '#666',
+    color:
+      selectedCategory && toolsReady && currentProject
+        ? theme.text
+        : '#999',
+    border: `1px solid ${theme.border}`,
+    borderRadius: '3px',
+    fontSize: '11px',
+    cursor:
+      selectedCategory && toolsReady && currentProject
+        ? 'pointer'
+        : 'not-allowed',
+  }}
+>
+  {/* Placeholder option */}
+  <option value="">
+    {!toolsReady
+      ? isInstallingToolPrompts
+        ? 'Installing tools...'
+        : 'Loading tools...'
+      : selectedCategory
+        ? 'Select a tool...'
+        : 'Please select a category first'}
+  </option>
+
+  {/* Sorted tool options */}
+  {[...toolsInCategory]
+    .sort((a, b) => {
+      const nameA = a.name.replace(/_/g, ' ').toLowerCase();
+      const nameB = b.name.replace(/_/g, ' ').toLowerCase();
+      return nameA.localeCompare(nameB);
+    })
+    .map((tool) => (
+      <option key={tool.id} value={tool.id}>
+        {tool.name
+          .split('_')
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')}
+      </option>
+    ))}
+</select>
 
         <StyledSmallButton
           onClick={handlePromptEdit}

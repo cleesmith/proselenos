@@ -12,6 +12,10 @@ export interface ThemeConfig {
   modalBg: string;
   inputBg: string;
   statusBg: string;
+  // Optional success styling used in some components
+  successBg?: string;
+  successBorder?: string;
+  successText?: string;
 }
 
 export const getTheme = (isDarkMode: boolean): ThemeConfig => ({

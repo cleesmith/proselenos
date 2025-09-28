@@ -999,9 +999,24 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   };
 
   // AI Tools handlers
+  // const handleCategoryChange = (category: string) => {
+  //   toolsActions.setSelectedCategory(category);
+  //   const filtered = toolsState.availableTools.filter(tool => tool.category === category);
+  //   toolsActions.setToolsInCategory(filtered);
+  // };
   const handleCategoryChange = (category: string) => {
     toolsActions.setSelectedCategory(category);
-    const filtered = toolsState.availableTools.filter(tool => tool.category === category);
+
+    // Filter and sort tools alphabetically by their display name.
+    const filtered = toolsState.availableTools
+      .filter(tool => tool.category === category)
+      .sort((a, b) => {
+        // Remove underscores and compare case‑insensitively
+        const nameA = a.name.replace(/_/g, ' ').toLowerCase();
+        const nameB = b.name.replace(/_/g, ' ').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
     toolsActions.setToolsInCategory(filtered);
   };
 
