@@ -131,12 +131,191 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   }, [init]); // Removed projectActions and toolsActions from dependencies
   
   // Check tool-prompts installation status after fast init
+//   useEffect(() => {
+//     const checkToolPromptsStatus = async () => {
+//       if (!session?.accessToken || hasCheckedToolPrompts || !init) return;
+    
+//       try {
+//         // Show initializing modal if no settings file (first-time setup)
+//         if (!init.hasSettingsFile) {
+//           setIsGoogleDriveOperationPending(true);
+//           Swal.fire({
+//             title: 'Initializing',
+//             html: 'Standby!<br />Connecting and preparing Google Drive...',
+//             icon: 'info',
+//             background: isDarkMode ? '#222' : '#fff',
+//             color: isDarkMode ? '#fff' : '#333',
+//             showConfirmButton: false,
+//             allowOutsideClick: false,
+//             allowEscapeKey: false
+//           });
+//         }
+      
+//         // Check if we need to install tool-prompts folder (without loading tools yet)
+//         if (Object.keys(init.toolsByCategory).length === 0) {
+//           // auto-install tool-prompts folder only
+//           setIsInstallingToolPrompts(true);
+//           setIsGoogleDriveOperationPending(true);
+//           Swal.close(); // close any previous alert
+//           Swal.fire({
+//             title: 'Initializing',
+//             text: 'Preparing proselenos_projects folder on Google Drive...',
+//             icon: 'info',
+//             background: isDarkMode ? '#222' : '#fff',
+//             color: isDarkMode ? '#fff' : '#333',
+//             showConfirmButton: false,
+//             allowOutsideClick: false,
+//             allowEscapeKey: false
+//           });
+        
+//           try {
+//             const installResult = await withTimeout(
+//               installToolPromptsAction(session.accessToken as string, init.config?.settings.proselenos_root_folder_id || ''),
+//               45000,
+//               'Google Drive initialization'
+//             );
+          
+//             if (installResult.success) {
+//               setIsGoogleDriveReady(true);
+//               setIsGoogleDriveOperationPending(false);
+//               // cls: Don't load tools yet - wait until first project is created
+//               // Immediately load tools now that the folder exists
+//               await toolsActions.loadToolsFromGoogleDrive(isDarkMode);
+//             } else {
+//               Swal.close();
+//               setIsGoogleDriveOperationPending(false);
+//               setIsInstallingToolPrompts(false);
+//               setInitFailed(true);
+            
+//               // Check if the failure is due to Google Drive permissions
+//               const errorMsg = installResult.message || installResult.error || 'Unknown error';
+//               const isPermissionError = 
+//                 errorMsg.includes('403') ||
+//                 errorMsg.includes('insufficient authentication scopes') ||
+//                 errorMsg.includes('Permission denied') ||
+//                 errorMsg.includes('Request had insufficient authentication scopes') ||
+//                 errorMsg.includes('The user has not granted the app') ||
+//                 errorMsg.includes('Root folder ID is required'); // ADD THIS KEY PATTERN
+            
+//               if (isPermissionError) {
+//                 const detailedPermissionError = `It looks like Google Drive access wasn't granted when you signed in just now.
+
+// WHY THIS IS NEEDED:
+// Proselenos needs to create a dedicated "proselenos_projects" folder in your Google Drive to store your writing projects, settings, and AI tools. Without this permission, the app cannot function at all.
+
+// WHAT HAPPENED:
+// When you signed in, there was a checkbox on Google's permission screen that said "See, edit, create, and delete only the specific Google Drive files you use with this app." This checkbox was likely unchecked, so the app didn't receive the necessary permissions.
+
+// WHAT TO DO NEXT:
+// 1. When you click "Sign out" below, you'll be taken back to the Proselenos landing page
+// 2. Now, Sign in with Google, again
+// 3. This time, the permission screen may look different - it might not show a checkbox at all
+// 4. Instead, it may simply say you're granting access to "Google Drive files" - this is normal
+// 5. But if there is a checkbox, be sure to check it
+// 6. Just click "Continue" to proceed
+
+// IMPORTANT PRIVACY NOTE:
+// The app can ONLY access files it creates in the "proselenos_projects" folder. It cannot see, read, or modify any of your other Google Drive files, folders, or documents. Your privacy is completely protected.
+
+// This is a one-time setup step. Once granted, you won't see this permission screen again.`;
+
+//                 showStickyErrorWithLogout(
+//                   'Google Drive Access Required',
+//                   detailedPermissionError,
+//                   isDarkMode
+//                 );
+//               } else {
+//                 showStickyErrorWithLogout(
+//                   'Initialization failed',
+//                   `Tool-prompts install failed: ${errorMsg}`,
+//                   isDarkMode
+//                 );
+//               }
+//               return;
+//             }
+//           } catch (error) {
+//             Swal.close();
+//             setIsGoogleDriveOperationPending(false);
+//             setIsInstallingToolPrompts(false);
+//             setInitFailed(true);
+          
+//             const msg = error instanceof Error ? error.message : String(error);
+          
+//             // Check if this is a Google Drive permission issue
+//             const isPermissionError = 
+//               (error as any)?.code === 403 || 
+//               (error as any)?.status === 403 || 
+//               msg.includes('insufficient authentication scopes') ||
+//               msg.includes('Permission denied') ||
+//               msg.includes('Request had insufficient authentication scopes') ||
+//               msg.includes('The user has not granted the app') ||
+//               msg.includes('403') ||
+//               msg.includes('Root folder ID is required'); // ADD THIS KEY PATTERN HERE TOO
+          
+//             if (isPermissionError) {
+//               const detailedPermissionError = `It looks like Google Drive access wasn't granted when you signed in just now.
+
+// WHY THIS IS NEEDED:
+// Proselenos needs to create a dedicated "proselenos_projects" folder in your Google Drive to store your writing projects, settings, and AI tools. Without this permission, the app cannot function at all.
+
+// WHAT HAPPENED:
+// When you signed in, there was a checkbox on Google's permission screen that said "See, edit, create, and delete only the specific Google Drive files you use with this app." This checkbox was likely unchecked, so the app didn't receive the necessary permissions.
+
+// WHAT TO DO NEXT:
+// 1. When you click "Sign out" below, you'll be taken back to the Proselenos landing page
+// 2. Now, Sign in with Google, again
+// 3. This time, the permission screen may look different - it might not show a checkbox at all
+// 4. Instead, it may simply say you're granting access to "Google Drive files" - this is normal
+// 5. But if there is a checkbox, be sure to check it
+// 6. Just click "Continue" to proceed
+
+// IMPORTANT PRIVACY NOTE:
+// The app can ONLY access files it creates in the "proselenos_projects" folder. It cannot see, read, or modify any of your other Google Drive files, folders, or documents. Your privacy is completely protected.
+
+// This is a one-time setup step. Once granted, you won't see this permission screen again.`;
+
+//               showStickyErrorWithLogout(
+//                 'Google Drive Access Required',
+//                 detailedPermissionError,
+//                 isDarkMode
+//               );
+//             } else {
+//               showStickyErrorWithLogout(
+//                 'Initialization error',
+//                 `Something went wrong setting up your workspace: ${msg}
+
+// Please try signing in again. If the problem persists, check your internet connection.`,
+//                 isDarkMode
+//               );
+//             }
+//             return;
+//           } finally {
+//             setIsInstallingToolPrompts(false);
+//           }
+//         } else {
+//           // Tool-prompts already exist
+//           setIsGoogleDriveReady(true);
+//           setIsGoogleDriveOperationPending(false);
+//         }
+//       } catch (error) {
+//         console.error('Error checking tool-prompts installation:', error);
+//       } finally {
+//         setHasCheckedToolPrompts(true);
+//       }
+//     };
+
+//     // Start check after fast init completes
+//     if (init) {
+//       checkToolPromptsStatus();
+//     }
+//   }, [session, hasCheckedToolPrompts, isDarkMode, init, toolsActions]);
   useEffect(() => {
     const checkToolPromptsStatus = async () => {
+      // Only run once per session/init
       if (!session?.accessToken || hasCheckedToolPrompts || !init) return;
-      
+
       try {
-        // Show initializing modal if no settings file (first-time setup)
+        // Show an initializing modal if this is a first-time setup (no settings file yet)
         if (!init.hasSettingsFile) {
           setIsGoogleDriveOperationPending(true);
           Swal.fire({
@@ -150,10 +329,9 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
             allowEscapeKey: false
           });
         }
-        
-        // Check if we need to install tool-prompts folder (without loading tools yet)
+
+        // If there are no tool categories at all, we need to install the tool-prompts folder
         if (Object.keys(init.toolsByCategory).length === 0) {
-          // auto-install tool-prompts folder only
           setIsInstallingToolPrompts(true);
           setIsGoogleDriveOperationPending(true);
           Swal.close(); // close any previous alert
@@ -167,55 +345,61 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
             allowOutsideClick: false,
             allowEscapeKey: false
           });
-          
+
           try {
+            // Attempt to install the original tool-prompts folder from the app bundle
             const installResult = await withTimeout(
-              installToolPromptsAction(session.accessToken as string, init.config?.settings.proselenos_root_folder_id || ''),
-              45000,
+              installToolPromptsAction(
+                session.accessToken as string,
+                init.config?.settings.proselenos_root_folder_id || ''
+              ),
+              45_000,
               'Google Drive initialization'
             );
-            
+
             if (installResult.success) {
+              // Installation succeeded: mark Drive as ready and stop the spinner
               setIsGoogleDriveReady(true);
               setIsGoogleDriveOperationPending(false);
-              // Don't load tools yet - wait until first project is created
+              // Do NOT load tools here; first-time users will load them when they create the first project
             } else {
+              // Installation failed: show an error modal and mark init as failed
               Swal.close();
               setIsGoogleDriveOperationPending(false);
               setIsInstallingToolPrompts(false);
               setInitFailed(true);
-              
-              // Check if the failure is due to Google Drive permissions
+
               const errorMsg = installResult.message || installResult.error || 'Unknown error';
-              const isPermissionError = 
+              const isPermissionError =
                 errorMsg.includes('403') ||
                 errorMsg.includes('insufficient authentication scopes') ||
                 errorMsg.includes('Permission denied') ||
                 errorMsg.includes('Request had insufficient authentication scopes') ||
                 errorMsg.includes('The user has not granted the app') ||
-                errorMsg.includes('Root folder ID is required'); // ADD THIS KEY PATTERN
-              
+                errorMsg.includes('Root folder ID is required');
+
               if (isPermissionError) {
+                // Explain to the user how to re‑grant Drive permissions
                 const detailedPermissionError = `It looks like Google Drive access wasn't granted when you signed in just now.
 
-WHY THIS IS NEEDED:
-Proselenos needs to create a dedicated "proselenos_projects" folder in your Google Drive to store your writing projects, settings, and AI tools. Without this permission, the app cannot function at all.
+  WHY THIS IS NEEDED:
+  Proselenos needs to create a dedicated "proselenos_projects" folder in your Google Drive to store your writing projects, settings, and AI tools. Without this permission, the app cannot function at all.
 
-WHAT HAPPENED:
-When you signed in, there was a checkbox on Google's permission screen that said "See, edit, create, and delete only the specific Google Drive files you use with this app." This checkbox was likely unchecked, so the app didn't receive the necessary permissions.
+  WHAT HAPPENED:
+  When you signed in, there was a checkbox on Google's permission screen that said "See, edit, create, and delete only the specific Google Drive files you use with this app." This checkbox was likely unchecked, so the app didn't receive the necessary permissions.
 
-WHAT TO DO NEXT:
-1. When you click "Sign out" below, you'll be taken back to the Proselenos landing page
-2. Now, Sign in with Google, again
-3. This time, the permission screen may look different - it might not show a checkbox at all
-4. Instead, it may simply say you're granting access to "Google Drive files" - this is normal
-5. But if there is a checkbox, be sure to check it
-6. Just click "Continue" to proceed
+  WHAT TO DO NEXT:
+  1. When you click "Sign out" below, you'll be taken back to the Proselenos landing page
+  2. Now, sign in with Google again
+  3. This time, the permission screen may look different – it might not show a checkbox at all
+  4. Instead, it may simply say you're granting access to "Google Drive files" – this is normal
+  5. But if there is a checkbox, be sure to check it
+  6. Just click "Continue" to proceed
 
-IMPORTANT PRIVACY NOTE:
-The app can ONLY access files it creates in the "proselenos_projects" folder. It cannot see, read, or modify any of your other Google Drive files, folders, or documents. Your privacy is completely protected.
+  IMPORTANT PRIVACY NOTE:
+  The app can ONLY access files it creates in the "proselenos_projects" folder. It cannot see, read, or modify any of your other Google Drive files, folders, or documents. Your privacy is completely protected.
 
-This is a one-time setup step. Once granted, you won't see this permission screen again.`;
+  This is a one‑time setup step. Once granted, you won't see this permission screen again.`;
 
                 showStickyErrorWithLogout(
                   'Google Drive Access Required',
@@ -232,45 +416,44 @@ This is a one-time setup step. Once granted, you won't see this permission scree
               return;
             }
           } catch (error) {
+            // Catch runtime errors during installation (network issues, timeouts, etc.)
             Swal.close();
             setIsGoogleDriveOperationPending(false);
             setIsInstallingToolPrompts(false);
             setInitFailed(true);
-            
+
             const msg = error instanceof Error ? error.message : String(error);
-            
-            // Check if this is a Google Drive permission issue
-            const isPermissionError = 
-              (error as any)?.code === 403 || 
-              (error as any)?.status === 403 || 
+            const isPermissionError =
+              (error as any)?.code === 403 ||
+              (error as any)?.status === 403 ||
               msg.includes('insufficient authentication scopes') ||
               msg.includes('Permission denied') ||
               msg.includes('Request had insufficient authentication scopes') ||
               msg.includes('The user has not granted the app') ||
               msg.includes('403') ||
-              msg.includes('Root folder ID is required'); // ADD THIS KEY PATTERN HERE TOO
-            
+              msg.includes('Root folder ID is required');
+
             if (isPermissionError) {
               const detailedPermissionError = `It looks like Google Drive access wasn't granted when you signed in just now.
 
-WHY THIS IS NEEDED:
-Proselenos needs to create a dedicated "proselenos_projects" folder in your Google Drive to store your writing projects, settings, and AI tools. Without this permission, the app cannot function at all.
+  WHY THIS IS NEEDED:
+  Proselenos needs to create a dedicated "proselenos_projects" folder in your Google Drive to store your writing projects, settings, and AI tools. Without this permission, the app cannot function at all.
 
-WHAT HAPPENED:
-When you signed in, there was a checkbox on Google's permission screen that said "See, edit, create, and delete only the specific Google Drive files you use with this app." This checkbox was likely unchecked, so the app didn't receive the necessary permissions.
+  WHAT HAPPENED:
+  When you signed in, there was a checkbox on Google's permission screen that said "See, edit, create, and delete only the specific Google Drive files you use with this app." This checkbox was likely unchecked, so the app didn't receive the necessary permissions.
 
-WHAT TO DO NEXT:
-1. When you click "Sign out" below, you'll be taken back to the Proselenos landing page
-2. Now, Sign in with Google, again
-3. This time, the permission screen may look different - it might not show a checkbox at all
-4. Instead, it may simply say you're granting access to "Google Drive files" - this is normal
-5. But if there is a checkbox, be sure to check it
-6. Just click "Continue" to proceed
+  WHAT TO DO NEXT:
+  1. When you click "Sign out" below, you'll be taken back to the Proselenos landing page
+  2. Now, sign in with Google again
+  3. This time, the permission screen may look different – it might not show a checkbox at all
+  4. Instead, it may simply say you're granting access to "Google Drive files" – this is normal
+  5. But if there is a checkbox, be sure to check it
+  6. Just click "Continue" to proceed
 
-IMPORTANT PRIVACY NOTE:
-The app can ONLY access files it creates in the "proselenos_projects" folder. It cannot see, read, or modify any of your other Google Drive files, folders, or documents. Your privacy is completely protected.
+  IMPORTANT PRIVACY NOTE:
+  The app can ONLY access files it creates in the "proselenos_projects" folder. It cannot see, read, or modify any of your other Google Drive files, folders, or documents. Your privacy is completely protected.
 
-This is a one-time setup step. Once granted, you won't see this permission screen again.`;
+  This is a one‑time setup step. Once granted, you won't see this permission screen again.`;
 
               showStickyErrorWithLogout(
                 'Google Drive Access Required',
@@ -282,31 +465,51 @@ This is a one-time setup step. Once granted, you won't see this permission scree
                 'Initialization error',
                 `Something went wrong setting up your workspace: ${msg}
 
-Please try signing in again. If the problem persists, check your internet connection.`,
+  Please try signing in again. If the problem persists, check your internet connection.`,
                 isDarkMode
               );
             }
             return;
           } finally {
+            // Whether success or failure, stop showing the install spinner
             setIsInstallingToolPrompts(false);
           }
         } else {
-          // Tool-prompts already exist
+          // The tool‑prompts folder already exists on the user's Drive
           setIsGoogleDriveReady(true);
           setIsGoogleDriveOperationPending(false);
+          // Load tools immediately if they haven't been loaded yet
+          if (!toolsState.toolsReady) {
+            try {
+              await toolsActions.loadToolsFromGoogleDrive(isDarkMode);
+            } catch (err) {
+              console.error('Error loading AI tools:', err);
+            }
+          }
         }
       } catch (error) {
         console.error('Error checking tool-prompts installation:', error);
       } finally {
+        // Mark that we have performed this check so it doesn’t run again
         setHasCheckedToolPrompts(true);
       }
     };
 
-    // Start check after fast init completes
+    // Start the check after the fast-init payload is available
     if (init) {
       checkToolPromptsStatus();
     }
-  }, [session, hasCheckedToolPrompts, isDarkMode, init, toolsActions]);
+    // Depend on toolsState.toolsReady to avoid stale closures
+  }, [
+    session,
+    hasCheckedToolPrompts,
+    isDarkMode,
+    init,
+    toolsState.toolsReady,
+    toolsActions,
+    isInstallingToolPrompts
+  ]);
+
 
   // Helper function to get loading status
   const getLoadingStatus = () => {
