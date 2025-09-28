@@ -46,13 +46,13 @@ export async function getAvailableToolsAction(): Promise<{
   tools?: any[];
   error?: string;
 }> {
-  console.time('getAvailableTools-total');
+  // console.time('getAvailableTools-total');
   try {
     const result = await getAvailableToolsInternal();
-    console.timeEnd('getAvailableTools-total');
+    // console.timeEnd('getAvailableTools-total');
     return result;
   } catch (error) {
-    console.timeEnd('getAvailableTools-total');
+    // console.timeEnd('getAvailableTools-total');
     console.error('Error in getAvailableToolsAction:', error);
     return {
       success: false,

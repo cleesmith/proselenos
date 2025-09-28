@@ -1,4 +1,12 @@
-// app/ai-tools/AIToolsSection.tsx
+// Modified version of AIToolsSection to include a Reload Tools button
+
+// NOTE: This file replicates the original structure from the Proselenos repository
+// (app/ai-tools/AIToolsSection.tsx) and adds a new "Reload Tools" button. The
+// button appears to the right of the "Run an AI tool:" heading and will
+// trigger a callback supplied via the `onReloadTools` prop. It has the same
+// styling and disabled logic as other small buttons. To integrate this
+// component, be sure to pass an `onReloadTools` function when using
+// <AIToolsSection>.
 
 'use client';
 
@@ -61,6 +69,8 @@ interface AIToolsSectionProps {
   onClearTool: () => void;
   onExecuteTool: () => void;
   onLoadFileIntoEditor?: (content: string, fileName: string, fileId?: string) => void;
+  // New callback to reload tool prompts from Google Drive
+  onReloadTools: () => void;
 }
 
 export default function AIToolsSection({
@@ -92,10 +102,11 @@ export default function AIToolsSection({
   onSetupTool,
   onClearTool,
   onExecuteTool,
-  onLoadFileIntoEditor
+  onLoadFileIntoEditor,
+  onReloadTools,
 }: AIToolsSectionProps) {
   
-  // Dual panel editor state (new - separate from view)
+  // Dual panel editor state
   const [showDualEditor, setShowDualEditor] = useState(false);
   const [editorManuscriptContent, setEditorManuscriptContent] = useState('');
   
@@ -104,6 +115,31 @@ export default function AIToolsSection({
   
   // Tool prompt editing state
   const [isLoadingPrompt, setIsLoadingPrompt] = useState(false);
+
+  // Track whether the Reload Tools action is currently running. When true,
+  // the Reload button will show "Reloading..." and be disabled. This
+  // provides visual feedback while awaiting the asynchronous reload
+  // operation to complete.
+  const [isReloading, setIsReloading] = useState(false);
+
+  /**
+   * Trigger the reload callback passed from the parent while managing local
+   * loading state. This prevents double‑clicks and ensures the button
+   * reflects progress. Any errors are caught and logged; they do not
+   * propagate to the UI because the parent already handles error state via
+   * showAlert and isGoogleDriveOperationPending.
+   */
+  const handleReloadClick = async () => {
+    if (isReloading) return;
+    setIsReloading(true);
+    try {
+      await onReloadTools();
+    } catch (err) {
+      console.error('Error during tool reload:', err);
+    } finally {
+      setIsReloading(false);
+    }
+  };
 
   // Preload markdown editor when tool completes
   useEffect(() => {
@@ -124,7 +160,14 @@ export default function AIToolsSection({
     }, 150); // 150ms delay for smooth UX
   };
 
-  const formatFullReport = (toolResult: string, toolId: string, currentProvider: string, currentModel: string, manuscriptFileName: string, currentProject: string) => {
+  const formatFullReport = (
+    toolResult: string,
+    toolId: string,
+    currentProvider: string,
+    currentModel: string,
+    manuscriptFileName: string,
+    currentProject: string
+  ) => {
     // Create human-readable timestamp like the original Node.js app
     const formatter = new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
@@ -133,7 +176,7 @@ export default function AIToolsSection({
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
     const dateTimeStr = formatter.format(new Date());
     
@@ -143,7 +186,7 @@ export default function AIToolsSection({
     // Get display name for the tool
     const displayToolName = toolName
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
     
     // Create full manuscript path
@@ -167,13 +210,6 @@ https://proselenos.com
 `;
   };
 
-  // const handleEditClick = () => {
-  //   if (!selectedManuscriptForTool) return;
-    
-  //   // Use cached manuscript content directly - no API call needed!
-  //   setEditorManuscriptContent(manuscriptContent);
-  //   setShowDualEditor(true);
-  // };
   const handleEditClick = () => {
     if (!selectedManuscriptForTool) return;
     setEditorManuscriptContent(manuscriptContent);
@@ -219,27 +255,51 @@ https://proselenos.com
   };
 
   return (
-    <div style={{ 
-      marginBottom: '12px',
-      backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-      border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-      borderRadius: '8px',
-      padding: '12px'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start', 
-        marginBottom: '6px' 
-      }}>
-        <h2 style={{ 
-          fontSize: '16px', 
-          fontWeight: 'bold', 
-          color: theme.text,
-          marginBottom: 0
-        }}>
-          Run an AI tool:
-        </h2>
+    <div
+      style={{
+        marginBottom: '12px',
+        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+        border: `1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+        borderRadius: '8px',
+        padding: '12px',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '6px',
+        }}
+      >
+        {/* Left group: heading and reload button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2
+            style={{
+              fontSize: '16px',
+              fontWeight: 'bold',
+              color: theme.text,
+              marginBottom: 0,
+            }}
+          >
+            Run an AI tool:
+          </h2>
+          <StyledSmallButton
+            onClick={handleReloadClick}
+            disabled={
+              isReloading ||
+              isSystemInitializing ||
+              isGoogleDriveOperationPending ||
+              isInstallingToolPrompts ||
+              toolExecuting
+            }
+            theme={theme}
+            styleOverrides={{ fontSize: '10px', padding: '2px 8px', height: '22px', lineHeight: 1 }}
+          >
+            {isReloading ? 'Reloading...' : 'Reload Tools'}
+          </StyledSmallButton>
+        </div>
+        {/* Right-hand button: AI Writing Assistant stays on far right */}
         <StyledSmallButton
           onClick={() => setShowWritingAssistant(true)}
           disabled={isSystemInitializing || !currentProject || isGoogleDriveOperationPending || toolExecuting}
@@ -250,14 +310,16 @@ https://proselenos.com
         </StyledSmallButton>
       </div>
       
-      <div style={{ 
-        fontSize: '14px', 
-        color: theme.textSecondary,
-        marginBottom: '8px' 
-      }}>
+      <div
+        style={{
+          fontSize: '14px',
+          color: theme.textSecondary,
+          marginBottom: '8px',
+        }}
+      >
         Category:
       </div>
-
+      
       <select
         value={selectedCategory}
         onChange={(e) => handleCategoryChange(e.target.value)}
@@ -266,120 +328,144 @@ https://proselenos.com
           width: '100%',
           maxWidth: '300px',
           padding: '4px 8px',
-          backgroundColor: (toolsReady && currentProject) ? theme.inputBg : '#666',
-          color: (toolsReady && currentProject) ? theme.text : '#999',
+          backgroundColor: toolsReady && currentProject ? theme.inputBg : '#666',
+          color: toolsReady && currentProject ? theme.text : '#999',
           border: `1px solid ${theme.border}`,
           borderRadius: '3px',
           fontSize: '11px',
           marginBottom: '8px',
-          cursor: (toolsReady && currentProject) ? 'pointer' : 'not-allowed'
+          cursor: toolsReady && currentProject ? 'pointer' : 'not-allowed',
         }}
       >
-        <option value="">{toolsReady ? 'Select a category...' : (isInstallingToolPrompts ? 'Installing tools...' : 'Loading tools...')}</option>
+        <option value="">
+          {toolsReady
+            ? 'Select a category...'
+            : isInstallingToolPrompts
+            ? 'Installing tools...'
+            : 'Loading tools...'}
+        </option>
         <option value="Core Editing Tools">Core Editing Tools</option>
         <option value="Other Editing Tools">Other Editing Tools</option>
         {/* <option value="AI Writing Tools">AI Writing Tools</option> */}
         <option value="User Tools">User Tools</option>
       </select>
-
-      <div style={{ 
-        fontSize: '14px', 
-        color: theme.textSecondary,
-        marginBottom: '8px' 
-      }}>
+      
+      <div
+        style={{
+          fontSize: '14px',
+          color: theme.textSecondary,
+          marginBottom: '8px',
+        }}
+      >
         Tool:
       </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-
-<select
-  value={selectedTool}
-  onChange={(e) => handleToolChange(e.target.value)}
-  disabled={
-    !selectedCategory || !toolsReady || toolExecuting || !currentProject
-  }
-  style={{
-    flex: '1',
-    maxWidth: '300px',
-    padding: '4px 8px',
-    backgroundColor:
-      selectedCategory && toolsReady && currentProject
-        ? theme.inputBg
-        : '#666',
-    color:
-      selectedCategory && toolsReady && currentProject
-        ? theme.text
-        : '#999',
-    border: `1px solid ${theme.border}`,
-    borderRadius: '3px',
-    fontSize: '11px',
-    cursor:
-      selectedCategory && toolsReady && currentProject
-        ? 'pointer'
-        : 'not-allowed',
-  }}
->
-  {/* Placeholder option */}
-  <option value="">
-    {!toolsReady
-      ? isInstallingToolPrompts
-        ? 'Installing tools...'
-        : 'Loading tools...'
-      : selectedCategory
-        ? 'Select a tool...'
-        : 'Please select a category first'}
-  </option>
-
-  {/* Sorted tool options */}
-  {[...toolsInCategory]
-    .sort((a, b) => {
-      const nameA = a.name.replace(/_/g, ' ').toLowerCase();
-      const nameB = b.name.replace(/_/g, ' ').toLowerCase();
-      return nameA.localeCompare(nameB);
-    })
-    .map((tool) => (
-      <option key={tool.id} value={tool.id}>
-        {tool.name
-          .split('_')
-          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ')}
-      </option>
-    ))}
-</select>
-
+      
+      <div
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}
+      >
+        <select
+          value={selectedTool}
+          onChange={(e) => handleToolChange(e.target.value)}
+          disabled={!selectedCategory || !toolsReady || toolExecuting || !currentProject}
+          style={{
+            flex: '1',
+            maxWidth: '300px',
+            padding: '4px 8px',
+            backgroundColor:
+              selectedCategory && toolsReady && currentProject ? theme.inputBg : '#666',
+            color: selectedCategory && toolsReady && currentProject ? theme.text : '#999',
+            border: `1px solid ${theme.border}`,
+            borderRadius: '3px',
+            fontSize: '11px',
+            cursor:
+              selectedCategory && toolsReady && currentProject ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {/* Placeholder option */}
+          <option value="">
+            {!toolsReady
+              ? isInstallingToolPrompts
+                ? 'Installing tools...'
+                : 'Loading tools...'
+              : selectedCategory
+              ? 'Select a tool...'
+              : 'Please select a category first'}
+          </option>
+          
+          {/* Sorted tool options */}
+          {[...toolsInCategory]
+            .sort((a, b) => {
+              const nameA = a.name.replace(/_/g, ' ').toLowerCase();
+              const nameB = b.name.replace(/_/g, ' ').toLowerCase();
+              return nameA.localeCompare(nameB);
+            })
+            .map((tool) => (
+              <option key={tool.id} value={tool.id}>
+                {tool.name
+                  .split('_')
+                  .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')}
+              </option>
+            ))}
+        </select>
+        
         <StyledSmallButton
           onClick={handlePromptEdit}
-          disabled={isSystemInitializing || !selectedTool || !toolsReady || toolExecuting || isLoadingPrompt}
+          disabled={
+            isSystemInitializing ||
+            !selectedTool ||
+            !toolsReady ||
+            toolExecuting ||
+            isLoadingPrompt
+          }
           theme={theme}
         >
           {isLoadingPrompt ? 'Loading...' : 'edit prompt'}
         </StyledSmallButton>
-
+        
         <StyledSmallButton
           onClick={onSetupTool}
-          disabled={isSystemInitializing || !selectedTool || !toolsReady || !currentProject || isGoogleDriveOperationPending || toolExecuting}
+          disabled={
+            isSystemInitializing ||
+            !selectedTool ||
+            !toolsReady ||
+            !currentProject ||
+            isGoogleDriveOperationPending ||
+            toolExecuting
+          }
           theme={theme}
         >
           Select
         </StyledSmallButton>
-
+        
         <StyledSmallButton
           onClick={onClearTool}
-          disabled={isSystemInitializing || !selectedManuscriptForTool && !toolResult && elapsedTime === 0 || toolExecuting}
+          disabled={
+            isSystemInitializing ||
+            (!selectedManuscriptForTool && !toolResult && elapsedTime === 0) ||
+            toolExecuting
+          }
           theme={theme}
         >
           Clear
         </StyledSmallButton>
-
+        
         <StyledSmallButton
           onClick={onExecuteTool}
-          disabled={isSystemInitializing || !selectedManuscriptForTool || toolExecuting || !toolsReady || isGoogleDriveOperationPending || toolJustFinished}
+          disabled={
+            isSystemInitializing ||
+            !selectedManuscriptForTool ||
+            toolExecuting ||
+            !toolsReady ||
+            isGoogleDriveOperationPending ||
+            toolJustFinished
+          }
           theme={theme}
         >
           {toolExecuting ? 'Running...' : 'Run'}
         </StyledSmallButton>
         
-        <ToolProgressIndicator 
+        <ToolProgressIndicator
           toolExecuting={toolExecuting}
           elapsedTime={elapsedTime}
           theme={theme}
@@ -387,27 +473,26 @@ https://proselenos.com
           onEditClick={handleEditClick}
         />
       </div>
-
+      
       {/* Show selected manuscript info */}
       {selectedManuscriptForTool && (
-        <div style={{
-          marginTop: '8px',
-          padding: '6px 8px',
-          backgroundColor: theme.statusBg,
-          border: `1px solid ${theme.border}`,
-          borderRadius: '3px',
-          fontSize: '11px',
-          color: theme.text
-        }}>
+        <div
+          style={{
+            marginTop: '8px',
+            padding: '6px 8px',
+            backgroundColor: theme.statusBg,
+            border: `1px solid ${theme.border}`,
+            borderRadius: '3px',
+            fontSize: '11px',
+            color: theme.text,
+          }}
+        >
           <strong>Selected manuscript:</strong> {selectedManuscriptForTool.name}
         </div>
       )}
-
-      <ToolResponseDisplay 
-        toolResult={toolResult}
-        theme={theme}
-      />
-
+      
+      <ToolResponseDisplay toolResult={toolResult} theme={theme} />
+      
       {/* Dual Panel Editor Modal */}
       {showDualEditor && selectedManuscriptForTool && (
         <DualPanelEditor
@@ -415,7 +500,7 @@ https://proselenos.com
           onClose={() => setShowDualEditor(false)}
           manuscriptContent={editorManuscriptContent}
           manuscriptName={selectedManuscriptForTool.name ?? 'manuscript'}
-          manuscriptFileId={selectedManuscriptForTool.id}      // <- new prop (non‑null)
+          manuscriptFileId={selectedManuscriptForTool.id}
           aiReport={
             selectedTool && selectedManuscriptForTool.name && currentProject
               ? formatFullReport(
@@ -424,7 +509,7 @@ https://proselenos.com
                   currentProvider,
                   currentModel,
                   selectedManuscriptForTool.name,
-                  currentProject
+                  currentProject as string
                 )
               : toolResult
           }
@@ -438,7 +523,7 @@ https://proselenos.com
           session={session}
         />
       )}
-
+      
       {/* AI Writing Assistant Modal */}
       {showWritingAssistant && (
         <WritingAssistantModal
