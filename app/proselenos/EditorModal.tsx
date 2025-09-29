@@ -93,6 +93,10 @@ export default function EditorModal({
   const [isGeneratingNext, setIsGeneratingNext] = useState(false);
 
   const [startSentenceIndex, setStartSentenceIndex] = useState<number | null>(null);
+  // Maintain a ref that always reflects the most up‑to‑date start sentence index.
+  // React state updates are asynchronous, so using this ref ensures that
+  // handleSpeak reads the latest value immediately when toggling Speak/Quiet.
+  const startSentenceRef = useRef<number | null>(null);
 
   // Single abort controller for background generation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -163,11 +167,24 @@ export default function EditorModal({
   // Utility to parse text into sentences
   const parseSentences = (text: string): string[] => {
     if (!text.trim()) return [];
+    /*
+     * Treat any newline as an implicit sentence boundary by inserting a period before it.
+     * This avoids combining lines without punctuation into a single long sentence.
+     * We still normalize multiple blank lines and remove newlines immediately following
+     * existing punctuation to prevent double periods.
+     */
     const result = text
-      .replace(/\n\s*\n+/g, ' . ') // Normalize multiple blank lines
-      .replace(/([.!?])\s*\n+/g, '$1 ') // Remove newline after punctuation
-      .replace(/\n+/g, ' ') // Replace newlines with space
-      .split(/(?<=[.!?])\s+(?=[A-Z])/)
+      // Replace multiple blank lines with a period and a space
+      .replace(/\n\s*\n+/g, '. ')
+      // If a newline comes directly after sentence-ending punctuation,
+      // just replace it with a space (the sentence already ends).
+      .replace(/([.!?])\s*\n+/g, '$1 ')
+      // For any other newline, treat it like a period followed by a space
+      .replace(/\n+/g, '. ')
+      // Split on sentence-ending punctuation followed by whitespace.
+      // We do not require the next sentence to start with a capital letter,
+      // since list items or dialogue may start with lowercase.
+      .split(/(?<=[.!?])\s+/)
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
     return result;
@@ -400,7 +417,9 @@ export default function EditorModal({
 
     // Save the sentences and decide where to start
     setSentences(parsedSentences);
-    const startIndex = startSentenceIndex ?? 0;
+    // Use the ref to determine the starting sentence index.  If the ref is null,
+    // fall back to 0 so that speaking always begins at the start after cleanup.
+    const startIndex = startSentenceRef.current ?? 0;
     setCurrentSentenceIndex(startIndex);
 
     // Generate and play the first sentence’s audio
@@ -482,6 +501,8 @@ export default function EditorModal({
     setIsGeneratingInitial(false);
     setIsGeneratingNext(false);
     setStartSentenceIndex(null);
+    // Reset the ref alongside the state so that subsequent Speak starts at the beginning
+    startSentenceRef.current = null;
   };
 
   // Cleanup when component unmounts
@@ -578,7 +599,6 @@ export default function EditorModal({
     }
   }, [currentSentenceIndex, isSpeaking]);
 
-
   /*
    * Compute exact character ranges of sentences in the original editorContent
    * using the same regex used for splitting into sentences.  This avoids
@@ -587,17 +607,26 @@ export default function EditorModal({
   interface SentenceRange { start: number; end: number; }
   const getSentenceRangesFromOriginal = (text: string): SentenceRange[] => {
     const ranges: SentenceRange[] = [];
-    const regex = /(?<=[.!?])\s+(?=[A-Z])/g;
+    /*
+     * The regex below matches either:
+     *   1. Sentence-ending punctuation (., !, ?) followed by whitespace, or
+     *   2. A newline character.
+     * Matching newlines explicitly treats a line break as the end of a sentence,
+     * even when the line does not end with punctuation. The matched newline and
+     * following whitespace are included in the preceding sentence range to
+     * preserve spacing.
+     */
+    const regex = /(?<=[.!?])\s+|\n+/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = regex.exec(text)) !== null) {
-      // Include the matched inter-sentence whitespace with the preceding sentence
+      // Include the matched whitespace (including newlines) with the preceding sentence.
       const end = match.index + match[0].length;
       ranges.push({ start: lastIndex, end });
       lastIndex = end;
     }
     ranges.push({ start: lastIndex, end: text.length });
-    // Filter out empty or whitespace‑only ranges (whitespace stays attached to previous sentence)
+    // Filter out ranges that contain only whitespace. This keeps blank lines attached to the previous sentence.
     return ranges.filter((r) => text.slice(r.start, r.end).trim().length > 0);
   };
 
@@ -639,6 +668,8 @@ export default function EditorModal({
         }
       }
       setStartSentenceIndex(idx);
+      // Update the ref immediately so handleSpeak reads the latest index
+      startSentenceRef.current = idx;
       setCurrentSentenceIndex(idx); // highlight this sentence in the overlay, if desired
     };
 
@@ -647,7 +678,6 @@ export default function EditorModal({
       textarea.removeEventListener('click', clickHandler);
     };
   }, [editorContent]);
-
 
   // Do not render anything if modal is closed
   if (!isOpen) return null;
