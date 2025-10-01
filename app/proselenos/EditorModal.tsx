@@ -1,5 +1,11 @@
 // app/proselenos/EditorModal.tsx
 
+// This file is a modified version of the original EditorModal component.
+// It adds a helper function `stripMarkdown` for removing markdown syntax
+// from the editor content, and introduces a “Clean MD” button in the
+// header bar.  Pressing this button will strip markdown formatting from
+// the current content and update the editor accordingly.
+
 // issues:
 //  1. Speak-ing text without "proper" punctuation, for example:
 //     an AI-based report, like Drunken, the Edge TTS has trouble 
@@ -36,6 +42,74 @@ import StyledSmallButton from '@/components/StyledSmallButton';
 // MDEditor is no longer used. We will replace it with a plain textarea below.
 // const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
 
+//
+// Helper to strip Markdown formatting from a string.
+//
+// The implementation below is adapted from the user’s working website code.
+// It supports options to control list leader stripping, GitHub-Flavored
+// Markdown handling, image alt text usage, and block spacing preservation.
+// Default options mirror the behaviour on proselenos.com.  If an error
+// occurs during processing, the original markdown string is returned.
+function stripMarkdown(md: string, options: any = {}): string {
+  options = options || {};
+  options.listUnicodeChar = options.hasOwnProperty('listUnicodeChar') ? options.listUnicodeChar : false;
+  options.stripListLeaders = options.hasOwnProperty('stripListLeaders') ? options.stripListLeaders : true;
+  options.gfm = options.hasOwnProperty('gfm') ? options.gfm : true;
+  options.useImgAltText = options.hasOwnProperty('useImgAltText') ? options.useImgAltText : true;
+  options.preserveBlockSpacing = options.hasOwnProperty('preserveBlockSpacing') ? options.preserveBlockSpacing : true;
+
+  let output = md || '';
+  // Remove horizontal rules
+  output = output.replace(/^(-\s*?|\*\s*?|_\s*?){3,}\s*$/gm, '');
+
+  try {
+    // Handle list markers
+    if (options.stripListLeaders) {
+      if (options.listUnicodeChar) {
+        output = output.replace(/^([\s\t]*)([\*\-\+]|\d+\.)\s+/gm, options.listUnicodeChar + ' $1');
+      } else {
+        output = output.replace(/^([\s\t]*)([\*\-\+]|\d+\.)\s+/gm, '$1');
+      }
+    }
+    // Handle GitHub Flavored Markdown features
+    if (options.gfm) {
+      output = output
+        .replace(/\n={2,}/g, '\n')
+        .replace(/~{3}.*\n/g, '')
+        .replace(/(`{3,})([\s\S]*?)\1/gm, function (_match: string, _p1: string, p2: string) {
+          return p2.trim() + '%%CODEBLOCK_END%%\n';
+        })
+        .replace(/~~/g, '');
+    }
+    // Process main markdown elements
+    output = output
+      .replace(/<[^>]*>/g, '')
+      .replace(/^[=\-]{2,}\s*$/g, '')
+      .replace(/\[\^.+?\](\: .*?$)?/g, '')
+      .replace(/\s{0,2}\[.*?\]: .*?$/g, '')
+      .replace(/!\[(.*?)\][\[\(].*?[\]\)]/g, options.useImgAltText ? '$1' : '')
+      .replace(/\[(.*?)\][\[\(].*?[\]\)]/g, '$1')
+      .replace(/^\s*>+\s?/gm, function () {
+        return options.preserveBlockSpacing ? '\n' : '';
+      })
+      .replace(/^([\s\t]*)([\*\-\+]|\d+\.)\s+/gm, '$1')
+      .replace(/^\s{1,2}\[(.*?)\]: (\S+)( \\".*?\\")?\s*$/g, '')
+      .replace(/^(\n)?\s{0,}#{1,6}\s+| {0,}(\n)?\s{0,}#{0,} {0,}(\n)?\s{0,}$/gm, '$1$2$3')
+      .replace(/([\*_]{1,3})(\S.*?\S{0,1})\1/g, '$2')
+      .replace(/([\*_]{1,3})(\S.*?\S{0,1})\1/g, '$2')
+      .replace(/`(.+?)`/g, '$1');
+    // Final cleanup and spacing
+    output = output
+      .replace(/%%CODEBLOCK_END%%\n/g, '\n\n\n')
+      .replace(/\n{4,}/g, '\n\n\n')
+      .replace(/\n{3}/g, '\n\n')
+      .trim();
+    return output;
+  } catch (_error) {
+    return md;
+  }
+}
+
 interface EditorModalProps {
   isOpen: boolean;
   theme: ThemeConfig;
@@ -70,47 +144,38 @@ export default function EditorModal({
   // State for file saving and opening
   const [isSaving, setIsSaving] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
-
   // TTS state variables – simplified
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
   const [sentences, setSentences] = useState<string[]>([]);
-
   // Voice selection state
   const [availableVoices, setAvailableVoices] = useState<any[]>([]);
   const [selectedVoice, setSelectedVoice] = useState('en-US-EmmaMultilingualNeural');
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const [isClientHydrated, setIsClientHydrated] = useState(false);
-
   // Two-buffer system: current + next audio
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [nextAudio, setNextAudio] = useState<HTMLAudioElement | null>(null);
   const [currentAudioUrl, setCurrentAudioUrl] = useState<string | null>(null);
   const [nextAudioUrl, setNextAudioUrl] = useState<string | null>(null);
-
   const [isGeneratingInitial, setIsGeneratingInitial] = useState(false);
   const [isGeneratingNext, setIsGeneratingNext] = useState(false);
-
   const [startSentenceIndex, setStartSentenceIndex] = useState<number | null>(null);
   // Maintain a ref that always reflects the most up‑to‑date start sentence index.
   // React state updates are asynchronous, so using this ref ensures that
   // handleSpeak reads the latest value immediately when toggling Speak/Quiet.
   const startSentenceRef = useRef<number | null>(null);
-
   // Single abort controller for background generation
   const abortControllerRef = useRef<AbortController | null>(null);
-
   // Ref for immediate access to nextAudio (avoids React state timing issues)
   const nextAudioRef = useRef<{ audio: HTMLAudioElement; url: string } | null>(null);
   // Ref for the overlay container so we can scroll it
   const overlayRef = useRef<HTMLDivElement | null>(null);
-
   // Hydrate client on mount
   useEffect(() => {
     setIsClientHydrated(true);
   }, []);
-
   // Load available voices when client is ready
   useEffect(() => {
     if (!isClientHydrated || typeof window === 'undefined') return;
@@ -140,30 +205,12 @@ export default function EditorModal({
     };
     loadVoices();
   }, [isClientHydrated]);
-
   // Persist voice selection
   const handleVoiceChange = (voice: string) => {
     if (typeof window === 'undefined') return;
     setSelectedVoice(voice);
     localStorage.setItem('proselenos-selected-voice', voice);
   };
-
-  // see: <MDEditor 
-  // hideToolbar={false}
-  // commands={filteredCommands}
-  // const filteredCommands = [
-  //   commands.bold,
-  //   commands.italic,
-  //   commands.strikethrough,
-  //   commands.hr,
-  //   commands.divider,
-  //   commands.title,
-  //   commands.quote,
-  //   commands.unorderedListCommand,
-  //   commands.orderedListCommand,
-  //   commands.checkedListCommand,
-  // ];
-
   // Utility to parse text into sentences
   const parseSentences = (text: string): string[] => {
     if (!text.trim()) return [];
@@ -189,7 +236,6 @@ export default function EditorModal({
       .filter((s) => s.length > 0);
     return result;
   };
-
   // Count words in the editor
   const countWords = (text: string) => {
     return text
@@ -198,10 +244,8 @@ export default function EditorModal({
       .filter((word) => word.length > 0)
       .length;
   };
-
   // Compute the current word count for display
   const wordCount = countWords(editorContent);
-
   // Save file handler
   const handleSave = async () => {
     if (!editorContent.trim()) {
@@ -244,7 +288,6 @@ export default function EditorModal({
       setIsSaving(false);
     }
   };
-
   // Open file handler
   const handleOpen = async () => {
     setIsOpening(true);
@@ -254,7 +297,11 @@ export default function EditorModal({
       setIsOpening(false);
     }
   };
-
+  // New handler: remove markdown from the editor content
+  const handleCleanMarkdown = (): void => {
+    const cleaned = stripMarkdown(editorContent);
+    onContentChange(cleaned);
+  };
   // Generate single sentence audio with cancellation support
   const generateSentenceAudio = async (
     sentence: string
@@ -275,7 +322,6 @@ export default function EditorModal({
       return null;
     }
   };
-
   // Generate next sentence in background (with state tracking)
   const generateNextSentence = async (nextIndex: number, sentenceArray: string[]) => {
     if (nextIndex >= sentenceArray.length) return;
@@ -312,7 +358,6 @@ export default function EditorModal({
       setIsGeneratingNext(false);
     }
   };
-
   // Handle sentence completion and advance
   const advanceToNextSentence = async (
     finishedIndex: number,
@@ -382,7 +427,6 @@ export default function EditorModal({
     // Start generating the next sentence in background
     generateNextSentence(nextIndex + 1, sentenceArray);
   };
-
   // Main TTS handler (Speak/Pause/Resume)
   const handleSpeak = async (): Promise<void> => {
     // Prevent TTS during hydration or on the server
@@ -390,13 +434,11 @@ export default function EditorModal({
       showAlert('TTS not available during page load', 'error', undefined, isDarkMode);
       return;
     }
-
     // Do nothing if the content is empty
     if (!editorContent.trim()) {
       showAlert('No content to read!', 'error', undefined, isDarkMode);
       return;
     }
-
     // If already speaking, toggle pause/resume
     if (isSpeaking && !isPaused) {
       handlePause();
@@ -406,7 +448,6 @@ export default function EditorModal({
       handleResume();
       return;
     }
-
     // Split the document into sentences using exact ranges
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const parsedSentences = ranges.map((r) => editorContent.slice(r.start, r.end));
@@ -414,14 +455,12 @@ export default function EditorModal({
       showAlert('No sentences found!', 'error', undefined, isDarkMode);
       return;
     }
-
     // Save the sentences and decide where to start
     setSentences(parsedSentences);
     // Use the ref to determine the starting sentence index.  If the ref is null,
     // fall back to 0 so that speaking always begins at the start after cleanup.
     const startIndex = startSentenceRef.current ?? 0;
     setCurrentSentenceIndex(startIndex);
-
     // Generate and play the first sentence’s audio
     setIsGeneratingInitial(true);
     const result0 = await generateSentenceAudio(parsedSentences[startIndex]);
@@ -432,7 +471,6 @@ export default function EditorModal({
     }
     setCurrentAudio(result0.audio);
     setCurrentAudioUrl(result0.url);
-
     /*
      * Mark as speaking before playback to ensure the highlight preview
      * appears immediately.  Without setting isSpeaking here, the
@@ -440,22 +478,18 @@ export default function EditorModal({
      */
     setIsSpeaking(true);
     setIsPaused(false);
-
     // When this sentence finishes, move on to the next
     result0.audio.onended = () => advanceToNextSentence(startIndex, parsedSentences);
     result0.audio.onerror = () => {
       showAlert('Audio playback error', 'error', undefined, isDarkMode);
       cleanupAudio();
     };
-
     await result0.audio.play();
-
     // If there’s another sentence after the current one, pre‑generate it
     if (parsedSentences.length > startIndex + 1) {
       generateNextSentence(startIndex + 1, parsedSentences);
     }
   };
-
   // Pause/resume/stop handlers
   const handlePause = (): void => {
     if (currentAudio && isSpeaking && !isPaused) {
@@ -487,7 +521,6 @@ export default function EditorModal({
     }
     cleanupAudio();
   };
-
   // Cleanup function for audio and TTS state
   const cleanupAudio = () => {
     setIsSpeaking(false);
@@ -504,7 +537,6 @@ export default function EditorModal({
     // Reset the ref alongside the state so that subsequent Speak starts at the beginning
     startSentenceRef.current = null;
   };
-
   // Cleanup when component unmounts
   useEffect(() => {
     return () => {
@@ -514,7 +546,6 @@ export default function EditorModal({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   // Stop the audio and clean up
   const handleStopAndScroll = () => {
     handleStop(); // existing stop logic
@@ -527,7 +558,6 @@ export default function EditorModal({
       editorElement.scrollLeft = 0; // optional, in case horizontal scroll changed
     }
   };
-
   // Cleanup when modal closes
   useEffect(() => {
     if (!isOpen && typeof window !== 'undefined') {
@@ -535,7 +565,6 @@ export default function EditorModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
-
   /*
    * Build a highlighted HTML string.  Instead of re‑splitting the
    * editor content (which can lead to off‑by‑one errors between the
@@ -545,60 +574,22 @@ export default function EditorModal({
    * currently being spoken. We preserve original spacing and
    * blank lines by slicing exact ranges from the original content.
    */
-  // const getHighlightedHtml = () => {
-  //   /*
-  //    * Use the original editorContent and the same sentence splitting regex
-  //    * to compute character ranges for each sentence.  This preserves
-  //    * whitespace and ensures that highlighting stays in sync with the
-  //    * currentSentenceIndex.  We wrap the current sentence range in a
-  //    * span; all other ranges are returned as‑is.  Note that when
-  //    * `sentences.length` is zero (i.e. no sentences have been parsed),
-  //    * this returns an empty string.
-  //    */
-  //   if (sentences.length === 0) return '';
-  //   const ranges: { start: number; end: number }[] = getSentenceRangesFromOriginal(editorContent);
-  //   return ranges
-  //     .map((r, idx) => {
-  //       const textSlice = editorContent.slice(r.start, r.end);
-  //       if (idx === currentSentenceIndex && isSpeaking) {
-  //         const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
-  //         return `<span style="background-color: ${bg}; border-radius: 3px;">${textSlice}</span>`;
-  //       }
-  //       return textSlice;
-  //     })
-  //     .join('');
-  // };
   const getHighlightedHtml = () => {
     if (sentences.length === 0) return '';
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const startIdx = startSentenceIndex ?? 0;
-
     // Only render sentences from startIdx onward
     return ranges.slice(startIdx).map((r, localIdx) => {
       const absoluteIdx = startIdx + localIdx; // index within all sentences
       const textSlice = editorContent.slice(r.start, r.end);
-
       // Highlight the one currently being spoken
       if (absoluteIdx === currentSentenceIndex && isSpeaking) {
         const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
         return `<span data-current="true" style="background:${bg};">${textSlice}</span>`;
       }
-
       return textSlice;
     }).join('');
   };
-
-  // Auto-scroll the overlay to keep the current sentence in view
-  useEffect(() => {
-    if (!isSpeaking) return;
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-    const currentEl = overlay.querySelector('[data-current="true"]') as HTMLElement | null;
-    if (currentEl) {
-      currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }, [currentSentenceIndex, isSpeaking]);
-
   /*
    * Compute exact character ranges of sentences in the original editorContent
    * using the same regex used for splitting into sentences.  This avoids
@@ -629,7 +620,6 @@ export default function EditorModal({
     // Filter out ranges that contain only whitespace. This keeps blank lines attached to the previous sentence.
     return ranges.filter((r) => text.slice(r.start, r.end).trim().length > 0);
   };
-
   // Effect: highlight the current sentence inside the editor by selecting it
   useEffect(() => {
     if (!isSpeaking) return;
@@ -638,9 +628,8 @@ export default function EditorModal({
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const range = ranges[currentSentenceIndex];
     const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
-    // this caused the MDEditor textarea to scroll to the bottom:
+    // This selection effect is commented out because it caused scrolling issues in MDEditor.
     // if (textarea && range) {
-    //   // Focus the textarea and select the current sentence
     //   textarea.focus();
     //   try {
     //     textarea.setSelectionRange(range.start, range.end);
@@ -649,13 +638,11 @@ export default function EditorModal({
     //   }
     // }
   }, [isSpeaking, currentSentenceIndex, editorContent]);
-
   // Effect: detect clicks inside the editor and remember the sentence index
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
     if (!textarea) return;
-
     const clickHandler = () => {
       const pos = textarea.selectionStart;
       const ranges = getSentenceRangesFromOriginal(editorContent);
@@ -672,16 +659,13 @@ export default function EditorModal({
       startSentenceRef.current = idx;
       setCurrentSentenceIndex(idx); // highlight this sentence in the overlay, if desired
     };
-
     textarea.addEventListener('click', clickHandler);
     return () => {
       textarea.removeEventListener('click', clickHandler);
     };
   }, [editorContent]);
-
   // Do not render anything if modal is closed
   if (!isOpen) return null;
-
   return (
     <div
       style={{
@@ -750,6 +734,15 @@ export default function EditorModal({
             theme={theme}
           >
             {isOpening ? 'Opening…' : 'Open'}
+          </StyledSmallButton>
+          {/* New button to strip Markdown formatting */}
+          <StyledSmallButton
+            onClick={handleCleanMarkdown}
+            disabled={!editorContent || !editorContent.trim()}
+            title="Remove Markdown formatting"
+            theme={theme}
+          >
+            Clean MD
           </StyledSmallButton>
           <select
             value={selectedVoice}
