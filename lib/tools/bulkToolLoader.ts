@@ -17,6 +17,10 @@ interface ToolCache {
 }
 
 export class BulkToolLoader {
+  // Store the Drive client for API calls.  This is kept as a mutable property
+  // because the access token can change between requests.  When a new
+  // BulkToolLoader instance is requested for the same user, the drive
+  // reference will be updated via `updateDriveClient`.
   private drive: drive_v3.Drive;
   private userId: string;
   private cache: ToolCache | null = null;
@@ -28,12 +32,33 @@ export class BulkToolLoader {
     this.userId = userId;
   }
 
+  /**
+   * Update the underlying Google Drive client.  This allows reuse of the
+   * BulkToolLoader across multiple requests while still using fresh
+   * credentials. Without updating the drive reference, an expired access
+   * token can cause 401 errors when making Drive API calls.  This method
+   * should be called whenever a new BulkToolLoader instance is requested
+   * and an existing instance already exists for the same user.
+   */
+  public updateDriveClient(newDrive: drive_v3.Drive): void {
+    this.drive = newDrive;
+  }
+
   // Static factory method to get or create per-user singleton instance
   static getInstance(googleDriveClient: drive_v3.Drive, userId: string): BulkToolLoader {
-    if (!userInstances.has(userId)) {
-      userInstances.set(userId, new BulkToolLoader(googleDriveClient, userId));
+    const existing = userInstances.get(userId);
+    if (existing) {
+      // Always update the drive client with the latest credentials.  Access
+      // tokens expire regularly, and using an old Drive instance will
+      // produce 401 "invalid authentication credentials" errors.  By
+      // updating the drive client here, we ensure that subsequent calls
+      // within the same user session use the fresh token.
+      existing.updateDriveClient(googleDriveClient);
+      return existing;
     }
-    return userInstances.get(userId)!;
+    const instance = new BulkToolLoader(googleDriveClient, userId);
+    userInstances.set(userId, instance);
+    return instance;
   }
 
   // Method to clear user instance (for cleanup)
@@ -46,7 +71,7 @@ export class BulkToolLoader {
     const cache = await this.getCache();
     return {
       tools: cache.tools,
-      categories: cache.categories
+      categories: cache.categories,
     };
   }
 
@@ -54,15 +79,15 @@ export class BulkToolLoader {
   async getToolPrompt(toolId: string): Promise<ToolPrompt | null> {
     const cache = await this.getCache();
     const cachedPrompt = cache.prompts.get(toolId);
-    
+
     // If we have cached prompt, return it (fast path)
     if (cachedPrompt) {
       return cachedPrompt;
     }
-    
+
     // Fallback: Tool not in cache, try to fetch it dynamically by path
     console.log(`Tool ${toolId} not in cache, attempting dynamic fetch...`);
-    
+
     try {
       // Parse toolId format: "category/filename"
       const [category, fileName] = toolId.split('/');
@@ -70,72 +95,73 @@ export class BulkToolLoader {
         console.error(`Invalid tool ID format: ${toolId}`);
         return null;
       }
-      
+
       // Find tool-prompts folder
       const rootResponse = await this.drive.files.list({
         q: `name='tool-prompts' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        fields: 'files(id, name)'
+        fields: 'files(id, name)',
       });
-      
+
       const toolPromptsFolder = rootResponse.data.files?.[0];
       if (!toolPromptsFolder?.id) {
         console.error('tool-prompts folder not found for dynamic fetch');
         return null;
       }
-      
+
       // Find category folder
       const categoryResponse = await this.drive.files.list({
         q: `'${toolPromptsFolder.id}' in parents and name='${category}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        fields: 'files(id, name)'
+        fields: 'files(id, name)',
       });
-      
+
       const categoryFolder = categoryResponse.data.files?.[0];
       if (!categoryFolder?.id) {
         console.error(`Category folder '${category}' not found for dynamic fetch`);
         return null;
       }
-      
+
       // Find tool file
       const toolFileResponse = await this.drive.files.list({
         q: `'${categoryFolder.id}' in parents and name='${fileName}' and mimeType='text/plain' and trashed=false`,
-        fields: 'files(id, name)'
+        fields: 'files(id, name)',
       });
-      
+
       const toolFile = toolFileResponse.data.files?.[0];
       if (!toolFile?.id) {
         console.error(`Tool file '${fileName}' not found in category '${category}' for dynamic fetch`);
         return null;
       }
-      
+
       // Download tool content
       const contentResponse = await this.drive.files.get({
         fileId: toolFile.id,
-        alt: 'media'
+        alt: 'media',
       });
-      
-      const content = typeof contentResponse.data === 'string' 
-        ? contentResponse.data 
-        : Buffer.from(contentResponse.data as any).toString('utf8');
-      
+
+      const content =
+        typeof contentResponse.data === 'string'
+          ? contentResponse.data
+          : Buffer.from(contentResponse.data as any).toString('utf8');
+
       // Create tool prompt object
-      const displayName = fileName.replace('.txt', '')
+      const displayName = fileName
+        .replace('.txt', '')
         .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
-        
+
       const toolPrompt: ToolPrompt = {
         id: toolId,
         name: displayName,
         category: category as ToolCategory,
-        content: content.trim()
+        content: content.trim(),
       };
-      
+
       // Update cache with newly fetched tool
       cache.prompts.set(toolId, toolPrompt);
-      
+
       console.log(`Successfully fetched tool ${toolId} dynamically`);
       return toolPrompt;
-      
     } catch (error) {
       console.error(`Failed to fetch tool ${toolId} dynamically:`, error);
       return null;
@@ -183,7 +209,7 @@ export class BulkToolLoader {
     const categoriesResponse = await this.drive.files.list({
       q: `'${toolPromptsFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
       fields: 'files(id, name)',
-      orderBy: 'name' // Sort categories alphabetically
+      orderBy: 'name', // Sort categories alphabetically
     });
 
     const categoryFolders = categoriesResponse.data.files || [];
@@ -191,36 +217,43 @@ export class BulkToolLoader {
       throw new Error('No category folders found in tool-prompts');
     }
 
-    console.log(`📁 Found ${categoryFolders.length} categories: ${categoryFolders.map(f => f.name).join(', ')}`);
+    console.log(
+      `📁 Found ${categoryFolders.length} categories: ${categoryFolders
+        .map((f) => f.name)
+        .join(', ')}`,
+    );
 
     // Step 3: Get all files from all categories in parallel
     const categoryFilesPromises = categoryFolders.map(async (folder) => {
       const filesResponse = await this.drive.files.list({
         q: `'${folder.id}' in parents and mimeType='text/plain' and trashed=false`,
         fields: 'files(id, name, modifiedTime)',
-        orderBy: 'name' // Sort files alphabetically within categories
+        orderBy: 'name', // Sort files alphabetically within categories
       });
-      
+
       return {
         categoryName: folder.name!,
-        files: filesResponse.data.files || []
+        files: filesResponse.data.files || [],
       };
     });
 
     const categoryResults = await Promise.all(categoryFilesPromises);
 
     // Step 4: Build file map and collect all file IDs
-    const fileMap = new Map<string, { category: string; fileName: string; modifiedTime: string }>();
+    const fileMap = new Map<
+      string,
+      { category: string; fileName: string; modifiedTime: string }
+    >();
     const allFileIds: string[] = [];
 
     categoryResults.forEach(({ categoryName, files }) => {
-      files.forEach(file => {
+      files.forEach((file) => {
         if (file.id && file.name) {
           allFileIds.push(file.id);
           fileMap.set(file.id, {
             category: categoryName,
             fileName: file.name,
-            modifiedTime: file.modifiedTime || new Date().toISOString()
+            modifiedTime: file.modifiedTime || new Date().toISOString(),
           });
         }
       });
@@ -230,16 +263,17 @@ export class BulkToolLoader {
 
     // Step 5: Download ALL file contents in parallel
     console.log(`📥 Downloading ${allFileIds.length} tool files in parallel...`);
-    
+
     const downloadPromises = allFileIds.map(async (fileId) => {
       const response = await this.drive.files.get({
         fileId,
         alt: 'media',
       });
 
-      const content = typeof response.data === 'string' 
-        ? response.data 
-        : Buffer.from(response.data as any).toString('utf8');
+      const content =
+        typeof response.data === 'string'
+          ? response.data
+          : Buffer.from(response.data as any).toString('utf8');
 
       return { fileId, content };
     });
@@ -260,9 +294,10 @@ export class BulkToolLoader {
 
       // Create tool ID and display name
       const toolId = `${category}/${fileName}`;
-      const displayName = fileName.replace('.txt', '')
+      const displayName = fileName
+        .replace('.txt', '')
         .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 
       // Create tool metadata
@@ -272,7 +307,7 @@ export class BulkToolLoader {
         category: category as ToolCategory,
         description: `${displayName} tool for manuscript processing`,
         fileName,
-        filePath: toolId
+        filePath: toolId,
       };
 
       tools.push(toolMetadata);
@@ -284,7 +319,7 @@ export class BulkToolLoader {
         category: category as ToolCategory,
         content: content.trim(),
         // source: 'google-drive',
-        // lastModified: modifiedTime
+        // lastModified: modifiedTime,
       };
 
       prompts.set(toolId, toolPrompt);
@@ -305,11 +340,13 @@ export class BulkToolLoader {
       tools,
       prompts,
       categories,
-      loadedAt: Date.now()
+      loadedAt: Date.now(),
     };
 
     const loadTime = Date.now() - startTime;
-    console.log(`✅ Bulk loaded ${tools.length} tools from ${categories.length} categories in ${loadTime}ms`);
+    console.log(
+      `✅ Bulk loaded ${tools.length} tools from ${categories.length} categories in ${loadTime}ms`,
+    );
     console.log(`📋 Categories: ${categories.join(', ')}`);
 
     return result;
