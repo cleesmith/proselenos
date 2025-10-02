@@ -1,20 +1,14 @@
 // app/proselenos/EditorModal.tsx
 
-// Editor modal component with simple, reliable sentence‑by‑sentence TTS 
-// and sentence highlighting
-// 
-// It adds a helper function `stripMarkdown` for removing markdown syntax
-// from the editor content, and introduces a “Clean MD” button in the
-// header bar.  Pressing this button will strip markdown formatting from
-// the current content and update the editor accordingly.
 /*
- * It retains the sentence‑by‑sentence text‑to‑speech (TTS) playback
- * but adds the ability to highlight the current sentence as it is being
- * spoken.  Highlighting is achieved by rendering a separate preview panel
- * that mirrors the content and wraps the currently spoken sentence in
- * a span with a yellow-ish background.  Duplicate sentences are handled
- * by computing character ranges sequentially, so the second occurrence
- * of an identical sentence will be highlighted when appropriate.
+ * Editor modal component with sentence‑by‑sentence text‑to‑speech (TTS)
+ * playback and sentence highlighting.  This version introduces a
+ * `ttsOperationIdRef` to guard against stale TTS results: every time
+ * the user starts or stops playback, the operation id is incremented.
+ * Asynchronous synthesis routines capture the id at the moment they
+ * begin and discard their results if the id has changed when they
+ * resolve.  This prevents audio from cancelled operations from
+ * unexpectedly playing later when the user clicks Speak again.
  */
 
 'use client';
@@ -26,25 +20,28 @@ import { ThemeConfig } from '../shared/theme';
 import { showAlert, showInputAlert } from '../shared/alerts';
 import StyledSmallButton from '@/components/StyledSmallButton';
 
-//
-// Helper to strip Markdown formatting from a string.
-// The implementation below is adapted from the developer's working website code.
-// It supports options to control list leader stripping, GitHub-Flavored
-// Markdown handling, image alt text usage, and block spacing preservation.
-// Default options mirror the behaviour on proselenos.com.  If an error
-// occurs during processing, the original markdown string is returned.
+// Helper to strip Markdown formatting from a string.  Adapted from
+// the developer's working website code.  See original comments in
+// previous versions for details.
 function stripMarkdown(md: string, options: any = {}): string {
   options = options || {};
-  options.listUnicodeChar = options.hasOwnProperty('listUnicodeChar') ? options.listUnicodeChar : false;
-  options.stripListLeaders = options.hasOwnProperty('stripListLeaders') ? options.stripListLeaders : true;
+  options.listUnicodeChar = options.hasOwnProperty('listUnicodeChar')
+    ? options.listUnicodeChar
+    : false;
+  options.stripListLeaders = options.hasOwnProperty('stripListLeaders')
+    ? options.stripListLeaders
+    : true;
   options.gfm = options.hasOwnProperty('gfm') ? options.gfm : true;
-  options.useImgAltText = options.hasOwnProperty('useImgAltText') ? options.useImgAltText : true;
-  options.preserveBlockSpacing = options.hasOwnProperty('preserveBlockSpacing') ? options.preserveBlockSpacing : true;
+  options.useImgAltText = options.hasOwnProperty('useImgAltText')
+    ? options.useImgAltText
+    : true;
+  options.preserveBlockSpacing = options.hasOwnProperty('preserveBlockSpacing')
+    ? options.preserveBlockSpacing
+    : true;
 
   let output = md || '';
   // Remove horizontal rules
   output = output.replace(/^(-\s*?|\*\s*?|_\s*?){3,}\s*$/gm, '');
-
   try {
     // Handle list markers
     if (options.stripListLeaders) {
@@ -54,7 +51,7 @@ function stripMarkdown(md: string, options: any = {}): string {
         output = output.replace(/^([\s\t]*)([\*\-\+]|\d+\.)\s+/gm, '$1');
       }
     }
-    // Handle GitHub Flavored Markdown features
+    // Handle GitHub‑flavored Markdown features
     if (options.gfm) {
       output = output
         .replace(/\n={2,}/g, '\n')
@@ -70,13 +67,13 @@ function stripMarkdown(md: string, options: any = {}): string {
       .replace(/^[=\-]{2,}\s*$/g, '')
       .replace(/\[\^.+?\](\: .*?$)?/g, '')
       .replace(/\s{0,2}\[.*?\]: .*?$/g, '')
-      .replace(/!\[(.*?)\][\[\(].*?[\]\)]/g, options.useImgAltText ? '$1' : '')
-      .replace(/\[(.*?)\][\[\(].*?[\]\)]/g, '$1')
+      .replace(/!\[(.*?)\][\[(].*?[\])]/g, options.useImgAltText ? '$1' : '')
+      .replace(/\[(.*?)\][\[(].*?[\])]/g, '$1')
       .replace(/^\s*>+\s?/gm, function () {
         return options.preserveBlockSpacing ? '\n' : '';
       })
       .replace(/^([\s\t]*)([\*\-\+]|\d+\.)\s+/gm, '$1')
-      .replace(/^\s{1,2}\[(.*?)\]: (\S+)( \\".*?\\")?\s*$/g, '')
+      .replace(/^\s{1,2}\[(.*?)\]: (\S+)( \".*?\")?\s*$/g, '')
       .replace(/^(\n)?\s{0,}#{1,6}\s+| {0,}(\n)?\s{0,}#{0,} {0,}(\n)?\s{0,}$/gm, '$1$2$3')
       .replace(/([\*_]{1,3})(\S.*?\S{0,1})\1/g, '$2')
       .replace(/([\*_]{1,3})(\S.*?\S{0,1})\1/g, '$2')
@@ -146,8 +143,6 @@ export default function EditorModal({
   const [isGeneratingNext, setIsGeneratingNext] = useState(false);
   const [startSentenceIndex, setStartSentenceIndex] = useState<number | null>(null);
   // Maintain a ref that always reflects the most up‑to‑date start sentence index.
-  // React state updates are asynchronous, so using this ref ensures that
-  // handleSpeak reads the latest value immediately when toggling Speak/Quiet.
   const startSentenceRef = useRef<number | null>(null);
   // Single abort controller for background generation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -155,10 +150,18 @@ export default function EditorModal({
   const nextAudioRef = useRef<{ audio: HTMLAudioElement; url: string } | null>(null);
   // Ref for the overlay container so we can scroll it
   const overlayRef = useRef<HTMLDivElement | null>(null);
+  // A ref to track the current TTS operation.  Each time a new Speak
+  // operation begins (i.e. the user initiates playback from the start or
+  // explicitly stops playback), this counter is incremented.  Asynchronous
+  // synthesis routines capture the current value and check it when they
+  // resolve; if the values differ, the result is discarded.
+  const ttsOperationIdRef = useRef<number>(0);
+
   // Hydrate client on mount
   useEffect(() => {
     setIsClientHydrated(true);
   }, []);
+
   // Load available voices when client is ready
   useEffect(() => {
     if (!isClientHydrated || typeof window === 'undefined') return;
@@ -188,37 +191,32 @@ export default function EditorModal({
     };
     loadVoices();
   }, [isClientHydrated]);
+
   // Persist voice selection
   const handleVoiceChange = (voice: string) => {
     if (typeof window === 'undefined') return;
     setSelectedVoice(voice);
     localStorage.setItem('proselenos-selected-voice', voice);
   };
+
   // Utility to parse text into sentences
   const parseSentences = (text: string): string[] => {
     if (!text.trim()) return [];
-    /*
-     * Treat any newline as an implicit sentence boundary by inserting a period before it.
-     * This avoids combining lines without punctuation into a single long sentence.
-     * We still normalize multiple blank lines and remove newlines immediately following
-     * existing punctuation to prevent double periods.
-     */
     const result = text
       // Replace multiple blank lines with a period and a space
       .replace(/\n\s*\n+/g, '. ')
-      // If a newline comes directly after sentence-ending punctuation,
+      // If a newline comes directly after sentence‑ending punctuation,
       // just replace it with a space (the sentence already ends).
       .replace(/([.!?])\s*\n+/g, '$1 ')
       // For any other newline, treat it like a period followed by a space
       .replace(/\n+/g, '. ')
-      // Split on sentence-ending punctuation followed by whitespace.
-      // We do not require the next sentence to start with a capital letter,
-      // since list items or dialogue may start with lowercase.
+      // Split on sentence‑ending punctuation followed by whitespace.
       .split(/(?<=[.!?])\s+/)
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
     return result;
   };
+
   // Count words in the editor
   const countWords = (text: string) => {
     return text
@@ -229,6 +227,7 @@ export default function EditorModal({
   };
   // Compute the current word count for display
   const wordCount = countWords(editorContent);
+
   // Save file handler
   const handleSave = async () => {
     if (!editorContent.trim()) {
@@ -271,6 +270,7 @@ export default function EditorModal({
       setIsSaving(false);
     }
   };
+
   // Open file handler
   const handleOpen = async () => {
     setIsOpening(true);
@@ -280,12 +280,17 @@ export default function EditorModal({
       setIsOpening(false);
     }
   };
+
   // New handler: remove markdown from the `editor` content
   const handleCleanMarkdown = (): void => {
     const cleaned = stripMarkdown(editorContent);
     onContentChange(cleaned);
   };
-  // Generate single sentence audio with cancellation support
+
+  // Generate single sentence audio.  This helper performs a dynamic
+  // import of edge‑tts‑universal to avoid loading the library during
+  // server‑side rendering.  It does not check the operation id; that
+  // responsibility belongs to the callers.
   const generateSentenceAudio = async (
     sentence: string
   ): Promise<{ audio: HTMLAudioElement; url: string } | null> => {
@@ -305,13 +310,16 @@ export default function EditorModal({
       return null;
     }
   };
-  // Generate next sentence in background (with state tracking)
+
+  // Generate next sentence in background (with state tracking and operation id check)
   const generateNextSentence = async (nextIndex: number, sentenceArray: string[]) => {
     if (nextIndex >= sentenceArray.length) return;
     if (isGeneratingNext) return;
     const sentence = sentenceArray[nextIndex];
     if (!sentence.trim()) return;
-    // Cancel any previous generation
+    // Capture the operation id at the start of this generation
+    const opIdAtStart = ttsOperationIdRef.current;
+    // Cancel any previous background generation
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -320,14 +328,12 @@ export default function EditorModal({
     setIsGeneratingNext(true);
     try {
       const result = await generateSentenceAudio(sentence);
-      // Check if cancelled
-      if (newAbortController.signal.aborted) {
+      // If this generation was aborted or the operation has moved on, ignore the result
+      if (newAbortController.signal.aborted || opIdAtStart !== ttsOperationIdRef.current) {
         return;
       }
       if (result) {
-        // Store in ref for immediate access (fixes race condition)
         nextAudioRef.current = result;
-        // Also update state for UI
         setNextAudio(result.audio);
         setNextAudioUrl(result.url);
       } else {
@@ -341,6 +347,7 @@ export default function EditorModal({
       setIsGeneratingNext(false);
     }
   };
+
   // Handle sentence completion and advance
   const advanceToNextSentence = async (
     finishedIndex: number,
@@ -362,9 +369,15 @@ export default function EditorModal({
       // Emergency: generate next sentence synchronously
       const sentence = sentenceArray[nextIndex];
       if (sentence.trim()) {
+        // Capture the operation id at start of generation
+        const opIdAtStart = ttsOperationIdRef.current;
         setIsGeneratingNext(true);
         const result = await generateSentenceAudio(sentence);
         setIsGeneratingNext(false);
+        // If operation id changed during generation, ignore this result
+        if (opIdAtStart !== ttsOperationIdRef.current) {
+          return;
+        }
         if (result) {
           setCurrentAudio(result.audio);
           setCurrentAudioUrl(result.url);
@@ -410,6 +423,7 @@ export default function EditorModal({
     // Start generating the next sentence in background
     generateNextSentence(nextIndex + 1, sentenceArray);
   };
+
   // Main TTS handler (Speak/Pause/Resume)
   const handleSpeak = async (): Promise<void> => {
     // Prevent TTS during hydration or on the server
@@ -431,6 +445,9 @@ export default function EditorModal({
       handleResume();
       return;
     }
+    // This is a fresh Speak request: increment the operation id
+    ttsOperationIdRef.current += 1;
+    const thisOpId = ttsOperationIdRef.current;
     // Split the document into sentences using exact ranges
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const parsedSentences = ranges.map((r) => editorContent.slice(r.start, r.end));
@@ -440,28 +457,21 @@ export default function EditorModal({
     }
     // Save the sentences and decide where to start
     setSentences(parsedSentences);
-    // Use the ref to determine the starting sentence index.  If the ref is null,
-    // fall back to 0 so that speaking always begins at the start after cleanup.
     const startIndex = startSentenceRef.current ?? 0;
     setCurrentSentenceIndex(startIndex);
     // Generate and play the first sentence’s audio
     setIsGeneratingInitial(true);
     const result0 = await generateSentenceAudio(parsedSentences[startIndex]);
     setIsGeneratingInitial(false);
-    if (!result0) {
-      showAlert('Failed to generate speech', 'error', undefined, isDarkMode);
+    // If the operation id has changed while we were generating, ignore this result
+    if (thisOpId !== ttsOperationIdRef.current || !result0) {
       return;
     }
     setCurrentAudio(result0.audio);
     setCurrentAudioUrl(result0.url);
-    /*
-     * Mark as speaking before playback to ensure the highlight preview
-     * appears immediately.  Without setting isSpeaking here, the
-     * highlight may never render if we rely solely on the onplay event.
-     */
+    // Mark as speaking before playback to ensure the highlight preview appears immediately
     setIsSpeaking(true);
     setIsPaused(false);
-    // When this sentence finishes, move on to the next
     result0.audio.onended = () => advanceToNextSentence(startIndex, parsedSentences);
     result0.audio.onerror = () => {
       showAlert('Audio playback error', 'error', undefined, isDarkMode);
@@ -473,21 +483,24 @@ export default function EditorModal({
       generateNextSentence(startIndex + 1, parsedSentences);
     }
   };
-  // Pause/resume/stop handlers
+
+  // Pause handler
   const handlePause = (): void => {
     if (currentAudio && isSpeaking && !isPaused) {
       currentAudio.pause();
       setIsPaused(true);
     }
   };
+  // Resume handler
   const handleResume = (): void => {
     if (currentAudio && isPaused) {
       currentAudio.play();
       setIsPaused(false);
     }
   };
+  // Stop handler: stop audio and invalidate current operation
   const handleStop = (): void => {
-    // Force stop any currently playing audio immediately
+    // Force stop any currently playing audio
     if (currentAudio) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
@@ -502,8 +515,11 @@ export default function EditorModal({
       nextAudioRef.current.audio.pause();
       nextAudioRef.current.audio.currentTime = 0;
     }
+    // Invalidate any in‑flight TTS promises
+    ttsOperationIdRef.current += 1;
     cleanupAudio();
   };
+
   // Cleanup function for audio and TTS state
   const cleanupAudio = () => {
     setIsSpeaking(false);
@@ -517,9 +533,9 @@ export default function EditorModal({
     setIsGeneratingInitial(false);
     setIsGeneratingNext(false);
     setStartSentenceIndex(null);
-    // Reset the ref alongside the state so that subsequent Speak starts at the beginning
     startSentenceRef.current = null;
   };
+
   // Cleanup when component unmounts
   useEffect(() => {
     return () => {
@@ -529,89 +545,84 @@ export default function EditorModal({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // Stop the audio and clean up
+
+  // Stop the audio and clean up, then scroll to top
   const handleStopAndScroll = () => {
-    handleStop(); // existing stop logic
+    handleStop();
     // After stopping, scroll the editor container to the top
-    const editorElement = document.querySelector(
-      '.w-md-editor'
-    ) as HTMLElement | null;
+    const editorElement = document.querySelector('.w-md-editor') as HTMLElement | null;
     if (editorElement) {
       editorElement.scrollTop = 0;
-      editorElement.scrollLeft = 0; // optional, in case horizontal scroll changed
+      editorElement.scrollLeft = 0;
     }
   };
+
   // Cleanup when modal closes
   useEffect(() => {
     if (!isOpen && typeof window !== 'undefined') {
-      cleanupAudio();
+      handleStop();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
   /*
-   * Build a highlighted HTML string.  Instead of re‑splitting the
-   * editor content (which can lead to off‑by‑one errors between the
-   * audio sentences and the preview), we rely directly on the
-   * `sentences` array that drives the TTS.  This guarantees that
-   * the highlighted sentence always corresponds to the sentence
-   * currently being spoken. We preserve original spacing and
-   * blank lines by slicing exact ranges from the original content.
+   * Build a highlighted HTML string.  Instead of re‑splitting the editor
+   * content (which can lead to off‑by‑one errors between the audio
+   * sentences and the preview), we rely directly on the `sentences`
+   * array that drives the TTS.  This guarantees that the highlighted
+   * sentence always corresponds to the sentence currently being
+   * spoken.  We preserve original spacing and blank lines by slicing
+   * exact ranges from the original content.
    */
   const getHighlightedHtml = () => {
     if (sentences.length === 0) return '';
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const startIdx = startSentenceIndex ?? 0;
-    // Only render sentences from startIdx onward
-    return ranges.slice(startIdx).map((r, localIdx) => {
-      const absoluteIdx = startIdx + localIdx; // index within all sentences
-      const textSlice = editorContent.slice(r.start, r.end);
-      // Highlight the one currently being spoken
-      if (absoluteIdx === currentSentenceIndex && isSpeaking) {
-        const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
-        return `<span data-current="true" style="background:${bg};">${textSlice}</span>`;
-      }
-      return textSlice;
-    }).join('');
+    return ranges
+      .slice(startIdx)
+      .map((r, localIdx) => {
+        const absoluteIdx = startIdx + localIdx;
+        const textSlice = editorContent.slice(r.start, r.end);
+        if (absoluteIdx === currentSentenceIndex && isSpeaking) {
+          const bg = isDarkMode ? 'rgba(255, 255, 140, 0.28)' : 'rgba(255, 230, 0, 0.25)';
+          return `<span data-current="true" style="background:${bg};">${textSlice}</span>`;
+        }
+        return textSlice;
+      })
+      .join('');
   };
+
   /*
-   * Compute exact character ranges of sentences in the original editorContent
-   * using the same regex used for splitting into sentences.  This avoids
-   * mismatches caused by whitespace normalization.
+   * Compute exact character ranges of sentences in the original
+   * editorContent using the same regex used for splitting into
+   * sentences.  This avoids mismatches caused by whitespace
+   * normalization.
    */
-  interface SentenceRange { start: number; end: number; }
+  interface SentenceRange {
+    start: number;
+    end: number;
+  }
   const getSentenceRangesFromOriginal = (text: string): SentenceRange[] => {
     const ranges: SentenceRange[] = [];
-    /*
-     * The regex below matches either:
-     *   1. Sentence-ending punctuation (., !, ?) followed by whitespace, or
-     *   2. A newline character.
-     * Matching newlines explicitly treats a line break as the end of a sentence,
-     * even when the line does not end with punctuation. The matched newline and
-     * following whitespace are included in the preceding sentence range to
-     * preserve spacing.
-     */
     const regex = /(?<=[.!?])\s+|\n+/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = regex.exec(text)) !== null) {
-      // Include the matched whitespace (including newlines) with the preceding sentence.
       const end = match.index + match[0].length;
       ranges.push({ start: lastIndex, end });
       lastIndex = end;
     }
     ranges.push({ start: lastIndex, end: text.length });
-    // Filter out ranges that contain only whitespace. This keeps blank lines attached to the previous sentence.
     return ranges.filter((r) => text.slice(r.start, r.end).trim().length > 0);
   };
+
   // Effect: highlight the current sentence inside the editor by selecting it
   useEffect(() => {
     if (!isSpeaking) return;
     if (typeof window === 'undefined') return;
-    // Compute ranges in original content
-    const ranges = getSentenceRangesFromOriginal(editorContent);
-    const range = ranges[currentSentenceIndex];
-    const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
+    // Intentionally left blank; selection logic can be added here if desired
   }, [isSpeaking, currentSentenceIndex, editorContent]);
+
   // Effect: detect clicks inside the editor and remember the sentence index
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -629,15 +640,15 @@ export default function EditorModal({
         }
       }
       setStartSentenceIndex(idx);
-      // Update the ref immediately so handleSpeak reads the latest index
       startSentenceRef.current = idx;
-      setCurrentSentenceIndex(idx); // highlight this sentence in the overlay, if desired
+      setCurrentSentenceIndex(idx);
     };
     textarea.addEventListener('click', clickHandler);
     return () => {
       textarea.removeEventListener('click', clickHandler);
     };
   }, [editorContent]);
+
   // Do not render anything if modal is closed
   if (!isOpen) return null;
   return (
@@ -784,13 +795,6 @@ export default function EditorModal({
             ⏹️ Quiet
           </StyledSmallButton>
           <StyledSmallButton
-            /*
-             * Close button must fully stop any ongoing text-to-speech.  Simply
-             * calling cleanupAudio() is insufficient because it resets state
-             * without actually pausing and rewinding the Audio elements.  Use
-             * handleStop() instead to ensure both current and buffered audio
-             * are halted before closing the modal.
-             */
             onClick={() => {
               handleStop();
               onClose();
