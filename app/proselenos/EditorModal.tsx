@@ -1,25 +1,16 @@
 // app/proselenos/EditorModal.tsx
 
-// This file is a modified version of the original EditorModal component.
+// Editor modal component with simple, reliable sentence‑by‑sentence TTS 
+// and sentence highlighting
+// 
 // It adds a helper function `stripMarkdown` for removing markdown syntax
 // from the editor content, and introduces a “Clean MD” button in the
 // header bar.  Pressing this button will strip markdown formatting from
 // the current content and update the editor accordingly.
-
-// issues:
-//  1. Speak-ing text without "proper" punctuation, for example:
-//     an AI-based report, like Drunken, the Edge TTS has trouble 
-//     generating, and gets hung = can't Quiet or Close to stop reading
-
-// Editor modal component with simple, reliable sentence‑by‑sentence TTS 
-// and sentence highlighting
-
 /*
- * This component is a rewrite of the original EditorModal for Proselenos.
  * It retains the sentence‑by‑sentence text‑to‑speech (TTS) playback
  * but adds the ability to highlight the current sentence as it is being
- * spoken.  Highlighting is achieved without modifying the underlying
- * markdown editor (MDEditor) by rendering a separate preview panel
+ * spoken.  Highlighting is achieved by rendering a separate preview panel
  * that mirrors the content and wraps the currently spoken sentence in
  * a span with a yellow-ish background.  Duplicate sentences are handled
  * by computing character ranges sequentially, so the second occurrence
@@ -33,19 +24,11 @@ import { useState, useRef, useEffect } from 'react';
 import React from 'react';
 import { ThemeConfig } from '../shared/theme';
 import { showAlert, showInputAlert } from '../shared/alerts';
-// Removed MDEditor commands and CSS imports since we are switching to a plain textarea.
-// import { commands } from '@uiw/react-md-editor';
-// import '@uiw/react-md-editor/markdown-editor.css';
-// import '@uiw/react-markdown-preview/markdown.css';
 import StyledSmallButton from '@/components/StyledSmallButton';
-
-// MDEditor is no longer used. We will replace it with a plain textarea below.
-// const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
 
 //
 // Helper to strip Markdown formatting from a string.
-//
-// The implementation below is adapted from the user’s working website code.
+// The implementation below is adapted from the developer's working website code.
 // It supports options to control list leader stripping, GitHub-Flavored
 // Markdown handling, image alt text usage, and block spacing preservation.
 // Default options mirror the behaviour on proselenos.com.  If an error
@@ -297,7 +280,7 @@ export default function EditorModal({
       setIsOpening(false);
     }
   };
-  // New handler: remove markdown from the editor content
+  // New handler: remove markdown from the `editor` content
   const handleCleanMarkdown = (): void => {
     const cleaned = stripMarkdown(editorContent);
     onContentChange(cleaned);
@@ -628,15 +611,6 @@ export default function EditorModal({
     const ranges = getSentenceRangesFromOriginal(editorContent);
     const range = ranges[currentSentenceIndex];
     const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
-    // This selection effect is commented out because it caused scrolling issues in MDEditor.
-    // if (textarea && range) {
-    //   textarea.focus();
-    //   try {
-    //     textarea.setSelectionRange(range.start, range.end);
-    //   } catch {
-    //     /* ignore errors in selection */
-    //   }
-    // }
   }, [isSpeaking, currentSentenceIndex, editorContent]);
   // Effect: detect clicks inside the editor and remember the sentence index
   useEffect(() => {
