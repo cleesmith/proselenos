@@ -73,7 +73,7 @@ function stripMarkdown(md: string, options: any = {}): string {
         return options.preserveBlockSpacing ? '\n' : '';
       })
       .replace(/^([\s\t]*)([\*\-\+]|\d+\.)\s+/gm, '$1')
-      .replace(/^\s{1,2}\[(.*?)\]: (\S+)( \".*?\")?\s*$/g, '')
+      .replace(/^\s{1,2}\[(.*?)\]: (\S+)( ".*?")?\s*$/g, '')
       .replace(/^(\n)?\s{0,}#{1,6}\s+| {0,}(\n)?\s{0,}#{0,} {0,}(\n)?\s{0,}$/gm, '$1$2$3')
       .replace(/([\*_]{1,3})(\S.*?\S{0,1})\1/g, '$2')
       .replace(/([\*_]{1,3})(\S.*?\S{0,1})\1/g, '$2')
@@ -205,13 +205,16 @@ export default function EditorModal({
     const result = text
       // Replace multiple blank lines with a period and a space
       .replace(/\n\s*\n+/g, '. ')
-      // If a newline comes directly after sentence‑ending punctuation,
-      // just replace it with a space (the sentence already ends).
-      .replace(/([.!?])\s*\n+/g, '$1 ')
+      // If a newline comes directly after sentence‑ending punctuation (optionally
+      // followed by a closing quote), just replace it with a space (the sentence
+      // already ends).  This handles cases like: "... here."\nBut the more …
+      .replace(/([.!?]["'”’]?)\s*\n+/g, '$1 ')
       // For any other newline, treat it like a period followed by a space
       .replace(/\n+/g, '. ')
-      // Split on sentence‑ending punctuation followed by whitespace.
-      .split(/(?<=[.!?])\s+/)
+      // Split on sentence‑ending punctuation optionally followed by a closing quote,
+      // then whitespace.  This ensures that sentences like ... here." But the more...
+      // are split correctly.
+      .split(/(?<=[.!?]["'”’]?)\s+/)
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
     return result;
@@ -604,7 +607,10 @@ export default function EditorModal({
   }
   const getSentenceRangesFromOriginal = (text: string): SentenceRange[] => {
     const ranges: SentenceRange[] = [];
-    const regex = /(?<=[.!?])\s+|\n+/g;
+    // Match spaces following a sentence‑ending punctuation optionally followed
+    // by a closing quote, or any sequence of newlines.  This ensures that
+    // sentences ending in .", !", ?", etc. are properly detected.
+    const regex = /(?<=[.!?]["'”’]?)\s+|\n+/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = regex.exec(text)) !== null) {
@@ -616,11 +622,25 @@ export default function EditorModal({
     return ranges.filter((r) => text.slice(r.start, r.end).trim().length > 0);
   };
 
-  // Effect: highlight the current sentence inside the editor by selecting it
+  // Effect: scroll the highlighted sentence into view when it changes
   useEffect(() => {
     if (!isSpeaking) return;
     if (typeof window === 'undefined') return;
-    // Intentionally left blank; selection logic can be added here if desired
+    const overlayEl = overlayRef.current;
+    if (!overlayEl) return;
+    const currentSpan = overlayEl.querySelector('span[data-current="true"]') as HTMLElement | null;
+    if (currentSpan) {
+      // Instead of placing the highlighted line flush against the bottom of the
+      // container, offset the scroll position upward slightly so there is room
+      // to show a few lines below the highlight.  We calculate a margin as a
+      // fraction of the overlay height (25%) and subtract it from the
+      // element's offsetTop.  Then we clamp within the scrollable range.
+      const margin = overlayEl.clientHeight * 0.25;
+      const desiredTop = currentSpan.offsetTop - margin;
+      const maxScrollTop = overlayEl.scrollHeight - overlayEl.clientHeight;
+      const newScrollTop = Math.max(0, Math.min(desiredTop, maxScrollTop));
+      overlayEl.scrollTo({ top: newScrollTop, behavior: 'smooth' });
+    }
   }, [isSpeaking, currentSentenceIndex, editorContent]);
 
   // Effect: detect clicks inside the editor and remember the sentence index
