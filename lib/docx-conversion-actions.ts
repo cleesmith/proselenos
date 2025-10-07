@@ -47,37 +47,6 @@ function bufferToStream(buffer: Buffer): Readable {
 }
 
 // List DOCX files in a project folder
-// export async function listDocxFilesAction(accessToken: string, projectFolderId: string): Promise<ActionResult> {
-//   try {
-//     const clients = await getAuthenticatedClients(accessToken);
-//     if ('error' in clients) {
-//       return { success: false, error: clients.error };
-//     }
-
-//     const { drive } = clients;
-    
-//     if (!projectFolderId) {
-//       return { success: false, error: 'Project folder ID is required' };
-//     }
-
-//     // Get all files in the project folder
-//     const allFiles = await listFilesAndFolders(drive, projectFolderId);
-    
-//     // Filter for DOCX files
-//     const docxFiles = allFiles.filter((file: any) => 
-//       file.name.toLowerCase().endsWith('.docx') &&
-//       file.mimeType !== 'application/vnd.google-apps.folder'
-//     );
-    
-//     return { 
-//       success: true, 
-//       data: { files: docxFiles },
-//       message: `Found ${docxFiles.length} DOCX files` 
-//     };
-//   } catch (error: any) {
-//     return { success: false, error: error.message || 'Failed to list DOCX files' };
-//   }
-// }
 export async function listDocxFilesAction(
   accessToken: string,
   projectFolderId: string
@@ -108,7 +77,6 @@ export async function listDocxFilesAction(
     return { success: false, error: error.message || 'Failed to list DOCX files' };
   }
 }
-
 
 // List TXT files in a project folder
 export async function listTxtFilesAction(accessToken: string, projectFolderId: string): Promise<ActionResult> {
@@ -197,85 +165,52 @@ export async function convertDocxToTxtAction(
       // Get all block elements
       const blocks = document.querySelectorAll("p, h1, h2, h3, h4, h5, h6") as NodeListOf<HTMLElement>;
       
-      // Process blocks to extract chapters
-      let chapters: any[] = [];
-      let currentChapter: any = null;
-      let ignoreFrontMatter = true;
-      let ignoreRest = false;
-      
-      // Stop headings
-      const STOP_TITLES = ["about the author", "website", "acknowledgments", "appendix"];
-      
-      // Convert NodeList to Array for iteration
+      // Process blocks to extract sections. A new section begins at an <h1> or when certain special headings appear.
+      const sections: any[] = [];
+      let currentSection: any = null;
+      // Special headings that should start a new section even if they are not <h1>
+      // Build sections based solely on <h1> headings.  Each <h1> indicates the start of a new section.
       Array.from(blocks).forEach((block: HTMLElement) => {
-        if (ignoreRest) return;
-        
         const tagName = block.tagName.toLowerCase();
-        const textRaw = block.textContent?.trim() || '';
-        const textLower = textRaw.toLowerCase();
-        
-        // Skip everything until first <h1>
-        if (ignoreFrontMatter) {
-          if (tagName === "h1") {
-            ignoreFrontMatter = false;
-          } else {
-            return;
-          }
-        }
-        
-        // If this heading is a "stop" heading, ignore the rest
-        if (tagName.startsWith("h") && STOP_TITLES.some(title => textLower.startsWith(title))) {
-          ignoreRest = true;
-          return;
-        }
-        
-        // If we see a new <h1>, that means a new chapter
-        if (tagName === "h1") {
-          currentChapter = {
-            title: textRaw,
-            textBlocks: []
-          };
-          chapters.push(currentChapter);
-        }
-        else {
-          // If there's no current chapter yet, create one
-          if (!currentChapter) {
-            currentChapter = { title: "Untitled Chapter", textBlocks: [] };
-            chapters.push(currentChapter);
-          }
-          // Add the block text if not empty
-          if (textRaw) {
-            currentChapter.textBlocks.push(textRaw);
-          }
-        }
-      });
-      
-      // Build the manuscript text with proper spacing
-      let manuscriptText = "";
-      
-      chapters.forEach((ch, idx) => {
-        // Two newlines before each chapter title
-        if (idx === 0) {
-          manuscriptText += "\n\n";
+        // Trim whitespace from block text and normalize non‑breaking spaces.  We intentionally do not
+        // apply any special heading detection here—only <h1> elements define new sections.
+        const rawText = block.textContent || '';
+        const normalizedText = rawText
+          .replace(/\u00a0/g, ' ')   // convert NBSP to a regular space
+          .replace(/\s+/g, ' ')      // collapse multiple whitespace into a single space
+          .trim();
+        const startNewSection = tagName === 'h1';
+
+        if (startNewSection) {
+          // A new section begins.  Use the normalized heading text as the section title.
+          currentSection = { title: normalizedText, textBlocks: [] };
+          sections.push(currentSection);
         } else {
-          manuscriptText += "\n\n\n";
+          // Append paragraph text to the current section.  Create a new section if none has been started yet.
+          if (!currentSection) {
+            currentSection = { title: '', textBlocks: [] };
+            sections.push(currentSection);
+          }
+          if (normalizedText) {
+            currentSection.textBlocks.push(normalizedText);
+          }
         }
-        
-        // Add chapter title with numbering if not already present
-        const formattedTitle = ch.title.match(/^Chapter\s+\d+/i) ? ch.title : `Chapter ${idx + 1}: ${ch.title}`;
-        manuscriptText += formattedTitle;
-        
-        // One newline after chapter title
-        manuscriptText += "\n\n";
-        
-        // Add paragraphs with one blank line between them
-        manuscriptText += ch.textBlocks.join("\n\n");
       });
-      
+      // Build the manuscript text with two blank lines before each section and between paragraphs.
+      let manuscriptText = '';
+      sections.forEach((sec) => {
+        // Insert two blank lines (i.e., three newline characters) before each section
+        manuscriptText += '\n\n\n';
+        if (sec.title) {
+          manuscriptText += sec.title;
+          // One blank line after the heading
+          manuscriptText += '\n\n';
+        }
+        manuscriptText += sec.textBlocks.join('\n\n');
+      });
       // Ensure the file ends with exactly 2 blank lines (3 newlines total)
-      manuscriptText = manuscriptText + '\n\n\n';
-      
-      const chapterCount = chapters.length;
+      manuscriptText += '\n\n\n';
+      const sectionCount = sections.length;
       
       // Save the converted text to Google Drive (no metadata header)
       const file = await uploadManuscript(
@@ -290,10 +225,10 @@ export async function convertDocxToTxtAction(
         data: {
           fileId: file.id,
           fileName: file.name || finalOutputName,
-          chapterCount,
+          sectionCount,
           characterCount: manuscriptText.length
         },
-        message: `Successfully converted DOCX to TXT. Found ${chapterCount} chapters.` 
+        message: `Successfully converted DOCX to TXT. Found ${sectionCount} sections.`
       };
     } catch (conversionError: any) {
       console.error('DOCX conversion error:', conversionError);
@@ -346,7 +281,7 @@ export async function convertTxtToDocxAction(
         fields: 'mimeType'
       });
 
-      if (fileInfo.data.mimeType === 'application/vnd.google-apps.document') {
+      if ((fileInfo.data as any).mimeType === 'application/vnd.google-apps.document') {
         // It's a Google Doc - export as plain text
         const response = await drive.files.export({
           fileId: txtFileId,
@@ -470,8 +405,8 @@ export async function convertTxtToDocxAction(
       return { 
         success: true, 
         data: {
-          fileId: file.data.id,
-          fileName: file.data.name || finalOutputName,
+          fileId: (file.data as any).id,
+          fileName: (file.data as any).name || finalOutputName,
           chapterCount,
           paragraphCount,
           characterCount: textContent.length
