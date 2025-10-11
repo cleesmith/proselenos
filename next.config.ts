@@ -3,9 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      // Increase body size limit to 5MB to allow larger file uploads
+      // Increase body size limit to allow larger file uploads
       // You can adjust this value based on your needs
-      bodySizeLimit: '5mb'
+      bodySizeLimit: '50mb'
     }
   }
 };
