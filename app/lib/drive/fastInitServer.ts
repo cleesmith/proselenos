@@ -79,6 +79,7 @@ export type Config = {
   selectedApiProvider: string;
   selectedAiModel: string;
   author_name: string;
+  isDarkMode?: boolean;
 };
 
 export type DriveFile = {
@@ -139,6 +140,7 @@ export async function fastInitForUser(accessToken: string): Promise<InitPayloadF
       selectedApiProvider: '',
       selectedAiModel: '',
       author_name: 'Anonymous',
+      isDarkMode: false,
     };
 
     const toolPromptsFolder = rootFolders.find(f => f.name === 'tool-prompts');

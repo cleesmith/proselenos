@@ -38,6 +38,7 @@ import {
   installToolPromptsAction,
   updateProviderAndModelAction,
   updateSelectedModelAction,
+  updateDarkModeAction,
   createGoogleDriveFileAction,
   updateGoogleDriveFileAction,
   loadProjectMetadataAction,
@@ -63,7 +64,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   
   // Core app state
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(init?.config?.isDarkMode ?? false);
   const [showEditorModal, setShowEditorModal] = useState(false);
   const [editorContent, setEditorContent] = useState('');
   const [currentFileName, setCurrentFileName] = useState<string | null>(null);
@@ -522,8 +523,12 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   }, [session, isLoadingConfig, projectActions.setCurrentProject, projectActions.setCurrentProjectId, projectActions.setUploadStatus, init]);
 
   // Toggle theme
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
+  const toggleTheme = async () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    if (session?.accessToken && init?.config?.settings.proselenos_root_folder_id) {
+      await updateDarkModeAction(session.accessToken, init.config.settings.proselenos_root_folder_id, newDarkMode);
+    }
   };
   
   // Handle sign out
@@ -1183,21 +1188,21 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         <div
           style={{
             minHeight: '100vh',
-            backgroundColor: '#0f0f0f',
-            color: '#ffffff',
+            backgroundColor: '#ffffff',
+            color: '#333',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
           }}
         >
           {/* Header Bar */}
           <header
             style={{
-              borderBottom: '1px solid #2a2a2a',
+              borderBottom: '1px solid #e0e0e0',
               padding: '0 24px',
               height: '60px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: '#1a1a1a',
+              backgroundColor: '#f5f5f5',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1227,8 +1232,8 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
             </div>
             
             <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-              <a href="#features" style={{ color: '#a0a0a0', textDecoration: 'none', fontSize: '14px' }}>Features</a>
-              <a href="#pricing" style={{ color: '#a0a0a0', textDecoration: 'none', fontSize: '14px' }}>Pricing</a>
+              <a href="#features" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>Features</a>
+              <a href="#pricing" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>Pricing</a>
               <button
                 onClick={() => signIn('google')}
                 style={{
@@ -1259,7 +1264,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   fontSize: '48px',
                   fontWeight: '700',
                   margin: '0 0 16px 0',
-                  background: 'linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%)',
+                  background: 'linear-gradient(135deg, #111 0%, #666 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   lineHeight: '1.2',
@@ -1270,7 +1275,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
               <p
                 style={{
                   fontSize: '20px',
-                  color: '#a0a0a0',
+                  color: '#666',
                   margin: '0 0 40px 0',
                   maxWidth: '600px',
                   marginLeft: 'auto',
@@ -1284,18 +1289,18 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
             {/* Description */}
             <div
               style={{
-                backgroundColor: '#1a1a1a',
+                backgroundColor: '#f9f9f9',
                 borderRadius: '16px',
                 padding: '40px',
                 marginBottom: '60px',
-                border: '1px solid #2a2a2a',
+                border: '1px solid #e0e0e0',
               }}
             >
               <p
                 style={{
                   fontSize: '16px',
                   lineHeight: '1.7',
-                  color: '#e0e0e0',
+                  color: '#333',
                   margin: 0,
                   textAlign: 'left',
                   maxWidth: '800px',
@@ -1317,7 +1322,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   fontWeight: '600',
                   textAlign: 'center',
                   marginBottom: '40px',
-                  color: '#ffffff',
+                  color: '#111',
                 }}
               >
                 Key Features
@@ -1358,10 +1363,10 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   <div
                     key={index}
                     style={{
-                      backgroundColor: '#1a1a1a',
+                      backgroundColor: '#ffffff',
                       borderRadius: '12px',
                       padding: '24px',
-                      border: '1px solid #2a2a2a',
+                      border: '1px solid #e0e0e0',
                       transition: 'border-color 0.2s',
                     }}
                   >
@@ -1370,7 +1375,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                         fontSize: '18px',
                         fontWeight: '600',
                         marginBottom: '12px',
-                        color: '#ffffff',
+                        color: '#111',
                       }}
                     >
                       {feature.title}:
@@ -1379,7 +1384,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                       style={{
                         fontSize: '14px',
                         lineHeight: '1.6',
-                        color: '#a0a0a0',
+                        color: '#666',
                         margin: 0,
                       }}
                     >
@@ -1398,17 +1403,17 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   fontWeight: '600',
                   textAlign: 'center',
                   marginBottom: '40px',
-                  color: '#ffffff',
+                  color: '#111',
                 }}
               >
                 Pricing
               </h2>
               <div
                 style={{
-                  backgroundColor: '#1a1a1a',
+                  backgroundColor: '#ffffff',
                   borderRadius: '16px',
                   padding: '40px',
-                  border: '1px solid #2a2a2a',
+                  border: '1px solid #e0e0e0',
                   textAlign: 'center',
                   maxWidth: '500px',
                   margin: '0 auto',
@@ -1427,7 +1432,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                 <p
                   style={{
                     fontSize: '16px',
-                    color: '#e0e0e0',
+                    color: '#333',
                     lineHeight: '1.6',
                     margin: 0,
                   }}
@@ -1448,24 +1453,24 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   fontWeight: '600',
                   textAlign: 'center',
                   marginBottom: '40px',
-                  color: '#ffffff',
+                  color: '#111',
                 }}
               >
                 Privacy & Security
               </h2>
               <div
                 style={{
-                  backgroundColor: '#1a1a1a',
+                  backgroundColor: '#f9f9f9',
                   borderRadius: '16px',
                   padding: '40px',
-                  border: '1px solid #2a2a2a',
+                  border: '1px solid #e0e0e0',
                 }}
               >
                 <p
                   style={{
                     fontSize: '16px',
                     lineHeight: '1.7',
-                    color: '#e0e0e0',
+                    color: '#333',
                     marginBottom: '24px',
                     textAlign: 'left',
                   }}
@@ -1479,13 +1484,13 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   <p
                     style={{
                       fontSize: '14px',
-                      color: '#a0a0a0',
+                      color: '#666',
                       margin: '0 0 8px 0',
                       fontFamily: 'monospace',
-                      backgroundColor: '#0f0f0f',
+                      backgroundColor: '#fff',
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      border: '1px solid #2a2a2a',
+                      border: '1px solid #ddd',
                     }}
                   >
                     openid, email, profile
@@ -1493,7 +1498,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   <p
                     style={{
                       fontSize: '14px',
-                      color: '#e0e0e0',
+                      color: '#333',
                       margin: '8px 0 0 0',
                     }}
                   >
@@ -1504,13 +1509,13 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   <p
                     style={{
                       fontSize: '14px',
-                      color: '#a0a0a0',
+                      color: '#666',
                       margin: '0 0 8px 0',
                       fontFamily: 'monospace',
-                      backgroundColor: '#0f0f0f',
+                      backgroundColor: '#fff',
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      border: '1px solid #2a2a2a',
+                      border: '1px solid #ddd',
                     }}
                   >
                     https://www.googleapis.com/auth/drive.file
@@ -1518,7 +1523,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   <p
                     style={{
                       fontSize: '14px',
-                      color: '#e0e0e0',
+                      color: '#333',
                       margin: '8px 0 0 0',
                     }}
                   >
@@ -1532,7 +1537,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
                   style={{
                     fontSize: '14px',
                     lineHeight: '1.6',
-                    color: '#a0a0a0',
+                    color: '#666',
                     margin: 0,
                     textAlign: 'center',
                   }}

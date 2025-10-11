@@ -395,6 +395,7 @@ export interface proselenosConfig {
   selectedApiProvider: string;
   selectedAiModel: string;
   author_name: string;
+  isDarkMode?: boolean;
 }
 
 // Get or create the proselenos-config.json file
@@ -446,7 +447,8 @@ export async function getproselenosConfig(drive: any, rootFolderId: string): Pro
     },
     selectedApiProvider: "",
     selectedAiModel: "",
-    author_name: "Anonymous"
+    author_name: "Anonymous",
+    isDarkMode: false
   };
 
   await saveproselenosConfig(drive, rootFolderId, defaultConfig);
@@ -516,6 +518,12 @@ export async function updateProviderAndModel(drive: any, rootFolderId: string, p
 export async function updateSelectedModel(drive: any, rootFolderId: string, model: string): Promise<void> {
   const config = await getproselenosConfig(drive, rootFolderId);
   config.selectedAiModel = model;
+  await saveproselenosConfig(drive, rootFolderId, config);
+}
+
+export async function updateDarkMode(drive: any, rootFolderId: string, dark: boolean): Promise<void> {
+  const config = await getproselenosConfig(drive, rootFolderId);
+  config.isDarkMode = dark;
   await saveproselenosConfig(drive, rootFolderId, config);
 }
 

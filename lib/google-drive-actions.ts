@@ -17,6 +17,7 @@ import {
   updateCurrentProject,
   updateProviderAndModel,
   updateSelectedModel,
+  updateDarkMode,
   validateCurrentProject,
   loadProjectMetadata,
   saveProjectMetadata,
@@ -344,10 +345,26 @@ export async function updateSelectedModelAction(accessToken: string, rootFolderI
 
     const { rootFolder } = clients;
     await updateSelectedModel(clients.drive, rootFolder.id, model);
-    
+
     return { success: true, message: 'AI model updated successfully' };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to update AI model' };
+  }
+}
+
+export async function updateDarkModeAction(accessToken: string, rootFolderId: string, isDarkMode: boolean): Promise<ActionResult> {
+  try {
+    const clients = await getAuthenticatedClients(accessToken, rootFolderId);
+    if ('error' in clients) {
+      return { success: false, error: clients.error };
+    }
+
+    const { rootFolder } = clients;
+    await updateDarkMode(clients.drive, rootFolder.id, isDarkMode);
+
+    return { success: true, message: 'Theme preference updated successfully' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to update theme preference' };
   }
 }
 
