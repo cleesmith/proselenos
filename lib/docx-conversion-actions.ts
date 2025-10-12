@@ -59,6 +59,26 @@ export async function convertDocxBufferToTxt(buffer: ArrayBuffer): Promise<strin
 }
 
 /**
+ * Deletes all files with a specific name in a Google Drive folder.
+ * This prevents duplicate filenames when uploading new versions.
+ */
+async function deleteExistingFilesByName(
+  drive: any,
+  folderId: string,
+  fileName: string
+): Promise<void> {
+  const response = await drive.files.list({
+    q: `'${folderId}' in parents and name = '${fileName}' and trashed = false`,
+    fields: 'files(id)',
+  });
+
+  const files = response.data.files || [];
+  for (const file of files) {
+    await drive.files.delete({ fileId: file.id });
+  }
+}
+
+/**
  * Uploads a plain-text document to a specified folder in the user's Google Drive.
  * The caller must provide the destination file name (including the `.txt`
  * extension) and the Drive folder ID. The content is uploaded via a
@@ -77,6 +97,9 @@ export async function uploadTextToDrive(
   accessToken?: string
 ): Promise<{ fileId: string; fileName: string }> {
   const drive = await getDriveClient(accessToken);
+
+  // Delete any existing files with the same name
+  await deleteExistingFilesByName(drive, folderId, fileName);
 
   // Convert the string into a stream. The Drive API expects a stream when
   // uploading file content.
@@ -212,6 +235,9 @@ export async function convertDocxToTxtAction(
     authClient.setCredentials({ access_token: accessToken });
     const userDrive = google.drive({ version: 'v3', auth: authClient });
 
+    // Delete any existing files with the same name
+    await deleteExistingFilesByName(userDrive, folderId, outputFileName);
+
     const bufferStream = new Readable();
     bufferStream.push(text);
     bufferStream.push(null);
@@ -297,6 +323,9 @@ export async function convertTxtToDocxAction(
     const chapterCount = chapterMatches ? chapterMatches.length : 0;
 
     // Create a stream from the text content
+    // Delete any existing files with the same name
+    await deleteExistingFilesByName(driveClient, folderId, outputFileName);
+
     const bufferStream = new Readable();
     bufferStream.push(text);
     bufferStream.push(null);

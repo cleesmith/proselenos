@@ -14,9 +14,11 @@ interface UploadModalProps {
   isDarkMode: boolean;
   currentProject: string | null;
   selectedUploadFile: File | null;
+  uploadFileName: string;
   isUploading: boolean;
   onClose: () => void;
   onFileSelect: (file: File) => void;
+  onFileNameChange: (name: string) => void;
   onUpload: () => void;
 }
 
@@ -26,9 +28,11 @@ export default function UploadModal({
   isDarkMode,
   currentProject,
   selectedUploadFile,
+  uploadFileName,
   isUploading,
   onClose,
   onFileSelect,
+  onFileNameChange,
   onUpload
 }: UploadModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,13 +46,14 @@ export default function UploadModal({
       const allowedExtensions = ['.txt', '.docx', '.epub', '.pdf'];
       const fileName = file.name.toLowerCase();
       const isValidFile = allowedExtensions.some(ext => fileName.endsWith(ext));
-      
+
       if (!isValidFile) {
         showAlert('Please select a .txt, .docx, .epub, or .pdf file only.', 'warning', undefined, isDarkMode);
         return;
       }
-      
+
       onFileSelect(file);
+      onFileNameChange(file.name); // Set default filename
     }
   };
 
@@ -132,12 +137,43 @@ export default function UploadModal({
           </StyledSmallButton>
           
           {selectedUploadFile && (
-            <span style={{
-              fontSize: '14px',
-              color: theme.textMuted
-            }}>
-              Selected: {selectedUploadFile.name} ({Math.round(selectedUploadFile.size / 1024)}KB)
-            </span>
+            <div style={{ marginTop: '12px' }}>
+              <span style={{
+                fontSize: '14px',
+                color: theme.textMuted,
+                display: 'block',
+                marginBottom: '8px'
+              }}>
+                Selected: {selectedUploadFile.name} ({Math.round(selectedUploadFile.size / 1024)}KB)
+              </span>
+
+              <div style={{ marginTop: '12px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  color: theme.text,
+                  marginBottom: '6px'
+                }}>
+                  Save as (optional):
+                </label>
+                <input
+                  type="text"
+                  value={uploadFileName}
+                  onChange={(e) => onFileNameChange(e.target.value)}
+                  placeholder="Enter filename..."
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    backgroundColor: theme.inputBg,
+                    color: theme.text,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
           )}
         </div>
 

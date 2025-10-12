@@ -1807,9 +1807,11 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         isDarkMode={isDarkMode}
         currentProject={projectState.currentProject}
         selectedUploadFile={projectState.selectedUploadFile}
+        uploadFileName={projectState.uploadFileName}
         isUploading={projectState.isUploading}
         onClose={handleCloseUploadModal}
         onFileSelect={handleUploadFileSelect}
+        onFileNameChange={projectActions.setUploadFileName}
         onUpload={handlePerformUpload}
       />
 

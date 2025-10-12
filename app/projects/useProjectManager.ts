@@ -52,6 +52,7 @@ interface ProjectManagerState {
   // Upload state
   showUploadModal: boolean;
   selectedUploadFile: File | null;
+  uploadFileName: string;
   isUploading: boolean;
 
   // Local DOCX import state
@@ -129,6 +130,7 @@ interface ProjectManagerActions {
     setIsGoogleDriveOperationPending: (loading: boolean) => void
   ) => void;
   selectUploadFile: (file: File) => void;
+  setUploadFileName: (name: string) => void;
   performFileUpload: (session: any, rootFolderId: string, isDarkMode: boolean) => Promise<void>;
   setShowUploadModal: (show: boolean) => void;
 
@@ -174,6 +176,7 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
   // Upload state
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
+  const [uploadFileName, setUploadFileName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
   // Local DOCX import state
@@ -593,14 +596,15 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
 
       setIsUploading(true);
       setShowUploadModal(false);
-      setUploadStatus(`Uploading ${selectedUploadFile.name}...`);
+      setUploadStatus(`Uploading ${uploadFileName || selectedUploadFile.name}...`);
 
       try {
         const result = await uploadFileToProjectAction(
           session.accessToken,
           rootFolderId,
           selectedUploadFile,
-          currentProjectId
+          currentProjectId,
+          uploadFileName
         );
 
         if (result.success) {
@@ -622,9 +626,10 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
       } finally {
         setIsUploading(false);
         setSelectedUploadFile(null);
+        setUploadFileName('');
       }
     },
-    [selectedUploadFile, currentProjectId]
+    [selectedUploadFile, uploadFileName, currentProjectId]
   );
 
   const closeModal = useCallback(() => setShowModal(false), []);
@@ -669,6 +674,7 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
     isConvertingTxt,
     showUploadModal,
     selectedUploadFile,
+    uploadFileName,
     isUploading,
     showLocalDocxImportModal,
     isLocalDocxConverting
@@ -702,6 +708,7 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
       setSelectedTxtFile,
       handleFileUpload,
       selectUploadFile,
+      setUploadFileName,
       performFileUpload,
       setShowUploadModal,
       handleLocalDocxImport,

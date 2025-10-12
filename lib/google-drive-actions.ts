@@ -409,7 +409,7 @@ export async function saveProjectMetadataAction(accessToken: string, rootFolderI
   }
 }
 
-export async function uploadFileToProjectAction(accessToken: string, rootFolderId: string, file: File, projectFolderId: string): Promise<ActionResult> {
+export async function uploadFileToProjectAction(accessToken: string, rootFolderId: string, file: File, projectFolderId: string, customFileName?: string): Promise<ActionResult> {
   try {
     const clients = await getAuthenticatedClients(accessToken, rootFolderId);
     if ('error' in clients) {
@@ -449,8 +449,11 @@ export async function uploadFileToProjectAction(accessToken: string, rootFolderI
       return readable;
     };
     
+    // Use custom filename if provided, otherwise use original file name
+    const finalFileName = customFileName?.trim() || file.name;
+
     // Check if file already exists in the project folder
-    const existingQuery = `name='${file.name}' and '${projectFolderId}' in parents and trashed=false`;
+    const existingQuery = `name='${finalFileName}' and '${projectFolderId}' in parents and trashed=false`;
     const existingFiles = await drive.files.list({
       q: existingQuery,
       fields: 'files(id)'
@@ -481,7 +484,7 @@ export async function uploadFileToProjectAction(accessToken: string, rootFolderI
       // Create new file
       result = await drive.files.create({
         requestBody: {
-          name: file.name,
+          name: finalFileName,
           parents: [projectFolderId]
         },
         media,

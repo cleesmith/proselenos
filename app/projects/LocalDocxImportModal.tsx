@@ -38,6 +38,7 @@ export default function LocalDocxImportModal({
 }: LocalDocxImportModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [outputFileName, setOutputFileName] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
   if (!isOpen) return null;
@@ -53,6 +54,8 @@ export default function LocalDocxImportModal({
       }
 
       setSelectedFile(file);
+      // Set default output filename
+      setOutputFileName(file.name.replace(/\.docx$/i, '.txt'));
     }
   };
 
@@ -81,8 +84,8 @@ export default function LocalDocxImportModal({
 
       setUploadStatus('Uploading to Google Drive...');
 
-      // Derive a .txt file name from the original .docx file name
-      const txtFileName = selectedFile.name.replace(/\.docx$/i, '.txt');
+      // Use custom filename if provided, otherwise use default
+      const txtFileName = outputFileName.trim() || selectedFile.name.replace(/\.docx$/i, '.txt');
 
       // Upload to Google Drive using server action
       const uploadResult = await uploadTextToDrive(text, txtFileName, currentProjectId, accessToken);
@@ -100,6 +103,7 @@ export default function LocalDocxImportModal({
 
       // Clean up and close
       setSelectedFile(null);
+      setOutputFileName('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -202,15 +206,44 @@ export default function LocalDocxImportModal({
           </StyledSmallButton>
 
           {selectedFile && (
-            <div style={{
-              marginTop: '12px',
-              padding: '8px',
-              backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-              borderRadius: '4px',
-              fontSize: '14px',
-              color: theme.text
-            }}>
-              <strong>Selected:</strong> {selectedFile.name} ({Math.round(selectedFile.size / 1024)}KB)
+            <div style={{ marginTop: '12px' }}>
+              <div style={{
+                padding: '8px',
+                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                borderRadius: '4px',
+                fontSize: '14px',
+                color: theme.text,
+                marginBottom: '12px'
+              }}>
+                <strong>Selected:</strong> {selectedFile.name} ({Math.round(selectedFile.size / 1024)}KB)
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  color: theme.text,
+                  marginBottom: '6px'
+                }}>
+                  Save as (optional):
+                </label>
+                <input
+                  type="text"
+                  value={outputFileName}
+                  onChange={(e) => setOutputFileName(e.target.value)}
+                  placeholder="Enter filename..."
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    backgroundColor: theme.inputBg,
+                    color: theme.text,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
