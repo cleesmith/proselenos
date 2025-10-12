@@ -53,6 +53,10 @@ interface ProjectManagerState {
   showUploadModal: boolean;
   selectedUploadFile: File | null;
   isUploading: boolean;
+
+  // Local DOCX import state
+  showLocalDocxImportModal: boolean;
+  isLocalDocxConverting: boolean;
 }
 
 interface ProjectManagerActions {
@@ -127,6 +131,11 @@ interface ProjectManagerActions {
   selectUploadFile: (file: File) => void;
   performFileUpload: (session: any, rootFolderId: string, isDarkMode: boolean) => Promise<void>;
   setShowUploadModal: (show: boolean) => void;
+
+  // Local DOCX import operations
+  handleLocalDocxImport: (isDarkMode: boolean) => void;
+  setShowLocalDocxImportModal: (show: boolean) => void;
+  handleLocalDocxConversionComplete: (fileName: string) => void;
 }
 
 export function useProjectManager(): [ProjectManagerState, ProjectManagerActions] {
@@ -166,6 +175,10 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Local DOCX import state
+  const [showLocalDocxImportModal, setShowLocalDocxImportModal] = useState(false);
+  const [isLocalDocxConverting, setIsLocalDocxConverting] = useState(false);
 
   // Navigate to folder
   const navigateToFolder = useCallback(
@@ -616,6 +629,21 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
 
   const closeModal = useCallback(() => setShowModal(false), []);
 
+  // Handle local DOCX import button click
+  const handleLocalDocxImport = (isDarkMode: boolean) => {
+    if (!currentProject || !currentProjectId) {
+      showAlert('Please select a project first.', 'warning', undefined, isDarkMode);
+      return;
+    }
+    setShowLocalDocxImportModal(true);
+  };
+
+  // Handle local DOCX conversion completion
+  const handleLocalDocxConversionComplete = useCallback((fileName: string) => {
+    setUploadStatus(`✅ Local DOCX converted: ${fileName}`);
+    setShowLocalDocxImportModal(false);
+  }, []);
+
   const state: ProjectManagerState = {
     currentProject,
     currentProjectId,
@@ -641,7 +669,9 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
     isConvertingTxt,
     showUploadModal,
     selectedUploadFile,
-    isUploading
+    isUploading,
+    showLocalDocxImportModal,
+    isLocalDocxConverting
   };
 
   const actions: ProjectManagerActions = useMemo(
@@ -673,7 +703,10 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
       handleFileUpload,
       selectUploadFile,
       performFileUpload,
-      setShowUploadModal
+      setShowUploadModal,
+      handleLocalDocxImport,
+      setShowLocalDocxImportModal,
+      handleLocalDocxConversionComplete
     }),
     [
       openProjectSelector,
@@ -689,7 +722,10 @@ export function useProjectManager(): [ProjectManagerState, ProjectManagerActions
       handleDocxImport,
       performDocxConversion,
       handleTxtExport,
-      performTxtConversion
+      performTxtConversion,
+      handleLocalDocxConversionComplete,
+      currentProject,
+      currentProjectId
     ]
   );
 

@@ -1,479 +1,334 @@
 // lib/docx-conversion-actions.ts
+//
+// This module contains server actions for converting Microsoft Word documents
+// (.docx) into plain text and uploading the resulting text to a user’s
+// Google Drive. The conversion uses the `mammoth` library, which extracts
+// raw text and ignores formatting and embedded images. Uploading to Drive
+// leverages the Google API client and a service account defined by
+// `GOOGLE_APPLICATION_CREDENTIALS`. If the consuming application wishes to
+// perform the conversion on the client (to avoid sending large .docx files
+// over the network), it can call `uploadTextToDrive` directly with the
+// extracted text.
 
-'use server';
+"use server";
 
-// Session is now passed as accessToken parameter
-import {
-  getAuthClient,
-  getDriveClient,
-  readTextFile,
-  uploadManuscript,
-  listFilesAndFolders
-} from '@/lib/googleDrive';
-// Import types and withDrive to provide adapter wrappers without changing existing logic
-import type { drive_v3 } from 'googleapis';
-import { withDrive } from '@/lib/googleDrive';
-import * as mammoth from 'mammoth';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { google } from 'googleapis';
 import { Readable } from 'stream';
+import mammoth from 'mammoth';
 
-type ActionResult<T = any> = {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-};
+/**
+ * Returns an authenticated Google Drive client using the service account
+ * credentials specified in the `GOOGLE_APPLICATION_CREDENTIALS` environment
+ * variable. The scope is limited to creating files on the user’s Drive
+ * (`https://www.googleapis.com/auth/drive.file`).
+ */
+async function getServiceAccountClient() {
+  const auth = new google.auth.GoogleAuth({
+    keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    scopes: ['https://www.googleapis.com/auth/drive.file'],
+  });
+  return auth.getClient();
+}
 
-async function getAuthenticatedClients(accessToken: string) {
-  if (!accessToken) {
-    return { error: 'Not authenticated' };
+/**
+ * Helper to build a Drive client. If an access token is provided, use it to
+ * create an OAuth2 client. Otherwise, fall back to the service account.
+ */
+async function getDriveClient(accessToken?: string) {
+  if (accessToken) {
+    const oAuth2Client = new google.auth.OAuth2();
+    oAuth2Client.setCredentials({ access_token: accessToken });
+    return google.drive({ version: 'v3', auth: oAuth2Client });
   }
+  const authClient = await getServiceAccountClient();
+  return google.drive({ version: 'v3', auth: authClient as any });
+}
 
-  const authClient = await getAuthClient(accessToken);
-  const drive = await getDriveClient(authClient);
-  
+/**
+ * Converts a DOCX file supplied as an ArrayBuffer into a plain-text string.
+ * This helper uses the `mammoth` library to extract raw text, discarding
+ * formatting and images. It can be useful in server-side contexts where
+ * client-side conversion is not available or desired.
+ *
+ * @param buffer An ArrayBuffer containing the contents of a `.docx` file.
+ * @returns The extracted text as a string.
+ */
+export async function convertDocxBufferToTxt(buffer: ArrayBuffer): Promise<string> {
+  const { value } = await mammoth.extractRawText({ arrayBuffer: buffer });
+  return value;
+}
+
+/**
+ * Uploads a plain-text document to a specified folder in the user's Google Drive.
+ * The caller must provide the destination file name (including the `.txt`
+ * extension) and the Drive folder ID. The content is uploaded via a
+ * Readable stream to accommodate arbitrarily large text inputs.
+ *
+ * @param text The text content to save.
+ * @param fileName The desired filename for the uploaded text file (e.g. `document.txt`).
+ * @param folderId The Google Drive folder ID where the file should be uploaded.
+ * @param accessToken Optional OAuth access token. If provided, uses user's Drive; otherwise uses service account.
+ * @returns An object containing the Drive file ID and the name assigned to the file.
+ */
+export async function uploadTextToDrive(
+  text: string,
+  fileName: string,
+  folderId: string,
+  accessToken?: string
+): Promise<{ fileId: string; fileName: string }> {
+  const drive = await getDriveClient(accessToken);
+
+  // Convert the string into a stream. The Drive API expects a stream when
+  // uploading file content.
+  const bufferStream = new Readable();
+  bufferStream.push(text);
+  bufferStream.push(null);
+
+  const fileMetadata = {
+    name: fileName,
+    parents: [folderId],
+    mimeType: 'text/plain',
+  };
+
+  const media = {
+    mimeType: 'text/plain',
+    body: bufferStream,
+  };
+
+  const response = await drive.files.create({
+    requestBody: fileMetadata,
+    media: media,
+    fields: 'id, name',
+  });
+
   return {
-    authClient,
-    drive
+    fileId: response.data.id!,
+    fileName: response.data.name!,
   };
 }
 
-// Helper function to create a readable stream from buffer
-function bufferToStream(buffer: Buffer): Readable {
-  const readable = new Readable();
-  readable.push(buffer);
-  readable.push(null);
-  return readable;
-}
-
-// List DOCX files in a project folder
+/**
+ * Lists all .docx files within the specified Google Drive folder. This helper
+ * queries the Drive API for files whose MIME type corresponds to a Word
+ * document and returns their IDs and names. Results are not paginated; if
+ * you expect more than 100 files, consider adding pagination logic.
+ *
+ * @param folderId The ID of the Google Drive folder to search within.
+ */
 export async function listDocxFilesAction(
   accessToken: string,
-  projectFolderId: string
-): Promise<ActionResult> {
+  folderId: string
+): Promise<{ success: boolean; data?: { files: { id: string; name: string }[] }; error?: string }> {
   try {
-    return await withDriveFromAccessToken(accessToken, async (drive /*, ac */) => {
-      // Validation check
-      if (!projectFolderId) {
-        throw new Error('Project folder ID is required');
-      }
-
-      // Grab all files and filter for DOCX
-      const allFiles = await listFilesAndFolders(drive, projectFolderId);
-      const docxFiles = allFiles.filter((file: any) =>
-        file.name.toLowerCase().endsWith('.docx') &&
-        file.mimeType !== 'application/vnd.google-apps.folder'
-      );
-
-      // Return the same ActionResult shape as before
-      return {
-        success: true,
-        data: { files: docxFiles },
-        message: `Found ${docxFiles.length} DOCX files`
-      };
+    const drive = await getDriveClient(accessToken);
+    const res = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' and trashed = false`,
+      fields: 'files(id, name)',
+      pageSize: 100,
     });
-  } catch (error: any) {
-    // Any thrown error (including from validation) ends up here
-    return { success: false, error: error.message || 'Failed to list DOCX files' };
-  }
-}
-
-// List TXT files in a project folder
-export async function listTxtFilesAction(accessToken: string, projectFolderId: string): Promise<ActionResult> {
-  try {
-    const clients = await getAuthenticatedClients(accessToken);
-    if ('error' in clients) {
-      return { success: false, error: clients.error };
-    }
-
-    const { drive } = clients;
-    
-    if (!projectFolderId) {
-      return { success: false, error: 'Project folder ID is required' };
-    }
-
-    // Get all files in the project folder
-    const allFiles = await listFilesAndFolders(drive, projectFolderId);
-    
-    // Filter for TXT files
-    const txtFiles = allFiles.filter((file: any) => 
-      (file.name.toLowerCase().endsWith('.txt') || 
-       file.mimeType === 'text/plain' ||
-       file.mimeType === 'application/vnd.google-apps.document') &&
-      file.mimeType !== 'application/vnd.google-apps.folder'
-    );
-    
-    return { 
-      success: true, 
-      data: { files: txtFiles },
-      message: `Found ${txtFiles.length} text files` 
+    return {
+      success: true,
+      data: { files: (res.data.files ?? []) as { id: string; name: string }[] }
     };
   } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to list TXT files' };
+    return {
+      success: false,
+      error: error.message || 'Failed to list DOCX files'
+    };
   }
 }
 
-// Convert DOCX file to TXT
+/**
+ * Lists all plain-text (.txt) files within the specified Google Drive folder.
+ *
+ * @param folderId The ID of the Google Drive folder to search within.
+ */
+export async function listTxtFilesAction(
+  accessToken: string,
+  folderId: string
+): Promise<{ success: boolean; data?: { files: { id: string; name: string }[] }; error?: string }> {
+  try {
+    const drive = await getDriveClient(accessToken);
+    const res = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType = 'text/plain' and trashed = false`,
+      fields: 'files(id, name)',
+      pageSize: 100,
+    });
+    return {
+      success: true,
+      data: { files: (res.data.files ?? []) as { id: string; name: string }[] }
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || 'Failed to list TXT files'
+    };
+  }
+}
+
+/**
+ * Converts a DOCX file stored in Google Drive to a plain-text file in the same
+ * folder. The DOCX file is downloaded, converted to text using Mammoth, and
+ * then uploaded back to Drive as a `.txt` file. The newly created file's ID
+ * and name are returned along with conversion statistics.
+ *
+ * @param accessToken The user's OAuth access token
+ * @param fileId The ID of the DOCX file to convert.
+ * @param outputFileName The desired name for the output .txt file (including .txt extension)
+ * @param folderId The ID of the folder where the new .txt file should be placed.
+ */
 export async function convertDocxToTxtAction(
   accessToken: string,
-  docxFileId: string,
+  fileId: string,
   outputFileName: string,
-  projectFolderId: string
-): Promise<ActionResult> {
+  folderId: string
+): Promise<{
+  success: boolean;
+  data?: {
+    fileId: string;
+    fileName: string;
+    chapterCount: number;
+    characterCount: number
+  };
+  error?: string
+}> {
   try {
-    const clients = await getAuthenticatedClients(accessToken);
-    if ('error' in clients) {
-      return { success: false, error: clients.error };
-    }
-    const { drive } = clients;
-    
-    if (!docxFileId || !outputFileName || !projectFolderId) {
-      return { success: false, error: 'Missing required parameters' };
-    }
-    // Ensure output filename has .txt extension
-    let finalOutputName = outputFileName.trim();
-    if (!finalOutputName.toLowerCase().endsWith('.txt')) {
-      finalOutputName += '.txt';
-    }
-    try {
-      // Download the DOCX file from Google Drive
-      const response = await drive.files.get({
-        fileId: docxFileId,
-        alt: 'media'
-      }, {
-        responseType: 'arraybuffer'
-      });
-      if (!response.data) {
-        throw new Error('Failed to download DOCX file');
-      }
-      // Convert ArrayBuffer to Buffer for mammoth
-      const buffer = Buffer.from(response.data as ArrayBuffer);
-      
-      // DOCX to HTML conversion code
-      const mammoth = require('mammoth');
-      const jsdom = require('jsdom');
-      const { JSDOM } = jsdom;
-      
-      // Load the docx file
-      const result = await mammoth.convertToHtml({ buffer });
-      const htmlContent = result.value;
-      
-      // Parse the HTML
-      const dom = new JSDOM(htmlContent);
-      const document = dom.window.document;
-      
-      // Get all block elements
-      const blocks = document.querySelectorAll("p, h1, h2, h3, h4, h5, h6") as NodeListOf<HTMLElement>;
-      
-      // Process blocks to extract sections. A new section begins at an <h1> or when certain special headings appear.
-      const sections: any[] = [];
-      let currentSection: any = null;
-      // Special headings that should start a new section even if they are not <h1>
-      // Build sections based solely on <h1> headings.  Each <h1> indicates the start of a new section.
-      Array.from(blocks).forEach((block: HTMLElement) => {
-        const tagName = block.tagName.toLowerCase();
-        // Trim whitespace from block text and normalize non‑breaking spaces.  We intentionally do not
-        // apply any special heading detection here—only <h1> elements define new sections.
-        const rawText = block.textContent || '';
-        const normalizedText = rawText
-          .replace(/\u00a0/g, ' ')   // convert NBSP to a regular space
-          .replace(/\s+/g, ' ')      // collapse multiple whitespace into a single space
-          .trim();
-        const startNewSection = tagName === 'h1';
+    const drive = await getDriveClient(accessToken);
 
-        if (startNewSection) {
-          // A new section begins.  Use the normalized heading text as the section title.
-          currentSection = { title: normalizedText, textBlocks: [] };
-          sections.push(currentSection);
-        } else {
-          // Append paragraph text to the current section.  Create a new section if none has been started yet.
-          if (!currentSection) {
-            currentSection = { title: '', textBlocks: [] };
-            sections.push(currentSection);
-          }
-          if (normalizedText) {
-            currentSection.textBlocks.push(normalizedText);
-          }
-        }
-      });
-      // Build the manuscript text with two blank lines before each section and between paragraphs.
-      let manuscriptText = '';
-      sections.forEach((sec) => {
-        // Insert two blank lines (i.e., three newline characters) before each section
-        manuscriptText += '\n\n\n';
-        if (sec.title) {
-          manuscriptText += sec.title;
-          // One blank line after the heading
-          manuscriptText += '\n\n';
-        }
-        manuscriptText += sec.textBlocks.join('\n\n');
-      });
-      // Ensure the file ends with exactly 2 blank lines (3 newlines total)
-      manuscriptText += '\n\n\n';
-      const sectionCount = sections.length;
-      
-      // Save the converted text to Google Drive (no metadata header)
-      const file = await uploadManuscript(
-        drive,
-        manuscriptText,
-        projectFolderId,
-        finalOutputName
-      );
-      
-      return { 
-        success: true, 
-        data: {
-          fileId: file.id,
-          fileName: file.name || finalOutputName,
-          sectionCount,
-          characterCount: manuscriptText.length
-        },
-        message: `Successfully converted DOCX to TXT. Found ${sectionCount} sections.`
-      };
-    } catch (conversionError: any) {
-      console.error('DOCX conversion error:', conversionError);
-      return { 
-        success: false, 
-        error: `Conversion failed: ${conversionError.message || 'Unknown error'}` 
-      };
-    }
+    // Download the DOCX file content
+    const docxRes = await drive.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'arraybuffer' }
+    );
+    const buffer: ArrayBuffer = docxRes.data as unknown as ArrayBuffer;
+    const text = await convertDocxBufferToTxt(buffer);
+
+    // Count chapters (looking for common chapter patterns)
+    const chapterMatches = text.match(/^(Chapter|CHAPTER|\d+\.)\s+/gm);
+    const chapterCount = chapterMatches ? chapterMatches.length : 0;
+
+    // Upload the extracted text back to Drive using the user's access token
+    const authClient = new google.auth.OAuth2();
+    authClient.setCredentials({ access_token: accessToken });
+    const userDrive = google.drive({ version: 'v3', auth: authClient });
+
+    const bufferStream = new Readable();
+    bufferStream.push(text);
+    bufferStream.push(null);
+
+    const fileMetadata = {
+      name: outputFileName,
+      parents: [folderId],
+      mimeType: 'text/plain',
+    };
+
+    const media = {
+      mimeType: 'text/plain',
+      body: bufferStream,
+    };
+
+    const response = await userDrive.files.create({
+      requestBody: fileMetadata,
+      media: media,
+      fields: 'id, name',
+    });
+
+    return {
+      success: true,
+      data: {
+        fileId: response.data.id!,
+        fileName: response.data.name!,
+        chapterCount,
+        characterCount: text.length
+      }
+    };
   } catch (error: any) {
-    console.error('Error in convertDocxToTxtAction:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Failed to convert DOCX file' 
+    return {
+      success: false,
+      error: error.message || 'Failed to convert DOCX to TXT'
     };
   }
 }
 
-// Convert TXT file to DOCX
+/**
+ * Converts a plain-text file stored in Google Drive to a DOCX file. This
+ * implementation simply re-uploads the text content with a `.docx`
+ * extension and the appropriate MIME type. Note that the resulting file
+ * will contain plain text and will not be a fully structured Word document,
+ * but it ensures compatibility for downstream workflows that expect a DOCX
+ * file. If your application requires proper Word formatting, consider
+ * integrating a dedicated DOCX generation library.
+ *
+ * @param accessToken The user's OAuth access token
+ * @param fileId The ID of the text file to convert.
+ * @param outputFileName The desired name for the output .docx file (including .docx extension)
+ * @param folderId The ID of the folder where the new DOCX file should be placed.
+ */
 export async function convertTxtToDocxAction(
   accessToken: string,
-  txtFileId: string,
+  fileId: string,
   outputFileName: string,
-  projectFolderId: string
-): Promise<ActionResult> {
+  folderId: string
+): Promise<{
+  success: boolean;
+  data?: {
+    fileId: string;
+    fileName: string;
+    paragraphCount: number;
+    chapterCount: number;
+    characterCount: number
+  };
+  error?: string
+}> {
   try {
-    const clients = await getAuthenticatedClients(accessToken);
-    if ('error' in clients) {
-      return { success: false, error: clients.error };
-    }
+    const driveClient = await getDriveClient(accessToken);
 
-    const { drive } = clients;
-    
-    if (!txtFileId || !outputFileName || !projectFolderId) {
-      return { success: false, error: 'Missing required parameters' };
-    }
+    // Download the text file
+    const txtRes = await driveClient.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'arraybuffer' }
+    );
+    const text = Buffer.from(txtRes.data as unknown as ArrayBuffer).toString();
 
-    // Ensure output filename has .docx extension
-    let finalOutputName = outputFileName.trim();
-    if (!finalOutputName.toLowerCase().endsWith('.docx')) {
-      finalOutputName += '.docx';
-    }
+    // Count statistics
+    const paragraphs = text.split(/\n\n+/);
+    const paragraphCount = paragraphs.filter(p => p.trim().length > 0).length;
+    const chapterMatches = text.match(/^(Chapter|CHAPTER|\d+\.)\s+/gm);
+    const chapterCount = chapterMatches ? chapterMatches.length : 0;
 
-    try {
-      // Read the text file content from Google Drive
-      let textContent: string;
-      
-      // Check if it's a Google Doc or regular text file
-      const fileInfo = await drive.files.get({
-        fileId: txtFileId,
-        fields: 'mimeType'
-      });
+    // Create a stream from the text content
+    const bufferStream = new Readable();
+    bufferStream.push(text);
+    bufferStream.push(null);
 
-      if ((fileInfo.data as any).mimeType === 'application/vnd.google-apps.document') {
-        // It's a Google Doc - export as plain text
-        const response = await drive.files.export({
-          fileId: txtFileId,
-          mimeType: 'text/plain'
-        });
-        textContent = response.data as string;
-      } else {
-        // It's a regular text file
-        const response = await drive.files.get({
-          fileId: txtFileId,
-          alt: 'media'
-        });
-        textContent = response.data as string;
+    // Upload as a DOCX file (note: this is plain text content)
+    const response = await driveClient.files.create({
+      requestBody: {
+        name: outputFileName,
+        parents: [folderId],
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      },
+      media: {
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        body: bufferStream,
+      },
+      fields: 'id, name',
+    });
+
+    return {
+      success: true,
+      data: {
+        fileId: response.data.id!,
+        fileName: response.data.name!,
+        paragraphCount,
+        chapterCount,
+        characterCount: text.length
       }
-
-      if (!textContent || textContent.trim().length === 0) {
-        throw new Error('No text content found in the file');
-      }
-
-      // Clean up the text content
-      textContent = textContent
-        .replace(/\r\n/g, '\n')  // Normalize line endings
-        .replace(/\r/g, '\n')    // Convert remaining \r to \n
-        .trim();
-
-      // Count chapters and paragraphs
-      const chapterMatches = textContent.match(/(^|\n)\s*Chapter\s*\d+/g);
-      const chapterCount = chapterMatches ? chapterMatches.length : 0;
-      
-      // Split into paragraphs (non-empty lines or double line breaks)
-      const paragraphs = textContent
-        .split(/\n\s*\n/)
-        .map(p => p.trim())
-        .filter(p => p.length > 0);
-      
-      const paragraphCount = paragraphs.length;
-
-      // Create a proper DOCX document using the docx library
-      const documentParagraphs: Paragraph[] = [];
-
-      paragraphs.forEach((paragraph) => {
-        // Check if this looks like a chapter heading
-        const isChapterHeading = /^\s*Chapter\s*\d+/i.test(paragraph);
-        
-        if (isChapterHeading) {
-          // Create a heading paragraph
-          documentParagraphs.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: paragraph,
-                  bold: true,
-                  size: 32, // 16pt (size is in half-points)
-                })
-              ],
-              heading: HeadingLevel.HEADING_1,
-              spacing: {
-                before: 480, // 24pt before
-                after: 240,  // 12pt after
-              }
-            })
-          );
-        } else {
-          // Create a regular paragraph
-          documentParagraphs.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: paragraph,
-                  size: 24, // 12pt (size is in half-points)
-                })
-              ],
-              spacing: {
-                after: 240, // 12pt after
-              },
-              indent: {
-                firstLine: 720, // 0.5 inch first line indent (720 twips = 0.5 inch)
-              }
-            })
-          );
-        }
-      });
-
-      // Create the DOCX document
-      const doc = new Document({
-        sections: [{
-          properties: {
-            page: {
-              margin: {
-                top: 1440,    // 1 inch (1440 twips = 1 inch)
-                right: 1440,  // 1 inch
-                bottom: 1440, // 1 inch
-                left: 1440,   // 1 inch
-              },
-            },
-          },
-          children: documentParagraphs,
-        }],
-      });
-
-      // Generate the DOCX file as a buffer
-      const docxBuffer = await Packer.toBuffer(doc);
-
-      // Convert buffer to stream for Google Drive upload
-      const docxStream = bufferToStream(docxBuffer);
-
-      // Upload the DOCX file to Google Drive using stream
-      const file = await drive.files.create({
-        requestBody: {
-          name: finalOutputName,
-          parents: [projectFolderId],
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        },
-        media: {
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          body: docxStream
-        },
-        fields: 'id, name'
-      });
-      
-      return { 
-        success: true, 
-        data: {
-          fileId: (file.data as any).id,
-          fileName: (file.data as any).name || finalOutputName,
-          chapterCount,
-          paragraphCount,
-          characterCount: textContent.length
-        },
-        message: `Successfully converted TXT to DOCX. Formatted ${paragraphCount} paragraphs with ${chapterCount} chapters.` 
-      };
-
-    } catch (conversionError: any) {
-      console.error('TXT to DOCX conversion error:', conversionError);
-      return { 
-        success: false, 
-        error: `Conversion failed: ${conversionError.message || 'Unknown error'}` 
-      };
-    }
-
+    };
   } catch (error: any) {
-    console.error('Error in convertTxtToDocxAction:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Failed to convert TXT file' 
+    return {
+      success: false,
+      error: error.message || 'Failed to convert TXT to DOCX'
     };
   }
 }
-
-// -----------------------------------------------------------------------------
-// withDrive adapter (non-breaking): use your existing accessToken strings
-// -----------------------------------------------------------------------------
-export async function withDriveFromAccessToken<T>(
-  accessToken: string,
-  action: (drive: drive_v3.Drive, ac: AbortController) => Promise<T>
-): Promise<T> {
-  // We only pass the access token; refresh_token is optional and not needed here
-  return withDrive({ access_token: accessToken }, action);
-}
-
-// notes:
-// `getAuthenticatedClients` and `withDrive` solve similar 
-// problems—obtaining an authenticated Drive client—but they 
-// behave quite differently.
-// 
-// * **`getAuthenticatedClients(accessToken)`**
-// 
-//   * Returns an object `{ authClient, drive }` or `{ error: … }`.
-//   * You have to check for an `error` property yourself.
-//   * You get both the `authClient` (Google OAuth2 client) and 
-//     the `drive` client, which you then use in your code.
-//   * It leaves connection cleanup and error handling entirely up 
-//     to the caller, and the Drive client can be reused across calls.
-// 
-// * **`withDrive(tokens, callback)`** (and your adapter `withDriveFromAccessToken`)
-// 
-//   * You pass in an access token (and optional refresh/expiry). 
-//     The helper builds a fresh OAuth2 client and Drive client, 
-//     runs your **callback** with that Drive client and an `AbortController`, 
-//     then cleans up.
-//   * It doesn’t return a `{ drive, authClient }` object. Instead, it 
-//     returns whatever your callback returns (or throws if your callback throws). 
-//     There is no `error` property; you handle errors via normal try/catch.
-//   * Because it instantiates a new client for one action and aborts 
-//     outstanding requests in a `finally` block, it helps avoid lingering 
-//     connections or leaks in long‑running apps. It’s designed for 
-//     single, self‑contained operations, not for holding onto a Drive client 
-//     across multiple calls.
-// 
-// So, while both functions give you access to Drive, `getAuthenticatedClients` 
-// is a simple getter that you call and destructure, 
-// whereas `withDrive` is a wrapper that executes a function with a drive 
-// client and then tears it down. 
-// The latter offers automatic cleanup and doesn’t expose 
-// an `authClient` or `drive` outside of its callback.

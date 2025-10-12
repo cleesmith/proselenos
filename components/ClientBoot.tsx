@@ -21,6 +21,7 @@ import EditorModal from '../app/proselenos/EditorModal';
 import ProjectSection from '../app/projects/ProjectSection';
 import ProjectSelectorModal from '../app/projects/ProjectSelectorModal';
 import ImportDocxModal from '../app/projects/ImportDocxModal';
+import LocalDocxImportModal from '../app/projects/LocalDocxImportModal';
 import ExportModal from '../app/projects/ExportModal';
 import UploadModal from '../app/projects/UploadModal';
 import { useProjectManager } from '../app/projects/useProjectManager';
@@ -764,7 +765,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   };
 
   const handleDocxImport = () => {
-    projectActions.handleDocxImport(session, isDarkMode, setIsGoogleDriveOperationPending);
+    projectActions.handleLocalDocxImport(isDarkMode);
   };
   
   const handleTxtExport = () => {
@@ -1811,7 +1812,21 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
         onFileSelect={handleUploadFileSelect}
         onUpload={handlePerformUpload}
       />
-      
+
+      {/* Local DOCX Import Modal */}
+      <LocalDocxImportModal
+        isOpen={projectState.showLocalDocxImportModal}
+        theme={theme}
+        isDarkMode={isDarkMode}
+        currentProject={projectState.currentProject}
+        currentProjectId={projectState.currentProjectId}
+        accessToken={session?.accessToken || null}
+        isConverting={projectState.isLocalDocxConverting}
+        onClose={() => projectActions.setShowLocalDocxImportModal(false)}
+        onConversionComplete={projectActions.handleLocalDocxConversionComplete}
+        setUploadStatus={projectActions.setUploadStatus}
+      />
+
       {/* AI Tools File Selector Modal */}
       <FileSelectorModal
         isOpen={toolsState.showFileSelector}
