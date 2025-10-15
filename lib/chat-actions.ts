@@ -18,9 +18,14 @@ export async function getChatProviderModelAction(): Promise<{ providerModel: str
 
 /**
  * Server action to get chat response
+ * @param messages - Array of chat messages
+ * @param customModel - Optional custom model to use (for TabChat-specific model)
  */
-export async function getChatResponseAction(messages: ChatMessage[]): Promise<ChatResponse> {
-  return await getChatResponseInternal(messages);
+export async function getChatResponseAction(
+  messages: ChatMessage[], 
+  customModel?: string
+): Promise<ChatResponse> {
+  return await getChatResponseInternal(messages, customModel);
 }
 
 /**

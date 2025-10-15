@@ -3,9 +3,8 @@
 'use client';
 
 import React from 'react';
-import { showAlert } from '@/app/shared/alerts';
 import { createRoot } from 'react-dom/client';
-import SimpleChatModal from './SimpleChatModal';
+import TabChatModal from './TabChatModal';
 import StyledSmallButton from '@/components/StyledSmallButton';
 import { getTheme } from '@/app/shared/theme';
 
@@ -18,7 +17,7 @@ interface ChatPopoutButtonProps {
 }
 
 /**
- * A button that opens the SimpleChatModal in a separate browser window.
+ * A button that opens the TabChatModal in a separate browser window.
  * The pop‑out window listens for the main window unloading and closes itself
  * to avoid leaving a non‑functional chat open after the parent is gone.
  */
@@ -33,7 +32,7 @@ export default function ChatPopoutButton({
 
   const openChatWindow = () => {
     if (!currentProject || !currentProjectId) {
-      showAlert('Please select a project first', 'warning', undefined, isDarkMode);
+      // No alert - user can see the button is disabled
       return;
     }
     const chatWindow = window.open('', '_blank');
@@ -44,7 +43,7 @@ export default function ChatPopoutButton({
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Chat</title>
+            <title>TabChat</title>
             <style>
               html, body { height: 100%; margin: 0; }
               #chat-root { height: 100%; display: flex; flex-direction: column; }
@@ -80,7 +79,7 @@ export default function ChatPopoutButton({
     };
 
     root.render(
-      <SimpleChatModal
+      <TabChatModal
         isOpen={true}
         onClose={handleClose}
         isDarkMode={isDarkMode}

@@ -41,8 +41,10 @@ export async function getProviderModelInfoInternal(): Promise<{ providerModel: s
 
 /**
  * Internal function to get chat response - NOT a public API endpoint
+ * @param messages - Array of chat messages
+ * @param customModel - Optional custom model to use (for TabChat-specific model selection)
  */
-export async function getChatResponseInternal(messages: ChatMessage[]): Promise<ChatResponse> {
+export async function getChatResponseInternal(messages: ChatMessage[], customModel?: string): Promise<ChatResponse> {
   const session: any = await getServerSession(authOptions);
   
   if (!session || !session.accessToken) {
@@ -56,9 +58,18 @@ export async function getChatResponseInternal(messages: ChatMessage[]): Promise<
   }
 
   try {
-    // Get provider and model info
-    const providerInfo: { provider: AIProvider; model: string } = await getCurrentProviderAndModel(session.accessToken as string);
-    const providerModel: string = `${providerInfo.provider === 'openrouter' ? 'OpenRouter' : providerInfo.provider}: ${providerInfo.model.replace(/^[^/]+\//, '')}`;
+    let providerInfo: { provider: AIProvider; model: string };
+    let providerModel: string;
+    
+    // If customModel is provided, use it directly (for TabChat)
+    if (customModel) {
+      providerInfo = { provider: 'openrouter', model: customModel };
+      providerModel = `TabChat: ${customModel.replace(/^[^/]+\//, '')}`;
+    } else {
+      // Otherwise get from settings (for regular chat)
+      providerInfo = await getCurrentProviderAndModel(session.accessToken as string);
+      providerModel = `${providerInfo.provider === 'openrouter' ? 'OpenRouter' : providerInfo.provider}: ${providerInfo.model.replace(/^[^/]+\//, '')}`;
+    }
 
     // Create AI service instance for direct API call
     const userId: string = session?.user?.id || 'anonymous';
