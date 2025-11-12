@@ -48,6 +48,7 @@ import {
   readGoogleDriveFileAction,
 } from '@/lib/google-drive-actions';
 import { hasApiKeyAction } from '@/lib/api-key-actions';
+import { ensureUserGitHubRepoAction } from '@/lib/github-repo-actions';
 import ProjectSettingsModal, { ProjectMetadata } from '../app/projects/ProjectSettingsModal';
 import type { InitPayloadForClient } from '../app/lib/drive/fastInitServer';
 
@@ -81,6 +82,8 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
   const [hasCheckedToolPrompts, setHasCheckedToolPrompts] = useState(false);
   const [isInstallingToolPrompts, setIsInstallingToolPrompts] = useState(false);
   const [isGoogleDriveReady, setIsGoogleDriveReady] = useState(false);
+  const [isGitHubRepoReady, setIsGitHubRepoReady] = useState(false);
+  const [hasCheckedGitHub, setHasCheckedGitHub] = useState(false);
   const [hasShownReadyModal, setHasShownReadyModal] = useState(false);
   const [isSystemInitializing, setIsSystemInitializing] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -330,10 +333,49 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     isInstallingToolPrompts,
   ]);
 
+  // Initialize GitHub repo for user
+  useEffect(() => {
+    const initGitHubRepo = async () => {
+      if (!session?.user?.id || hasCheckedGitHub) return;
+
+      try {
+        const result = await ensureUserGitHubRepoAction(session.user.id);
+
+        if (!result.success) {
+          // FAIL HARD - show error and block app
+          setInitFailed(true);
+          showStickyErrorWithLogout(
+            'GitHub Storage Failed',
+            `Failed to initialize GitHub storage: ${result.error}\n\nPlease ensure GITHUB_PAT and GITHUB_OWNER are configured correctly.`,
+            isDarkMode
+          );
+          return;
+        }
+
+        // Success - log the result
+        console.log('GitHub repo initialized:', result.data);
+        setIsGitHubRepoReady(true);
+      } catch (error) {
+        // FAIL HARD
+        setInitFailed(true);
+        showStickyErrorWithLogout(
+          'GitHub Storage Failed',
+          `Error initializing GitHub storage: ${error instanceof Error ? error.message : String(error)}`,
+          isDarkMode
+        );
+      } finally {
+        setHasCheckedGitHub(true);
+      }
+    };
+
+    initGitHubRepo();
+  }, [session?.user?.id, hasCheckedGitHub, isDarkMode]);
+
   // Helper function to get loading status
   const getLoadingStatus = () => {
     const checks = [
       { name: 'Google Drive', ready: isGoogleDriveReady },
+      { name: 'GitHub Storage', ready: isGitHubRepoReady },
       { name: 'AI Tools', ready: toolsState.toolsReady },
       { name: 'Authentication', ready: !!session?.accessToken },
       { name: 'Project', ready: projectState.currentProject || !init?.config?.settings.current_project },
@@ -398,6 +440,7 @@ export default function ClientBoot({ init }: { init: InitPayloadForClient | null
     }
   }, [
     isGoogleDriveReady,
+    isGitHubRepoReady,
     toolsState.toolsReady,
     session?.accessToken,
     hasApiKey,

@@ -11,9 +11,11 @@ claude*
 CLAUDE*
 *.bak*
 cls_*
+
 *.env
 .env.local
 .env*
+
 client_secret_851625125651-0bo8rqq00dkmf1i94b86sk3im7iacbsn.apps.googleusercontent.com.json
 
 # dependencies

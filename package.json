@@ -10,6 +10,7 @@
     "postbuild": "mkdir -p .next/server/app/data && cp app/data/*.afm .next/server/app/data/"
   },
   "dependencies": {
+    "@octokit/rest": "^21.0.2",
     "@uiw/react-md-editor": "^4.0.8",
     "@xmldom/xmldom": "^0.9.8",
     "canvas": "^3.2.0",
